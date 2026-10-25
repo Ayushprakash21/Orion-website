@@ -1,0 +1,8 @@
+{
+  "name": "Orion-9 | The Intelligence Layer for Global Supply Chains",
+  "description": "Orion-9 is an AI-powered Supply Chain Operating System and Intelligent Control Tower connecting supply chain data, operational workflows, risk intelligence, and autonomous decisions.",
+  "requestFramePermissions": [],
+  "majorCapabilities": [
+    "MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"
+  ]
+}
