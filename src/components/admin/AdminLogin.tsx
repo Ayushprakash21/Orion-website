@@ -122,7 +122,7 @@ export function AdminLogin({ onNavigate }: AdminLoginProps) {
   };
 
   return (
-    <div className="min-h-screen bg-[var(--orion-canvas)] text-[var(--orion-text-primary)] flex flex-col justify-between p-6 md:p-10 font-sans transition-colors duration-300 relative overflow-hidden">
+    <div className="min-h-screen bg-[var(--orion-canvas)] text-[var(--orion-text-primary)] flex flex-col justify-between p-4 sm:p-6 md:p-10 font-sans transition-colors duration-300 relative overflow-hidden">
       {/* Ambient background light spot */}
       <div
         className="pointer-events-none absolute -top-40 left-1/2 -translate-x-1/2 w-[700px] h-[500px] bg-sky-400/15 dark:bg-sky-500/10 blur-[130px] rounded-full"
@@ -130,8 +130,8 @@ export function AdminLogin({ onNavigate }: AdminLoginProps) {
       />
 
       {/* Top Bar in Liquid Glass */}
-      <header className="max-w-[1280px] w-full mx-auto flex flex-wrap items-center justify-between gap-4 relative z-10">
-        <div className="flex items-center gap-5">
+      <header className="max-w-[1280px] w-full mx-auto flex flex-wrap items-center justify-between gap-3 sm:gap-4 relative z-10">
+        <div className="flex items-center gap-3 sm:gap-5">
           <a
             href="/"
             onClick={(e) => {
@@ -152,14 +152,15 @@ export function AdminLogin({ onNavigate }: AdminLoginProps) {
           <button
             type="button"
             onClick={() => onNavigate('/')}
-            className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-xl liquid-glass-button text-xs font-medium text-[var(--orion-text-primary)] transition-colors cursor-pointer"
+            className="inline-flex items-center gap-1.5 sm:gap-2 px-3 py-1.5 rounded-xl liquid-glass-button text-xs font-medium text-[var(--orion-text-primary)] transition-colors cursor-pointer"
           >
             <ArrowLeft className="w-3.5 h-3.5 text-[var(--orion-accent)]" />
-            <span>Return to Site</span>
+            <span className="hidden min-[360px]:inline">Return to Site</span>
+            <span className="min-[360px]:hidden">Site</span>
           </button>
         </div>
 
-        <div className="flex items-center gap-3 text-xs font-mono text-[var(--orion-text-secondary)]">
+        <div className="flex items-center gap-2 sm:gap-3 text-xs font-mono text-[var(--orion-text-secondary)]">
           <button
             type="button"
             onClick={toggleTheme}
@@ -176,12 +177,12 @@ export function AdminLogin({ onNavigate }: AdminLoginProps) {
           <span className="hidden sm:inline">RESTRICTED ADMIN GATEWAY</span>
           <span aria-hidden="true" className="hidden sm:inline">·</span>
           <span className={isFirebaseConfigured ? 'text-emerald-500 font-medium' : 'text-amber-500'}>
-            {isFirebaseConfigured ? 'FIREBASE ONLINE' : 'DEV FALLBACK'}
+            {isFirebaseConfigured ? 'ONLINE' : 'DEV'}
           </span>
           {isDev && (
             <>
               <span aria-hidden="true">·</span>
-              <span className="px-2 py-0.5 rounded-md bg-sky-500/15 text-[var(--orion-accent)] font-semibold text-[10px]">
+              <span className="px-1.5 sm:px-2 py-0.5 rounded-md bg-sky-500/15 text-[var(--orion-accent)] font-semibold text-[10px]">
                 LOCAL DEV
               </span>
             </>
@@ -190,8 +191,8 @@ export function AdminLogin({ onNavigate }: AdminLoginProps) {
       </header>
 
       {/* Main Liquid Glass macOS Admin Window */}
-      <main className="max-w-lg w-full mx-auto my-10 relative z-10">
-        <div className="liquid-glass-elevated rounded-3xl border border-[var(--glass-border)] shadow-2xl overflow-hidden p-8 md:p-10">
+      <main className="max-w-lg w-full mx-auto my-4 sm:my-10 relative z-10">
+        <div className="liquid-glass-elevated rounded-2xl sm:rounded-3xl border border-[var(--glass-border)] shadow-2xl overflow-hidden p-5 sm:p-8 md:p-10">
           {/* macOS Titlebar & Traffic Lights */}
           <div className="flex items-center justify-between pb-6 mb-6 border-b border-[var(--glass-border-subtle)]">
             <div className="flex items-center gap-2">

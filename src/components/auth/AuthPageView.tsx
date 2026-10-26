@@ -110,7 +110,8 @@ export const AuthPageView: React.FC<AuthPageViewProps> = ({ mode, onNavigate }) 
               onClick={() => launchOrion()}
               className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-gradient-to-r from-[#0284C7] to-[#0369A1] hover:from-[#0369A1] hover:to-[#075985] text-white text-xs font-semibold transition-all shadow-[0_4px_16px_rgba(2,132,199,0.35)] cursor-pointer"
             >
-              <span>Launch Orion-9 OS</span>
+              <span className="hidden sm:inline">Launch Orion-9 OS</span>
+              <span className="sm:hidden">Orion-9 OS</span>
               <ArrowRight className="w-3.5 h-3.5" />
             </button>
           )}
@@ -118,9 +119,9 @@ export const AuthPageView: React.FC<AuthPageViewProps> = ({ mode, onNavigate }) 
       </header>
 
       {/* Main Centered Stage */}
-      <main className="relative z-20 flex-1 flex flex-col items-center justify-center px-4 py-8">
+      <main className="relative z-20 flex-1 flex flex-col items-center justify-center px-3 sm:px-4 py-6 sm:py-8">
         {user ? (
-          <div className="w-full max-w-md rounded-3xl liquid-glass-elevated p-8 sm:p-10 border border-[var(--glass-border)] shadow-2xl text-center space-y-6">
+          <div className="w-full max-w-md rounded-2xl sm:rounded-3xl liquid-glass-elevated p-5 sm:p-10 border border-[var(--glass-border)] shadow-2xl text-center space-y-5 sm:space-y-6">
             <div className="w-14 h-14 rounded-2xl liquid-glass-subtle border border-[var(--glass-border)] text-[var(--orion-accent)] mx-auto flex items-center justify-center shadow-inner">
               <ShieldCheck className="w-7 h-7 text-[var(--orion-accent)]" />
             </div>
@@ -152,7 +153,8 @@ export const AuthPageView: React.FC<AuthPageViewProps> = ({ mode, onNavigate }) 
                 onClick={() => launchOrion()}
                 className="w-full h-11 rounded-xl bg-[var(--orion-text-primary)] text-[var(--orion-surface)] text-xs font-semibold hover:opacity-90 transition-all flex items-center justify-center gap-2 cursor-pointer shadow-md"
               >
-                <span>Launch Orion-9 OS</span>
+                <span className="hidden sm:inline">Launch Orion-9 OS</span>
+              <span className="sm:hidden">Orion-9 OS</span>
                 <ArrowRight className="w-4 h-4" />
               </button>
               <button

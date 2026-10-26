@@ -40,7 +40,7 @@ export const ControlTowerAndFaq: React.FC = () => {
          ========================================================================== */}
       <section
         id="faq"
-        className="max-w-[1440px] mx-auto px-6 sm:px-12 py-20 sm:py-28 border-t border-[var(--glass-border-subtle)]"
+        className="max-w-[1440px] mx-auto px-4 sm:px-6 lg:px-12 py-16 sm:py-28 border-t border-[var(--glass-border-subtle)]"
       >
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-12 lg:gap-16 items-start">
           {/* Left Column: Heading */}

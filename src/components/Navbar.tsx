@@ -46,6 +46,7 @@ export const Navbar: React.FC<NavbarProps> = ({ onNavigate, onOpenDownload }) =>
     { label: 'Capabilities', href: '#capabilities' },
     { label: 'Orion-9 OS', href: '#control-tower' },
     { label: 'Readiness', href: '#faq' },
+    { label: 'Documentation', href: '/docs' },
   ];
 
   const companyName = activeConfig.branding.companyName || 'Orion-9';

@@ -212,7 +212,7 @@ export const EditorialCapabilities: React.FC = () => {
         aria-hidden="true"
       />
 
-      <div className="max-w-[1440px] mx-auto px-6 sm:px-12 relative z-10">
+      <div className="max-w-[1440px] mx-auto px-4 sm:px-6 lg:px-12 relative z-10">
         {/* Large Editorial Headline */}
         <div className="max-w-4xl pb-14 sm:pb-20 space-y-4">
           <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full liquid-glass-badge text-[11px] font-mono uppercase tracking-wider text-[var(--orion-accent)] font-semibold">

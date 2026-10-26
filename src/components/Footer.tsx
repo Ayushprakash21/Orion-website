@@ -123,7 +123,7 @@ export const Footer: React.FC<FooterProps> = ({ onNavigate, onOpenDownload }) =>
       {/* ==========================================================================
           2. MULTI-COLUMN ENTERPRISE NAVIGATION
          ========================================================================== */}
-      <div className="max-w-[1440px] mx-auto px-6 sm:px-12 pt-10 pb-12">
+      <div className="max-w-[1440px] mx-auto px-4 sm:px-6 lg:px-12 pt-10 pb-12">
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-12 lg:gap-8">
           {/* Left Column: Brand Lockup & Description */}
           <div className="lg:col-span-4 space-y-4 pr-0 lg:pr-8">
@@ -264,6 +264,15 @@ export const Footer: React.FC<FooterProps> = ({ onNavigate, onOpenDownload }) =>
                 Resources
               </h3>
               <ul className="space-y-2.5 text-xs font-medium text-[var(--orion-text-primary)]">
+                <li>
+                  <button
+                    type="button"
+                    onClick={() => handleRoute('/docs')}
+                    className="hover:text-[var(--orion-accent)] transition-colors cursor-pointer text-left text-cyan-400 font-semibold"
+                  >
+                    Documentation Manual
+                  </button>
+                </li>
                 <li>
                   <button
                     type="button"

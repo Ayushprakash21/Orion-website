@@ -18,6 +18,7 @@ import { DesktopDownloadModal } from './components/DesktopDownloadModal';
 import { AuthPageView } from './components/auth/AuthPageView';
 import { AdminLogin } from './components/admin/AdminLogin';
 import { AdminConsole } from './components/admin/AdminConsole';
+import { DocsLayout } from './components/docs/DocsLayout';
 
 const AppContent: React.FC = () => {
   const { activeConfig } = useSiteConfig();
@@ -76,6 +77,10 @@ const AppContent: React.FC = () => {
 
   if (currentPath.startsWith('/admin')) {
     return <AdminConsole onNavigate={navigate} />;
+  }
+
+  if (currentPath.startsWith('/docs')) {
+    return <DocsLayout currentPath={currentPath} onNavigate={navigate} />;
   }
 
   return (

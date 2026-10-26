@@ -32,13 +32,13 @@
 
 import React, { useEffect, useRef, useState, useCallback } from 'react';
 import * as THREE from 'three';
+import { motion, AnimatePresence, useReducedMotion } from 'framer-motion';
 import {
   SUPPLY_CHAIN_7_STAGES,
   evaluateWorldScrollState,
   evaluateHeroIntroSequence,
   clamp01,
   lerpScalar,
-  type SupplyChainProcessStage,
 } from '../utils/cinematic-choreography';
 import {
   detectSoftwareWebGL,
@@ -53,8 +53,29 @@ import { useSiteConfig } from '../context/SiteConfigContext';
 import { OrionHeroBrandLockup } from './OrionLogo';
 import { ArrowRight } from 'lucide-react';
 
+const STAGE_HEADINGS: readonly string[] = [
+  'Raw Material Origins',
+  'Supplier Fabrication',
+  'Manufacturing & Assembly',
+  'Warehouse & Inventory',
+  'Global Distribution',
+  'Regional Distribution',
+  'Customer Fulfillment',
+];
+
+const STATION_LOCATIONS = [
+  { x: -42, y: 1.5, z: 1 },    // Stage 0: Raw Material Origins
+  { x: -26, y: 1.8, z: -1 },   // Stage 1: Supplier Fabrication
+  { x: 2, y: 2.8, z: -1 },     // Stage 2: Manufacturing & Assembly
+  { x: 70, y: 3.5, z: 0 },     // Stage 3: Warehouse & Inventory
+  { x: 35, y: 4.2, z: 3 },     // Stage 4: Global Distribution
+  { x: 68, y: 1.8, z: 6 },     // Stage 5: Regional Distribution
+  { x: 88, y: 2.0, z: 1 },     // Stage 6: Customer Fulfillment
+] as const;
+
 export const OrionWorldExperience: React.FC = () => {
   const { activeConfig } = useSiteConfig();
+  const prefersReducedMotion = useReducedMotion();
   const containerRef = useRef<HTMLDivElement | null>(null);
   const canvasMountRef = useRef<HTMLDivElement | null>(null);
 
@@ -63,6 +84,47 @@ export const OrionWorldExperience: React.FC = () => {
   const smoothedScrollRef = useRef<number>(0);
   const [hudState, setHudState] = useState(() => evaluateWorldScrollState(0));
   const lastHudUpdateRef = useRef<number>(0);
+
+  // 10-Second Automatic Transition System (advances smoothly through stages when viewing)
+  const autoStage7IndexRef = useRef<number>(0);
+  const targetAutoProgressRef = useRef<number>(0.18);
+  const isAutoAdvancingRef = useRef<boolean>(false);
+  const lastUserScrollTimestampRef = useRef<number>(0);
+
+  useEffect(() => {
+    const AUTO_STAGE_INTERVAL_MS = 10000; // 10 seconds
+    let timerId: ReturnType<typeof setInterval> | null = null;
+
+    const startAutoTimer = () => {
+      if (timerId) clearInterval(timerId);
+      timerId = setInterval(() => {
+        if (document.hidden) return;
+        const now = performance.now();
+        // If user hasn't scrolled in the last 6s and is in process view
+        if (now - lastUserScrollTimestampRef.current >= 6000 && scrollProgressRef.current >= 0.12) {
+          isAutoAdvancingRef.current = true;
+          autoStage7IndexRef.current = (autoStage7IndexRef.current + 1) % SUPPLY_CHAIN_7_STAGES.length;
+          targetAutoProgressRef.current = SUPPLY_CHAIN_7_STAGES[autoStage7IndexRef.current].scrollTarget;
+        }
+      }, AUTO_STAGE_INTERVAL_MS);
+    };
+
+    startAutoTimer();
+
+    const handleVisibility = () => {
+      if (document.hidden) {
+        if (timerId) clearInterval(timerId);
+      } else {
+        startAutoTimer();
+      }
+    };
+
+    document.addEventListener('visibilitychange', handleVisibility);
+    return () => {
+      if (timerId) clearInterval(timerId);
+      document.removeEventListener('visibilitychange', handleVisibility);
+    };
+  }, []);
 
   // 5-Stage Hero Logo Intro State (Preserves initial 3.8s reveal & ambient loop)
   const [introState, setIntroState] = useState(() => {
@@ -137,6 +199,8 @@ export const OrionWorldExperience: React.FC = () => {
 
   useEffect(() => {
     const handleScroll = () => {
+      lastUserScrollTimestampRef.current = performance.now();
+      isAutoAdvancingRef.current = false;
       const container = containerRef.current;
       if (!container) return;
       const rect = container.getBoundingClientRect();
@@ -247,6 +311,31 @@ export const OrionWorldExperience: React.FC = () => {
     gridHelper.position.set(28, 0.025, 0);
     scene.add(gridHelper);
 
+    // =======================================================================
+    // DYNAMIC ACTIVE-STATION VISUAL HIGHLIGHT RIG (Requirement 5)
+    // Subtly illuminates the currently active supply-chain station with focused
+    // spotlight lighting and ground beacon halo.
+    // =======================================================================
+    const stationHaloGeo = new THREE.RingGeometry(3.0, 3.7, 32);
+    stationHaloGeo.rotateX(-Math.PI / 2);
+    const stationHaloMat = new THREE.MeshBasicMaterial({
+      color: 0x0284c7,
+      transparent: true,
+      opacity: 0.6,
+      side: THREE.DoubleSide,
+    });
+    const stationHaloMesh = new THREE.Mesh(stationHaloGeo, stationHaloMat);
+    stationHaloMesh.position.set(-42, 0.08, 1);
+    scene.add(stationHaloMesh);
+
+    const stationSpotlight = new THREE.SpotLight(0x38bdf8, 2.2, 55, Math.PI / 5, 0.5, 1.2);
+    stationSpotlight.position.set(-42, 22, 10);
+    const stationTarget = new THREE.Object3D();
+    stationTarget.position.set(-42, 1.2, 1);
+    scene.add(stationTarget);
+    stationSpotlight.target = stationTarget;
+    scene.add(stationSpotlight);
+
     // Build the Procedural 7-Stage World Rig
     const worldRig: Scene3DRig = buildEndToEndSupplyChainWorld(isSoftwareGl);
     scene.add(worldRig.rootGroup);
@@ -276,8 +365,16 @@ export const OrionWorldExperience: React.FC = () => {
       const elapsed = clock.getElapsedTime();
 
       // Smooth scroll lerp for stable, cinematic camera gliding
+      // Supports both manual scrolling and automatic 10-second stage transitions
       const rawScroll = scrollProgressRef.current;
-      smoothedScrollRef.current += (rawScroll - smoothedScrollRef.current) * 0.085;
+      let targetProgress = rawScroll;
+      if (
+        isAutoAdvancingRef.current &&
+        performance.now() - lastUserScrollTimestampRef.current >= 6000
+      ) {
+        targetProgress = targetAutoProgressRef.current;
+      }
+      smoothedScrollRef.current += (targetProgress - smoothedScrollRef.current) * 0.085;
       const currentScroll = smoothedScrollRef.current;
 
       const state = evaluateWorldScrollState(currentScroll);
@@ -285,6 +382,24 @@ export const OrionWorldExperience: React.FC = () => {
       // Camera interpolation along Catmull-Rom keyframes
       camera.position.set(state.cameraPos.x, state.cameraPos.y, state.cameraPos.z);
       camera.lookAt(state.lookAt.x, state.lookAt.y, state.lookAt.z);
+
+      // Dynamically highlight the active supply-chain station (Requirement 5)
+      const targetStationCoord =
+        STATION_LOCATIONS[state.activeStage7Index] || STATION_LOCATIONS[0];
+      stationHaloMesh.position.x += (targetStationCoord.x - stationHaloMesh.position.x) * 0.08;
+      stationHaloMesh.position.z += (targetStationCoord.z - stationHaloMesh.position.z) * 0.08;
+      stationHaloMesh.position.y = 0.08;
+
+      stationTarget.position.x = stationHaloMesh.position.x;
+      stationTarget.position.y = targetStationCoord.y;
+      stationTarget.position.z = stationHaloMesh.position.z;
+
+      stationSpotlight.position.x = stationHaloMesh.position.x;
+      stationSpotlight.position.z = stationHaloMesh.position.z + 9;
+      stationSpotlight.position.y = 20;
+
+      // Subtle breath/pulse on the active station beacon
+      stationHaloMat.opacity = 0.42 + 0.28 * Math.sin(elapsed * 3.6);
 
       // Update Route Pulse Shader for the Continuous Cyan Pipeline
       if (worldRig.cyanPipelineMat.uniforms) {
@@ -401,6 +516,7 @@ export const OrionWorldExperience: React.FC = () => {
       if (now - lastHudUpdateRef.current > 50) {
         lastHudUpdateRef.current = now;
         setHudState(state);
+        autoStage7IndexRef.current = state.activeStage7Index;
       }
 
       framePacer.scheduleNext(tick);
@@ -411,6 +527,8 @@ export const OrionWorldExperience: React.FC = () => {
     return () => {
       window.removeEventListener('resize', handleResize);
       framePacer.dispose();
+      stationHaloGeo.dispose();
+      stationHaloMat.dispose();
       envTexture.dispose();
       renderer.dispose();
     };
@@ -420,10 +538,6 @@ export const OrionWorldExperience: React.FC = () => {
     activeConfig.homepage.heroHeadlineLine1 || 'The New Standard in';
   const heroLine2 =
     activeConfig.homepage.heroHeadlineLine2 || 'Supply Chain Control';
-
-  // Active Stage Resolution out of the 7 stages
-  const activeStage: SupplyChainProcessStage =
-    SUPPLY_CHAIN_7_STAGES[hudState.activeStage7Index] || SUPPLY_CHAIN_7_STAGES[0];
 
   return (
     <section
@@ -478,67 +592,37 @@ export const OrionWorldExperience: React.FC = () => {
         </div>
 
         {/* ==========================================================================
-            2. BOTTOM-LEFT 7-STAGE PROCESS HUD (COMPACT, RESTRAINED & BALANCED)
+            2. MINIMAL DYNAMIC LEFT-ALIGNED STAGE HEADING INDICATOR
+               Replaces large card, badges, descriptions, telemetry tags, and numbered
+               navigation strip with pure, left-aligned typography, subtle transition,
+               and restrained cyan accent dot.
            ========================================================================== */}
         <div
           style={{
             opacity: hudState.processHudOpacity,
-            pointerEvents: hudState.processHudOpacity > 0.2 ? 'auto' : 'none',
+            pointerEvents: 'none',
           }}
-          className="absolute bottom-5 sm:bottom-7 left-4 sm:left-8 z-20 w-[calc(100%-2rem)] max-w-[340px] sm:max-w-[365px] transition-all duration-300"
+          className="absolute bottom-8 sm:bottom-12 md:bottom-14 left-6 sm:left-10 md:left-14 z-20 transition-opacity duration-300"
+          aria-live="polite"
         >
-          {/* Main Liquid-Glass Stage Card — 25-35% more compact to avoid dominating the 3D scene */}
-          <div className="bg-white/94 border border-[#C8DFEE]/90 rounded-xl p-3 sm:p-3.5 shadow-[0_8px_24px_rgba(7,11,25,0.06)] mb-2 backdrop-blur-md">
-            <div className="flex items-start gap-2.5">
-              <span className="w-6 h-6 sm:w-6.5 sm:h-6.5 rounded-md bg-[#070B19] text-white font-mono text-[11px] sm:text-xs font-semibold flex items-center justify-center shrink-0 mt-0.5 shadow-xs">
-                {activeStage.number}
-              </span>
-              <div className="space-y-1 flex-1 min-w-0">
-                <div className="flex items-center gap-1.5">
-                  <span className="text-[9px] sm:text-[9.5px] font-mono font-bold tracking-wider text-[#0284C7] uppercase">
-                    STAGE {activeStage.number} / 07 · {activeStage.stageName}
-                  </span>
-                </div>
-                <h2 className="font-editorial text-base sm:text-lg font-bold tracking-[-0.015em] text-[#070B19] leading-snug">
-                  {activeStage.title}
-                </h2>
-                <p className="text-[11px] sm:text-xs text-[#334155] leading-relaxed">
-                  {activeStage.description}
-                </p>
-                <div className="pt-0.5 flex items-center gap-1.5 text-[10px] font-mono text-[#0284C7] font-semibold">
-                  <span className="w-1.5 h-1.5 rounded-full bg-[#0284C7] animate-pulse" />
-                  <span>{activeStage.telemetryTag}</span>
-                </div>
-              </div>
-            </div>
-          </div>
-
-          {/* 7-Stage Interactive Pill Navigation (01 to 07) — Compact */}
-          <div className="flex items-center gap-1 p-1 rounded-lg bg-white/90 border border-[#B8D7ED]/80 backdrop-blur-md shadow-xs overflow-x-auto scrollbar-none">
-            {SUPPLY_CHAIN_7_STAGES.map((st, idx) => {
-              const isCurrent = idx === hudState.activeStage7Index;
-              return (
-                <button
-                  key={st.id}
-                  type="button"
-                  onClick={() => scrollToNormalizedProgress(st.scrollTarget)}
-                  aria-label={`Jump to stage ${st.number}: ${st.title}`}
-                  className={`px-2 py-0.5 rounded-md text-[10px] font-mono font-semibold transition cursor-pointer flex items-center gap-1 shrink-0 ${
-                    isCurrent
-                      ? 'bg-[#070B19] text-white shadow-xs'
-                      : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100'
-                  }`}
-                >
-                  <span
-                    className={`w-1 h-1 rounded-full shrink-0 ${
-                      isCurrent ? 'bg-[#38BDF8]' : 'bg-slate-400'
-                    }`}
-                  />
-                  <span>{st.number}</span>
-                </button>
-              );
-            })}
-          </div>
+          <AnimatePresence mode="wait">
+            <motion.div
+              key={hudState.activeStage7Index}
+              initial={prefersReducedMotion ? { opacity: 0 } : { opacity: 0, x: -14 }}
+              animate={prefersReducedMotion ? { opacity: 1 } : { opacity: 1, x: 0 }}
+              exit={prefersReducedMotion ? { opacity: 0 } : { opacity: 0, x: 10 }}
+              transition={{ duration: 0.38, ease: [0.16, 1, 0.3, 1] }}
+              className="flex items-center gap-2.5 sm:gap-3"
+            >
+              <span
+                className="w-2 h-2 sm:w-2.5 sm:h-2.5 rounded-full bg-[#0284C7] shadow-[0_0_10px_rgba(2,132,199,0.75)] shrink-0"
+                aria-hidden="true"
+              />
+              <h2 className="font-editorial text-lg sm:text-2xl md:text-[26px] font-bold tracking-[-0.015em] text-[#070B19] select-none whitespace-nowrap drop-shadow-xs">
+                {STAGE_HEADINGS[hudState.activeStage7Index] || STAGE_HEADINGS[0]}
+              </h2>
+            </motion.div>
+          </AnimatePresence>
         </div>
       </div>
     </section>
