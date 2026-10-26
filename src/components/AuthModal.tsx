@@ -22,7 +22,7 @@ export const AuthModal: React.FC = () => {
 
   return (
     <div
-      className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-[#101820]/60 backdrop-blur-md animate-in fade-in duration-200 overflow-y-auto"
+      className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-xl animate-in fade-in duration-200 overflow-y-auto"
       role="dialog"
       aria-modal="true"
       aria-label="Orion-9 Authentication"
@@ -31,7 +31,7 @@ export const AuthModal: React.FC = () => {
         <button
           type="button"
           onClick={closeAuthModal}
-          className="absolute right-6 top-4 z-40 flex h-9 w-9 items-center justify-center rounded-full border border-[#D5E1E8] bg-white text-[#111827] shadow-md transition hover:bg-[#F5F9FB] cursor-pointer"
+          className="absolute right-6 top-4 z-40 flex h-9 w-9 items-center justify-center rounded-full liquid-glass-button text-[var(--orion-text-primary)] shadow-md transition cursor-pointer"
           aria-label="Close authentication modal"
         >
           <X className="w-4 h-4" />

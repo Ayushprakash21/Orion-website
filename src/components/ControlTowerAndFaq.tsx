@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { ChevronDown, ArrowUpRight, ShieldCheck, Activity, CheckCircle2 } from 'lucide-react';
+import { ChevronDown, ArrowUpRight, ShieldCheck, Activity, CheckCircle2, Sliders, Globe, Radio } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 
 interface ScenarioRecord {
@@ -81,31 +81,35 @@ const FAQ_ITEMS = [
 ];
 
 export const ControlTowerAndFaq: React.FC = () => {
-  const { launchOrion, destinationUrl } = useAuth();
+  const { user, launchOrion, destinationUrl } = useAuth();
   const [selectedScenario, setSelectedScenario] = useState<ScenarioRecord>(SCENARIOS[2]);
   const [openFaqIndex, setOpenFaqIndex] = useState<number | null>(0);
 
   return (
-    <div className="w-full bg-white text-[#070B19]">
+    <div className="w-full bg-[var(--orion-canvas)] text-[var(--orion-text-primary)] transition-colors duration-300">
       {/* ==========================================================================
           PART A: ARCHITECTURAL CONTROL TOWER LIVE INSPECTION (#control-tower)
          ========================================================================== */}
       <section
         id="control-tower"
-        className="max-w-[1440px] mx-auto px-6 sm:px-12 py-20 sm:py-28 border-t border-[#E2ECF4]"
+        className="max-w-[1440px] mx-auto px-6 sm:px-12 py-20 sm:py-28 border-t border-[var(--glass-border-subtle)]"
       >
         <div className="flex flex-col lg:flex-row lg:items-end justify-between gap-8 pb-12">
           <div>
-            <span className="text-xs font-mono uppercase tracking-wider text-[#0284C7] font-medium block mb-3">
-              LIVE CONTROL TOWER TELEMETRY
-            </span>
-            <h2 className="font-editorial text-3xl sm:text-5xl font-bold tracking-[-0.02em] leading-[1.1] text-[#070B19]">
+            <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full liquid-glass-badge text-[11px] font-mono uppercase tracking-wider text-[var(--orion-accent)] font-semibold mb-3">
+              <Radio className="w-3.5 h-3.5 animate-pulse text-[var(--orion-accent)]" />
+              <span>LIVE ORION-9 OS TELEMETRY</span>
+            </div>
+            <h2 className="font-editorial text-3xl sm:text-5xl font-extrabold tracking-[-0.03em] leading-[1.08] text-[var(--orion-text-primary)]">
               From corridor anomaly to verified execution.
             </h2>
+            <p className="text-sm sm:text-base text-[var(--orion-text-secondary)] mt-3 max-w-2xl">
+              Inspect multi-tier telemetry streams in real time. Compare autonomous mitigation scenarios with deterministic trade-off analysis.
+            </p>
           </div>
 
-          {/* Scenario Switcher Buttons */}
-          <div className="flex flex-wrap items-center gap-2">
+          {/* Scenario Switcher Tabs */}
+          <div className="flex flex-wrap items-center gap-2 p-1.5 rounded-2xl liquid-glass-subtle">
             {SCENARIOS.map((sc) => {
               const active = sc.id === selectedScenario.id;
               return (
@@ -113,10 +117,10 @@ export const ControlTowerAndFaq: React.FC = () => {
                   key={sc.id}
                   type="button"
                   onClick={() => setSelectedScenario(sc)}
-                  className={`px-4 py-2 rounded-lg text-xs font-semibold transition-all cursor-pointer ${
+                  className={`px-4 py-2 rounded-xl text-xs font-semibold transition-all cursor-pointer ${
                     active
-                      ? 'bg-[#070B19] text-white shadow-xs'
-                      : 'bg-[#F2F9FD] text-[#334155] hover:bg-[#E2F0FA] border border-[#D4E4F0]'
+                      ? 'bg-[var(--orion-text-primary)] text-[var(--orion-surface)] shadow-sm'
+                      : 'text-[var(--orion-text-secondary)] hover:text-[var(--orion-text-primary)] hover:bg-white/40 dark:hover:bg-white/10'
                   }`}
                 >
                   {sc.code} · {sc.label}
@@ -126,75 +130,100 @@ export const ControlTowerAndFaq: React.FC = () => {
           </div>
         </div>
 
-        {/* Clean Architectural Telemetry Inspection Frame */}
-        <div className="rounded-3xl bg-[#070B19] text-white p-6 sm:p-10 lg:p-12 border border-[#1E293B]">
-          <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-center">
-            <div className="lg:col-span-7 space-y-6">
-              <div className="flex flex-wrap items-center gap-3">
-                <span className="text-xs font-mono uppercase tracking-wider text-[#38BDF8] font-medium">
-                  {selectedScenario.statusText}
-                </span>
-                <span className="text-white/40" aria-hidden="true">·</span>
-                <span className="text-xs font-mono text-white/70">
-                  {selectedScenario.corridor}
-                </span>
+        {/* macOS Liquid Glass Operational Window Frame */}
+        <div className="rounded-3xl liquid-glass-elevated border border-[var(--glass-border)] overflow-hidden shadow-2xl transition-all duration-300">
+          {/* macOS Window Titlebar */}
+          <div className="px-6 py-4 border-b border-[var(--glass-border-subtle)] bg-white/40 dark:bg-black/30 flex items-center justify-between text-xs">
+            <div className="flex items-center gap-3">
+              <div className="flex items-center gap-1.5">
+                <span className="w-3 h-3 rounded-full bg-[#FF5F56] border border-[#E0443E] shadow-2xs" />
+                <span className="w-3 h-3 rounded-full bg-[#FFBD2E] border border-[#DEA123] shadow-2xs" />
+                <span className="w-3 h-3 rounded-full bg-[#27C93F] border border-[#1AAB29] shadow-2xs" />
               </div>
-
-              <h3 className="font-editorial text-2xl sm:text-3xl lg:text-4xl font-bold tracking-[-0.015em] text-white leading-tight">
-                {selectedScenario.summary}
-              </h3>
-
-              <div className="p-4 rounded-2xl bg-white/5 border border-white/10 flex items-start gap-3">
-                <CheckCircle2 className="w-4 h-4 text-[#38BDF8] shrink-0 mt-0.5" />
-                <p className="text-xs sm:text-sm text-white/85 font-mono">
-                  {selectedScenario.actionTaken}
-                </p>
-              </div>
+              <span className="text-[var(--orion-text-muted)] font-mono text-[11px]">
+                orion-control-tower.cockpit — Telemetry Active (216 Nodes)
+              </span>
             </div>
 
-            <div className="lg:col-span-5 grid grid-cols-1 sm:grid-cols-2 gap-4">
-              <div className="p-5 rounded-2xl bg-white/5 border border-white/10">
-                <span className="text-[11px] font-mono uppercase tracking-wider text-white/55 block">
-                  CORRIDOR ETA WINDOW
-                </span>
-                <span className="text-lg sm:text-xl font-bold text-white mt-1.5 block tabular-nums">
-                  {selectedScenario.etaDelta}
-                </span>
-              </div>
+            <div className="flex items-center gap-2">
+              <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-emerald-500/10 text-emerald-500 text-[10px] font-mono font-semibold border border-emerald-500/20">
+                <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
+                AIS / ADS-B SYNCHRONIZED
+              </span>
+            </div>
+          </div>
 
-              <div className="p-5 rounded-2xl bg-white/5 border border-white/10">
-                <span className="text-[11px] font-mono uppercase tracking-wider text-white/55 block">
-                  SLA INTEGRITY
-                </span>
-                <span className="text-lg sm:text-xl font-bold text-[#38BDF8] mt-1.5 block tabular-nums">
-                  {selectedScenario.slaProtection}
-                </span>
-              </div>
-
-              <div className="p-5 rounded-2xl bg-white/5 border border-white/10">
-                <span className="text-[11px] font-mono uppercase tracking-wider text-white/55 block">
-                  FINANCIAL PROTECTION
-                </span>
-                <span className="text-lg sm:text-xl font-bold text-white mt-1.5 block tabular-nums">
-                  {selectedScenario.financialImpact}
-                </span>
-              </div>
-
-              <button
-                type="button"
-                onClick={() => launchOrion(destinationUrl)}
-                className="p-5 rounded-2xl bg-white text-[#070B19] hover:bg-[#E0F2FE] transition-colors flex flex-col justify-between text-left cursor-pointer group"
-              >
-                <div className="flex items-center justify-between w-full">
-                  <span className="text-[11px] font-mono uppercase tracking-wider font-medium text-[#0284C7]">
-                    LIVE COCKPIT
+          {/* Window Body */}
+          <div className="p-6 sm:p-10 lg:p-12">
+            <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-center">
+              <div className="lg:col-span-7 space-y-6">
+                <div className="flex flex-wrap items-center gap-3">
+                  <span className="px-3 py-1 rounded-full liquid-glass-badge text-xs font-mono uppercase tracking-wider text-[var(--orion-accent)] font-semibold">
+                    {selectedScenario.statusText}
                   </span>
-                  <ArrowUpRight className="w-4 h-4 transition-transform group-hover:translate-x-0.5 group-hover:-translate-y-0.5" />
+                  <span className="text-[var(--orion-text-muted)]" aria-hidden="true">·</span>
+                  <span className="text-xs font-mono text-[var(--orion-text-secondary)]">
+                    {selectedScenario.corridor}
+                  </span>
                 </div>
-                <span className="text-base font-bold mt-2 block">
-                  Launch Control Tower
-                </span>
-              </button>
+
+                <h3 className="font-editorial text-2xl sm:text-3xl lg:text-4xl font-bold tracking-tight text-[var(--orion-text-primary)] leading-snug">
+                  {selectedScenario.summary}
+                </h3>
+
+                <div className="p-4 rounded-2xl liquid-glass-subtle border border-[var(--glass-border)] flex items-start gap-3">
+                  <CheckCircle2 className="w-4 h-4 text-[var(--orion-accent)] shrink-0 mt-0.5" />
+                  <p className="text-xs sm:text-sm text-[var(--orion-text-primary)] font-mono">
+                    {selectedScenario.actionTaken}
+                  </p>
+                </div>
+              </div>
+
+              {/* KPI Glass Cards */}
+              <div className="lg:col-span-5 grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div className="p-5 rounded-2xl liquid-glass-card">
+                  <span className="text-[11px] font-mono uppercase tracking-wider text-[var(--orion-text-muted)] block">
+                    CORRIDOR ETA WINDOW
+                  </span>
+                  <span className="text-lg sm:text-xl font-bold text-[var(--orion-text-primary)] mt-1.5 block tabular-nums">
+                    {selectedScenario.etaDelta}
+                  </span>
+                </div>
+
+                <div className="p-5 rounded-2xl liquid-glass-card">
+                  <span className="text-[11px] font-mono uppercase tracking-wider text-[var(--orion-text-muted)] block">
+                    SLA INTEGRITY
+                  </span>
+                  <span className="text-lg sm:text-xl font-bold text-[var(--orion-accent)] mt-1.5 block tabular-nums">
+                    {selectedScenario.slaProtection}
+                  </span>
+                </div>
+
+                <div className="p-5 rounded-2xl liquid-glass-card">
+                  <span className="text-[11px] font-mono uppercase tracking-wider text-[var(--orion-text-muted)] block">
+                    FINANCIAL PROTECTION
+                  </span>
+                  <span className="text-lg sm:text-xl font-bold text-[var(--orion-text-primary)] mt-1.5 block tabular-nums">
+                    {selectedScenario.financialImpact}
+                  </span>
+                </div>
+
+                <button
+                  type="button"
+                  onClick={() => launchOrion(destinationUrl)}
+                  className="p-5 rounded-2xl liquid-glass-elevated hover:bg-[var(--orion-accent)] hover:text-white transition-all duration-200 flex flex-col justify-between text-left cursor-pointer group shadow-md"
+                >
+                  <div className="flex items-center justify-between w-full">
+                    <span className="text-[11px] font-mono uppercase tracking-wider font-semibold text-[var(--orion-accent)] group-hover:text-white transition-colors">
+                      LIVE COCKPIT
+                    </span>
+                    <ArrowUpRight className="w-4 h-4 text-[var(--orion-accent)] group-hover:text-white transition-transform group-hover:translate-x-0.5 group-hover:-translate-y-0.5" />
+                  </div>
+                  <span className="text-sm font-bold mt-2 block text-[var(--orion-text-primary)] group-hover:text-white transition-colors">
+                    {user ? 'Launch Orion-9 OS' : 'Sign in to Orion-9 OS'}
+                  </span>
+                </button>
+              </div>
             </div>
           </div>
         </div>
@@ -205,44 +234,51 @@ export const ControlTowerAndFaq: React.FC = () => {
          ========================================================================== */}
       <section
         id="faq"
-        className="max-w-[1440px] mx-auto px-6 sm:px-12 py-20 sm:py-28 border-t border-[#E2ECF4]"
+        className="max-w-[1440px] mx-auto px-6 sm:px-12 py-20 sm:py-28 border-t border-[var(--glass-border-subtle)]"
       >
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-12 lg:gap-16 items-start">
-          {/* Left 5 Columns: Editorial Heading */}
+          {/* Left Column: Heading */}
           <div className="lg:col-span-5 space-y-4">
-            <h2 className="font-editorial text-3xl sm:text-4xl lg:text-[42px] font-bold tracking-[-0.02em] leading-[1.1] text-[#070B19]">
+            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full liquid-glass-badge text-[11px] font-mono uppercase tracking-wider text-[var(--orion-accent)] font-semibold">
+              <ShieldCheck className="w-3.5 h-3.5" />
+              <span>Enterprise FAQ</span>
+            </div>
+            <h2 className="font-editorial text-3xl sm:text-4xl lg:text-[42px] font-bold tracking-tight leading-tight text-[var(--orion-text-primary)]">
               Operational readiness, answered clearly.
             </h2>
-            <p className="text-sm sm:text-base text-[#475569] max-w-sm leading-relaxed">
+            <p className="text-sm sm:text-base text-[var(--orion-text-secondary)] max-w-sm leading-relaxed">
               How Orion-9 integrates with your enterprise stack, governs autonomous decisions, and secures global corridors.
             </p>
           </div>
 
-          {/* Right 7 Columns: Clean Expandable Rows */}
-          <div className="lg:col-span-7 border-t border-[#DCE7F0]">
+          {/* Right Column: Liquid Glass Expandable Rows */}
+          <div className="lg:col-span-7 space-y-3">
             {FAQ_ITEMS.map((item, idx) => {
               const isOpen = openFaqIndex === idx;
               return (
-                <div key={item.question} className="border-b border-[#DCE7F0]">
+                <div
+                  key={item.question}
+                  className="rounded-2xl liquid-glass-card border border-[var(--glass-border)] transition-all duration-200 overflow-hidden"
+                >
                   <button
                     type="button"
                     onClick={() => setOpenFaqIndex(isOpen ? null : idx)}
-                    className="w-full py-6 flex items-center justify-between gap-6 text-left cursor-pointer group"
+                    className="w-full p-5 sm:p-6 flex items-center justify-between gap-6 text-left cursor-pointer group"
                     aria-expanded={isOpen}
                   >
-                    <span className="font-editorial text-base sm:text-lg font-bold text-[#070B19] group-hover:text-[#0284C7] transition-colors">
+                    <span className="font-editorial text-base sm:text-lg font-bold text-[var(--orion-text-primary)] group-hover:text-[var(--orion-accent)] transition-colors">
                       {item.question}
                     </span>
-                    <span className="w-7 h-7 rounded-xs bg-[#070B19] text-white flex items-center justify-center shrink-0 transition-transform duration-200">
+                    <span className="w-8 h-8 rounded-xl liquid-glass-button text-[var(--orion-text-primary)] flex items-center justify-center shrink-0 transition-transform duration-200">
                       <ChevronDown
                         className={`w-4 h-4 transition-transform duration-200 ${
-                          isOpen ? 'rotate-180' : ''
+                          isOpen ? 'rotate-180 text-[var(--orion-accent)]' : ''
                         }`}
                       />
                     </span>
                   </button>
                   {isOpen && (
-                    <div className="pb-6 pr-12 text-xs sm:text-sm text-[#475569] leading-relaxed">
+                    <div className="px-5 sm:px-6 pb-6 text-xs sm:text-sm text-[var(--orion-text-secondary)] leading-relaxed border-t border-[var(--glass-border-subtle)] pt-4 animate-in fade-in duration-150">
                       {item.answer}
                     </div>
                   )}

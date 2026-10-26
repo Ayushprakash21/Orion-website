@@ -27,23 +27,23 @@ export const FinalCTA: React.FC<FinalCTAProps> = ({
   };
 
   return (
-    <section className="relative py-28 lg:py-36 bg-[#F5F9FB] border-b border-[#D5E1E8] overflow-hidden">
+    <section className="relative py-28 lg:py-36 bg-[var(--orion-canvas)] text-[var(--orion-text-primary)] border-b border-[var(--glass-border-subtle)] overflow-hidden transition-colors duration-300">
       {/* Soft Ambient Radial Atmosphere */}
       <div
-        className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[680px] h-[340px] bg-[#A8C2D2]/20 rounded-full blur-[140px] pointer-events-none"
+        className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[700px] h-[350px] bg-[var(--orion-accent)]/15 rounded-full blur-[140px] pointer-events-none"
         aria-hidden="true"
       />
 
       <div className="relative max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 text-center space-y-6">
-        <span className="text-xs font-semibold text-[#294D6B] uppercase tracking-wider block">
+        <span className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full liquid-glass-badge text-[11px] font-mono uppercase tracking-widest text-[var(--orion-accent)] font-semibold mx-auto block">
           Get Started with Orion-9
         </span>
 
-        <h2 className="text-4xl sm:text-5xl lg:text-6xl font-bold text-[#111827] tracking-[-0.035em] leading-[1.04]">
+        <h2 className="text-4xl sm:text-5xl lg:text-6xl font-bold text-[var(--orion-text-primary)] tracking-[-0.035em] leading-[1.04]">
           {hp.finalCtaTitle || 'Ready to orchestrate your global supply chain?'}
         </h2>
 
-        <p className="text-base sm:text-lg text-[#4A5568] max-w-2xl mx-auto leading-relaxed">
+        <p className="text-base sm:text-lg text-[var(--orion-text-secondary)] max-w-2xl mx-auto leading-relaxed">
           {hp.finalCtaSubtitle ||
             'Deploy an autonomous intelligence layer over your existing ERPs and freight carriers.'}
         </p>
@@ -53,9 +53,9 @@ export const FinalCTA: React.FC<FinalCTAProps> = ({
           <button
             type="button"
             onClick={onLaunchApp}
-            className="w-full sm:w-auto inline-flex items-center justify-center gap-2.5 px-8 py-4 bg-[#111827] text-white font-medium text-sm rounded-full hover:bg-[#294D6B] transition-all shadow-[0_8px_24px_rgba(17,24,39,0.14)] active:scale-[0.99] group cursor-pointer"
+            className="w-full sm:w-auto inline-flex items-center justify-center gap-2.5 px-8 py-4 bg-[var(--orion-text-primary)] text-[var(--orion-surface)] font-medium text-sm rounded-full hover:bg-[var(--orion-accent)] hover:text-white transition-all shadow-lg active:scale-[0.99] group cursor-pointer"
           >
-            <span>Launch Control Tower</span>
+            <span>Launch Orion-9 OS</span>
             <ArrowRight className="w-4 h-4 text-[#A8C2D2] transition-transform group-hover:translate-x-1" />
           </button>
 
@@ -63,7 +63,7 @@ export const FinalCTA: React.FC<FinalCTAProps> = ({
             <button
               type="button"
               onClick={() => handleRoute('/signup')}
-              className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-7 py-4 bg-white text-[#111827] font-medium text-sm rounded-full border border-[#D5E1E8] hover:border-[#294D6B]/50 hover:bg-[#F5F9FB] transition-all shadow-2xs cursor-pointer"
+              className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-7 py-4 liquid-glass-button text-[var(--orion-text-primary)] font-medium text-sm rounded-full transition-all shadow-xs cursor-pointer"
             >
               <UserPlus className="w-4 h-4 text-[#294D6B]" />
               <span>Create Operator Account</span>
@@ -72,7 +72,7 @@ export const FinalCTA: React.FC<FinalCTAProps> = ({
 
           <a
             href="#network"
-            className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-6 py-4 bg-transparent text-[#4A5568] font-medium text-sm rounded-full border border-[#D5E1E8] hover:border-[#294D6B] hover:text-[#111827] transition-all"
+            className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-6 py-4 liquid-glass-subtle text-[var(--orion-text-secondary)] hover:text-[var(--orion-text-primary)] font-medium text-sm rounded-full border border-[var(--glass-border)] transition-all"
           >
             <Compass className="w-4 h-4 text-[#294D6B]" />
             <span>Explore Global Topology</span>

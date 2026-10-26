@@ -369,3 +369,7 @@ export function useSiteConfig() {
   }
   return ctx;
 }
+
+export function useOptionalSiteConfig() {
+  return useContext(SiteConfigContext) || null;
+}

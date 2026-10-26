@@ -27,9 +27,12 @@ import {
   Laptop,
   Apple,
   Download,
+  Sun,
+  Moon,
 } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import { useSiteConfig } from '../../context/SiteConfigContext';
+import { useTheme } from '../../context/ThemeContext';
 import {
   validateBrandingConfig,
   validateNavigationConfig,
@@ -58,6 +61,7 @@ import {
   DesktopReleaseStatus,
 } from '../../types/cms';
 import { DEFAULT_DESKTOP_RELEASES } from '../../data/defaultSiteConfig';
+import { LogoManagementSection } from './LogoManagementSection';
 
 type AdminTabId =
   | 'overview'
@@ -108,12 +112,14 @@ export function AdminConsole({ onNavigate }: AdminConsoleProps) {
     publishSection,
     resetToDefaults,
   } = useSiteConfig();
+  const { theme, toggleTheme } = useTheme();
 
   const [activeTab, setActiveTab] = useState<AdminTabId>('overview');
   const [statusBanner, setStatusBanner] = useState<{
-    type: 'success' | 'error';
+    type: 'success' | 'error' | 'warning';
     text: string;
   } | null>(null);
+  const [isSavingBranding, setIsSavingBranding] = useState(false);
 
   // Local editable states synchronized with draftConfig
   const [brandingForm, setBrandingForm] = useState(draftConfig.branding);
@@ -215,7 +221,7 @@ export function AdminConsole({ onNavigate }: AdminConsoleProps) {
   if (authLoading) {
     return (
       <div className="min-h-screen bg-[#EAF4F8] flex items-center justify-center p-8">
-        <div className="bg-white rounded-2xl border border-[#D5E1E8] px-8 py-6 text-sm font-mono text-[#294D6B]">
+        <div className="liquid-glass-elevated rounded-3xl border border-[var(--glass-border)] shadow-xl px-8 py-6 text-sm font-mono text-[#294D6B]">
           VERIFYING ADMINISTRATOR CREDENTIALS...
         </div>
       </div>
@@ -269,27 +275,32 @@ export function AdminConsole({ onNavigate }: AdminConsoleProps) {
     );
   }
 
-  const showBanner = (type: 'success' | 'error', text: string) => {
+  const showBanner = (type: 'success' | 'error' | 'warning', text: string) => {
     setStatusBanner({ type, text });
   };
 
   // Handlers for each section with strict validation
   const handleSaveBranding = async (publish: boolean) => {
-    const check = validateBrandingConfig(brandingForm);
-    if (!check.valid) {
-      showBanner('error', check.errors.join(' '));
-      return;
+    setIsSavingBranding(true);
+    try {
+      const check = validateBrandingConfig(brandingForm);
+      if (!check.valid) {
+        showBanner('error', check.errors.join(' '));
+        return;
+      }
+      const action = publish ? publishSection : saveDraftSection;
+      const res = await action(
+        'branding',
+        brandingForm,
+        'Updated Orion-9 branding, logo placements, and color tokens'
+      );
+      showBanner(
+        res.success ? 'success' : 'error',
+        res.error || (publish ? 'Branding & Identity published live successfully.' : 'Branding & Identity saved to draft.')
+      );
+    } finally {
+      setIsSavingBranding(false);
     }
-    const action = publish ? publishSection : saveDraftSection;
-    const res = await action(
-      'branding',
-      brandingForm,
-      'Updated Orion-9 branding and color tokens'
-    );
-    showBanner(
-      res.success ? 'success' : 'error',
-      res.error || (publish ? 'Branding published live.' : 'Branding saved to draft.')
-    );
   };
 
   const handleSaveNavigation = async (publish: boolean) => {
@@ -589,7 +600,7 @@ export function AdminConsole({ onNavigate }: AdminConsoleProps) {
     { id: 'overview', label: 'Overview', icon: LayoutDashboard },
     { id: 'content', label: 'Website content', icon: FileText },
     { id: 'sections', label: 'Homepage sections', icon: Layers },
-    { id: 'branding', label: 'Branding & theme', icon: Palette },
+    { id: 'branding', label: 'Branding & Identity', icon: Palette },
     { id: 'navigation', label: 'Navigation management', icon: Compass },
     { id: 'cta', label: 'CTA management', icon: MousePointerClick },
     { id: 'media', label: 'Media library', icon: ImageIcon },
@@ -640,7 +651,7 @@ export function AdminConsole({ onNavigate }: AdminConsoleProps) {
     },
     {
       key: 'controlTowerPreview',
-      label: '07 · Live Control Tower Cockpit',
+      label: '07 · Live Orion-9 OS Cockpit',
       description: 'Simulated Demo Telemetry vs Live Production Gateway toggle',
     },
     {
@@ -656,9 +667,9 @@ export function AdminConsole({ onNavigate }: AdminConsoleProps) {
   ];
 
   return (
-    <div className="min-h-screen bg-[#EAF4F8] text-[#111827] flex flex-col lg:flex-row">
+    <div className="min-h-screen bg-[var(--orion-canvas)] text-[var(--orion-text-primary)] flex flex-col lg:flex-row transition-colors duration-300">
       {/* Left Sidebar Navigation (14 sections including Logout) */}
-      <aside className="w-full lg:w-72 bg-[#101820] text-white shrink-0 flex flex-col justify-between p-6 border-b lg:border-b-0 lg:border-r border-white/10">
+      <aside className="w-full lg:w-72 bg-[#090D18]/95 dark:bg-[#060913]/95 backdrop-blur-2xl text-white shrink-0 flex flex-col justify-between p-6 border-b lg:border-b-0 lg:border-r border-white/10">
         <div>
           <div className="flex items-center justify-between mb-8">
             <div className="flex items-center gap-3">
@@ -733,19 +744,32 @@ export function AdminConsole({ onNavigate }: AdminConsoleProps) {
       {/* Main Workspace */}
       <div className="flex-1 flex flex-col min-w-0">
         {/* Top Action Bar */}
-        <header className="bg-white/90 backdrop-blur-md border-b border-[#D5E1E8] px-6 md:px-10 py-4 flex flex-wrap items-center justify-between gap-4 sticky top-0 z-20">
+        <header className="liquid-glass-nav border-b border-[var(--glass-border-subtle)] px-6 md:px-10 py-4 flex flex-wrap items-center justify-between gap-4 sticky top-0 z-20">
           <div>
-            <div className="text-[11px] font-mono uppercase tracking-widest text-[#566575]">
+            <div className="text-[11px] font-mono uppercase tracking-widest text-[var(--orion-text-muted)]">
               ORION-9 ENTERPRISE CMS · FIRESTORE SCHEMA GOVERNANCE
             </div>
-            <h1 className="text-lg font-semibold text-[#111827] capitalize">
+            <h1 className="text-lg font-semibold text-[var(--orion-text-primary)] capitalize">
               {navItems.find((i) => i.id === activeTab)?.label || 'Overview'}
             </h1>
           </div>
 
-          <div className="flex flex-wrap items-center gap-3">
+          <div className="flex flex-wrap items-center gap-2.5">
+            <button
+              type="button"
+              onClick={toggleTheme}
+              className="p-2 rounded-xl liquid-glass-button text-[var(--orion-text-secondary)] hover:text-[var(--orion-text-primary)] cursor-pointer"
+              aria-label="Toggle theme"
+            >
+              {theme === 'dark' ? (
+                <Sun className="w-4 h-4 text-amber-400" />
+              ) : (
+                <Moon className="w-4 h-4 text-slate-700" />
+              )}
+            </button>
+
             {lastSavedMessage && (
-              <span className="text-xs font-mono text-[#294D6B] bg-[#EAF4F8] px-3 py-1.5 rounded-lg">
+              <span className="text-xs font-mono text-[var(--orion-accent)] liquid-glass-subtle px-3 py-1.5 rounded-xl border border-[var(--glass-border-subtle)]">
                 {lastSavedMessage}
               </span>
             )}
@@ -755,8 +779,8 @@ export function AdminConsole({ onNavigate }: AdminConsoleProps) {
               onClick={() => setIsPreviewMode(!isPreviewMode)}
               className={`px-3.5 py-2 rounded-xl text-xs font-medium border transition-colors cursor-pointer ${
                 isPreviewMode
-                  ? 'bg-amber-50 border-amber-300 text-amber-900'
-                  : 'bg-[#F5F9FB] border-[#D5E1E8] text-[#111827]'
+                  ? 'bg-amber-500/15 border-amber-500/30 text-amber-600 dark:text-amber-400 font-bold'
+                  : 'liquid-glass-button text-[var(--orion-text-primary)]'
               }`}
             >
               {isPreviewMode ? 'Draft Preview Mode: ON' : 'Live Published Mode'}
@@ -765,7 +789,7 @@ export function AdminConsole({ onNavigate }: AdminConsoleProps) {
             <button
               type="button"
               onClick={() => onNavigate('/')}
-              className="px-4 py-2 rounded-xl bg-[#101820] text-white text-xs font-medium hover:bg-[#294D6B] transition-colors cursor-pointer"
+              className="px-4 py-2 rounded-xl bg-gradient-to-r from-[#0284C7] to-[#0369A1] text-white text-xs font-medium shadow-md transition-colors cursor-pointer"
             >
               Inspect Live Homepage
             </button>
@@ -779,6 +803,8 @@ export function AdminConsole({ onNavigate }: AdminConsoleProps) {
             className={`mx-6 md:mx-10 mt-6 p-4 rounded-2xl border flex items-center justify-between text-xs font-medium ${
               statusBanner.type === 'success'
                 ? 'bg-emerald-50 border-emerald-200 text-emerald-900'
+                : statusBanner.type === 'warning'
+                ? 'bg-amber-50 border-amber-200 text-amber-900'
                 : 'bg-red-50 border-red-200 text-red-900'
             }`}
           >
@@ -786,14 +812,18 @@ export function AdminConsole({ onNavigate }: AdminConsoleProps) {
               {statusBanner.type === 'success' ? (
                 <CheckCircle2 className="w-4 h-4 text-emerald-700 shrink-0" />
               ) : (
-                <AlertTriangle className="w-4 h-4 text-red-600 shrink-0" />
+                <AlertTriangle
+                  className={`w-4 h-4 shrink-0 ${
+                    statusBanner.type === 'warning' ? 'text-amber-600' : 'text-red-600'
+                  }`}
+                />
               )}
               <span>{statusBanner.text}</span>
             </div>
             <button
               type="button"
               onClick={() => setStatusBanner(null)}
-              className="text-[11px] underline ml-4"
+              className="text-[11px] underline ml-4 cursor-pointer"
             >
               Dismiss
             </button>
@@ -806,7 +836,7 @@ export function AdminConsole({ onNavigate }: AdminConsoleProps) {
           {activeTab === 'overview' && (
             <div className="space-y-6">
               <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
-                <div className="bg-white rounded-2xl border border-[#D5E1E8] p-6">
+                <div className="liquid-glass-elevated rounded-3xl border border-[var(--glass-border)] shadow-xl p-6">
                   <div className="text-xs font-mono text-[#566575] mb-1">ACTIVE SECTIONS</div>
                   <div className="text-3xl font-semibold text-[#111827]">
                     {
@@ -820,7 +850,7 @@ export function AdminConsole({ onNavigate }: AdminConsoleProps) {
                   </p>
                 </div>
 
-                <div className="bg-white rounded-2xl border border-[#D5E1E8] p-6">
+                <div className="liquid-glass-elevated rounded-3xl border border-[var(--glass-border)] shadow-xl p-6">
                   <div className="text-xs font-mono text-[#566575] mb-1">
                     PRIMARY LAUNCH TARGET
                   </div>
@@ -828,11 +858,11 @@ export function AdminConsole({ onNavigate }: AdminConsoleProps) {
                     {publishedConfig.navigation.launchControlTowerUrl}
                   </div>
                   <p className="text-xs text-[#566575] mt-2">
-                    Verified HTTPS production Control Tower destination.
+                    Verified HTTPS production Orion-9 OS destination.
                   </p>
                 </div>
 
-                <div className="bg-white rounded-2xl border border-[#D5E1E8] p-6">
+                <div className="liquid-glass-elevated rounded-3xl border border-[var(--glass-border)] shadow-xl p-6">
                   <div className="text-xs font-mono text-[#566575] mb-1">AUDIT TRAIL EVENTS</div>
                   <div className="text-3xl font-semibold text-[#111827]">{auditLogs.length}</div>
                   <p className="text-xs text-[#566575] mt-2">
@@ -841,7 +871,7 @@ export function AdminConsole({ onNavigate }: AdminConsoleProps) {
                 </div>
               </div>
 
-              <div className="bg-white rounded-2xl border border-[#D5E1E8] p-6 md:p-8">
+              <div className="liquid-glass-elevated rounded-3xl border border-[var(--glass-border)] shadow-xl p-6 md:p-8">
                 <h2 className="text-base font-semibold text-[#111827] mb-2">
                   Quick Governance Actions
                 </h2>
@@ -871,7 +901,7 @@ export function AdminConsole({ onNavigate }: AdminConsoleProps) {
 
           {/* 2. WEBSITE CONTENT */}
           {activeTab === 'content' && (
-            <div className="bg-white rounded-2xl border border-[#D5E1E8] p-6 md:p-8 space-y-6">
+            <div className="liquid-glass-elevated rounded-3xl border border-[var(--glass-border)] shadow-xl p-6 md:p-8 space-y-6">
               <div>
                 <h2 className="text-base font-semibold text-[#111827]">
                   Hero &amp; Section Copywriting
@@ -950,7 +980,7 @@ export function AdminConsole({ onNavigate }: AdminConsoleProps) {
                   </div>
                   <div>
                     <label className="block text-xs font-medium text-[#111827] mb-1">
-                      Control Tower Section Heading
+                      Orion-9 OS Section Heading
                     </label>
                     <input
                       type="text"
@@ -985,7 +1015,7 @@ export function AdminConsole({ onNavigate }: AdminConsoleProps) {
 
           {/* 3. HOMEPAGE SECTIONS (Metrics & Final Banner) */}
           {activeTab === 'sections' && (
-            <div className="bg-white rounded-2xl border border-[#D5E1E8] p-6 md:p-8 space-y-6">
+            <div className="liquid-glass-elevated rounded-3xl border border-[var(--glass-border)] shadow-xl p-6 md:p-8 space-y-6">
               <div>
                 <h2 className="text-base font-semibold text-[#111827]">
                   Hero Metrics &amp; Final Conversion Section
@@ -1085,121 +1115,20 @@ export function AdminConsole({ onNavigate }: AdminConsoleProps) {
             </div>
           )}
 
-          {/* 4. BRANDING & THEME */}
+          {/* 4. BRANDING & IDENTITY */}
           {activeTab === 'branding' && (
-            <div className="bg-white rounded-2xl border border-[#D5E1E8] p-6 md:p-8 space-y-6">
-              <div>
-                <h2 className="text-base font-semibold text-[#111827]">
-                  Brand Identity &amp; VectrFL Ice-Blue Color Tokens
-                </h2>
-                <p className="text-xs text-[#566575] mt-1">
-                  All color tokens are validated as 6-digit hex codes before saving to prevent
-                  malformed CSS injection.
-                </p>
-              </div>
-
-              <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-                <div>
-                  <label className="block text-xs font-medium text-[#111827] mb-1">
-                    Company Name
-                  </label>
-                  <input
-                    type="text"
-                    value={brandingForm.companyName}
-                    onChange={(e) =>
-                      setBrandingForm({ ...brandingForm, companyName: e.target.value })
-                    }
-                    className="w-full px-4 py-2.5 rounded-xl bg-[#F5F9FB] border border-[#D5E1E8] text-sm"
-                  />
-                </div>
-                <div>
-                  <label className="block text-xs font-medium text-[#111827] mb-1">
-                    Short Mark
-                  </label>
-                  <input
-                    type="text"
-                    value={brandingForm.shortMark}
-                    onChange={(e) =>
-                      setBrandingForm({ ...brandingForm, shortMark: e.target.value })
-                    }
-                    className="w-full px-4 py-2.5 rounded-xl bg-[#F5F9FB] border border-[#D5E1E8] text-sm font-mono"
-                  />
-                </div>
-                <div>
-                  <label className="block text-xs font-medium text-[#111827] mb-1">
-                    Brand Tagline
-                  </label>
-                  <input
-                    type="text"
-                    value={brandingForm.tagline}
-                    onChange={(e) => setBrandingForm({ ...brandingForm, tagline: e.target.value })}
-                    className="w-full px-4 py-2.5 rounded-xl bg-[#F5F9FB] border border-[#D5E1E8] text-sm"
-                  />
-                </div>
-              </div>
-
-              <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-                {(
-                  [
-                    ['canvasColor', 'Main Canvas (#EAF4F8)'],
-                    ['altSectionColor', 'Alternate Section (#F5F9FB)'],
-                    ['surfaceColor', 'White Surface (#FFFFFF)'],
-                    ['primaryTextColor', 'Primary Text (#111827)'],
-                    ['secondaryTextColor', 'Secondary Text (#566575)'],
-                    ['borderColor', 'Border Hairline (#D5E1E8)'],
-                    ['deepBlueAccent', 'Deep Blue Accent (#294D6B)'],
-                    ['steelBlueAccent', 'Steel Blue Accent (#A8C2D2)'],
-                    ['darkSurfaceColor', 'Dark App Surface (#101820)'],
-                  ] as const
-                ).map(([key, label]) => (
-                  <div key={key} className="p-3.5 rounded-xl bg-[#F5F9FB] border border-[#D5E1E8]">
-                    <label className="block text-[11px] font-mono text-[#566575] mb-1.5">
-                      {label}
-                    </label>
-                    <div className="flex items-center gap-2">
-                      <input
-                        type="color"
-                        value={brandingForm[key]}
-                        onChange={(e) =>
-                          setBrandingForm({ ...brandingForm, [key]: e.target.value.toUpperCase() })
-                        }
-                        className="w-8 h-8 rounded-lg border border-[#D5E1E8] cursor-pointer"
-                      />
-                      <input
-                        type="text"
-                        value={brandingForm[key]}
-                        onChange={(e) =>
-                          setBrandingForm({ ...brandingForm, [key]: e.target.value })
-                        }
-                        className="flex-1 px-2.5 py-1.5 rounded-lg bg-white border border-[#D5E1E8] text-xs font-mono"
-                      />
-                    </div>
-                  </div>
-                ))}
-              </div>
-
-              <div className="flex flex-wrap gap-3 pt-4 border-t border-[#D5E1E8]">
-                <button
-                  type="button"
-                  onClick={() => handleSaveBranding(false)}
-                  className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl border border-[#D5E1E8] text-xs font-medium"
-                >
-                  <Save className="w-3.5 h-3.5" /> Save Draft
-                </button>
-                <button
-                  type="button"
-                  onClick={() => handleSaveBranding(true)}
-                  className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-[#101820] text-white text-xs font-medium"
-                >
-                  <UploadCloud className="w-3.5 h-3.5" /> Publish Theme Live
-                </button>
-              </div>
-            </div>
+            <LogoManagementSection
+              brandingForm={brandingForm}
+              setBrandingForm={setBrandingForm}
+              onSave={handleSaveBranding}
+              isSaving={isSavingBranding}
+              showBanner={showBanner}
+            />
           )}
 
           {/* 5. NAVIGATION MANAGEMENT */}
           {activeTab === 'navigation' && (
-            <div className="bg-white rounded-2xl border border-[#D5E1E8] p-6 md:p-8 space-y-6">
+            <div className="liquid-glass-elevated rounded-3xl border border-[var(--glass-border)] shadow-xl p-6 md:p-8 space-y-6">
               <div>
                 <h2 className="text-base font-semibold text-[#111827]">
                   Navbar Links &amp; Footer Navigation
@@ -1293,13 +1222,13 @@ export function AdminConsole({ onNavigate }: AdminConsoleProps) {
 
           {/* 6. CTA MANAGEMENT */}
           {activeTab === 'cta' && (
-            <div className="bg-white rounded-2xl border border-[#D5E1E8] p-6 md:p-8 space-y-6">
+            <div className="liquid-glass-elevated rounded-3xl border border-[var(--glass-border)] shadow-xl p-6 md:p-8 space-y-6">
               <div>
                 <h2 className="text-base font-semibold text-[#111827]">
                   Call-to-Action Labels &amp; Application Launch Target
                 </h2>
                 <p className="text-xs text-[#566575] mt-1">
-                  Configure the primary Control Tower launch destination and CTA button copy across
+                  Configure the primary Orion-9 OS launch destination and CTA button copy across
                   the navbar, hero, and closing banner.
                 </p>
               </div>
@@ -1320,7 +1249,7 @@ export function AdminConsole({ onNavigate }: AdminConsoleProps) {
                 </div>
                 <div>
                   <label className="block text-xs font-medium text-[#111827] mb-1">
-                    Production Control Tower Launch URL
+                    Production Orion-9 OS Launch URL
                   </label>
                   <input
                     type="url"
@@ -1384,7 +1313,7 @@ export function AdminConsole({ onNavigate }: AdminConsoleProps) {
 
           {/* 7. MEDIA LIBRARY */}
           {activeTab === 'media' && (
-            <div className="bg-white rounded-2xl border border-[#D5E1E8] p-6 md:p-8 space-y-6">
+            <div className="liquid-glass-elevated rounded-3xl border border-[var(--glass-border)] shadow-xl p-6 md:p-8 space-y-6">
               <div>
                 <h2 className="text-base font-semibold text-[#111827]">
                   Approved Media &amp; Visual Asset Registry
@@ -1469,7 +1398,7 @@ export function AdminConsole({ onNavigate }: AdminConsoleProps) {
 
           {/* 8. SEO SETTINGS */}
           {activeTab === 'seo' && (
-            <div className="bg-white rounded-2xl border border-[#D5E1E8] p-6 md:p-8 space-y-6">
+            <div className="liquid-glass-elevated rounded-3xl border border-[var(--glass-border)] shadow-xl p-6 md:p-8 space-y-6">
               <div>
                 <h2 className="text-base font-semibold text-[#111827]">
                   Search Engine &amp; OpenGraph Metadata
@@ -1549,7 +1478,7 @@ export function AdminConsole({ onNavigate }: AdminConsoleProps) {
 
           {/* 9. FEATURE VISIBILITY */}
           {activeTab === 'visibility' && (
-            <div className="bg-white rounded-2xl border border-[#D5E1E8] p-6 md:p-8 space-y-6">
+            <div className="liquid-glass-elevated rounded-3xl border border-[var(--glass-border)] shadow-xl p-6 md:p-8 space-y-6">
               <div>
                 <h2 className="text-base font-semibold text-[#111827]">
                   Homepage Section &amp; Interactive Feature Toggles
@@ -1615,7 +1544,7 @@ export function AdminConsole({ onNavigate }: AdminConsoleProps) {
 
           {/* 10. AUTHENTICATION SETTINGS */}
           {activeTab === 'auth' && (
-            <div className="bg-white rounded-2xl border border-[#D5E1E8] p-6 md:p-8 space-y-6">
+            <div className="liquid-glass-elevated rounded-3xl border border-[var(--glass-border)] shadow-xl p-6 md:p-8 space-y-6">
               <div>
                 <h2 className="text-base font-semibold text-[#111827]">
                   Orion-9 Authentication &amp; Session Policies
@@ -1634,7 +1563,7 @@ export function AdminConsole({ onNavigate }: AdminConsoleProps) {
                     ['allowPasswordReset', 'Enable Inline Password Recovery Flow'],
                     [
                       'requireEmailVerificationForLaunch',
-                      'Require Verified Email Before Control Tower Launch',
+                      'Require Verified Email Before Orion-9 OS Launch',
                     ],
                   ] as const
                 ).map(([key, label]) => (
@@ -1676,7 +1605,7 @@ export function AdminConsole({ onNavigate }: AdminConsoleProps) {
 
           {/* 11. USER MANAGEMENT */}
           {activeTab === 'users' && (
-            <div className="bg-white rounded-2xl border border-[#D5E1E8] p-6 md:p-8 space-y-6">
+            <div className="liquid-glass-elevated rounded-3xl border border-[var(--glass-border)] shadow-xl p-6 md:p-8 space-y-6">
               <div>
                 <h2 className="text-base font-semibold text-[#111827]">
                   Administrator Access Control List (
@@ -1753,7 +1682,7 @@ export function AdminConsole({ onNavigate }: AdminConsoleProps) {
 
           {/* 12. AUDIT LOG */}
           {activeTab === 'audit' && (
-            <div className="bg-white rounded-2xl border border-[#D5E1E8] p-6 md:p-8 space-y-6">
+            <div className="liquid-glass-elevated rounded-3xl border border-[var(--glass-border)] shadow-xl p-6 md:p-8 space-y-6">
               <div>
                 <h2 className="text-base font-semibold text-[#111827]">
                   Immutable Administrative Audit Log (<code className="font-mono">auditLogs</code>)
@@ -1792,7 +1721,7 @@ export function AdminConsole({ onNavigate }: AdminConsoleProps) {
           {/* DESKTOP RELEASES MANAGER */}
           {activeTab === 'releases' && (
             <div className="space-y-6">
-              <div className="bg-white rounded-2xl border border-[#D5E1E8] p-6 md:p-8 space-y-6">
+              <div className="liquid-glass-elevated rounded-3xl border border-[var(--glass-border)] shadow-xl p-6 md:p-8 space-y-6">
                 <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-[#D5E1E8] pb-5">
                   <div>
                     <h2 className="text-base font-semibold text-[#111827] flex items-center gap-2">
@@ -1961,7 +1890,7 @@ export function AdminConsole({ onNavigate }: AdminConsoleProps) {
               </div>
 
               {/* Form to Register a New Release */}
-              <div className="bg-white rounded-2xl border border-[#D5E1E8] p-6 md:p-8 space-y-5">
+              <div className="liquid-glass-elevated rounded-3xl border border-[var(--glass-border)] shadow-xl p-6 md:p-8 space-y-5">
                 <div>
                   <h3 className="text-base font-semibold text-[#111827] flex items-center gap-2">
                     <Plus className="w-4 h-4 text-[#0284C7]" />
@@ -2182,7 +2111,7 @@ export function AdminConsole({ onNavigate }: AdminConsoleProps) {
           {/* 13. SYSTEM SETTINGS */}
           {activeTab === 'system' && (
             <div className="space-y-6">
-              <div className="bg-white rounded-2xl border border-[#D5E1E8] p-6 md:p-8 space-y-5">
+              <div className="liquid-glass-elevated rounded-3xl border border-[var(--glass-border)] shadow-xl p-6 md:p-8 space-y-5">
                 <div>
                   <h2 className="text-base font-semibold text-[#111827]">
                     Firebase Project Runtime Binding

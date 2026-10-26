@@ -254,7 +254,7 @@ export const FlowLogin: React.FC<FlowLoginProps> = ({
             borderRadius: expanded ? 28 : 22,
           }}
           transition={{ duration: 0.65, ease }}
-          className="relative w-full overflow-hidden border border-[#D5E1E8] bg-white/95 shadow-[0_28px_80px_rgba(16,24,32,0.12),0_2px_12px_rgba(41,77,107,0.06)] backdrop-blur-2xl"
+          className="relative w-full overflow-hidden rounded-3xl liquid-glass-elevated border border-[var(--glass-border)] text-[var(--orion-text-primary)] shadow-2xl"
         >
           {/* Top Atmospheric Highlight */}
           <motion.div
@@ -271,7 +271,7 @@ export const FlowLogin: React.FC<FlowLoginProps> = ({
             <button
               type="button"
               onClick={toggle}
-              className="absolute right-4 top-4 z-20 flex h-7 w-7 items-center justify-center rounded-full border border-[#D5E1E8] bg-[#F5F9FB] text-[#566575] transition hover:border-[#294D6B]/40 hover:text-[#111827] cursor-pointer"
+              className="absolute right-4 top-4 z-20 flex h-7 w-7 items-center justify-center rounded-full border border-[var(--glass-border)] liquid-glass-button text-[var(--orion-text-secondary)] hover:text-[var(--orion-text-primary)] transition cursor-pointer"
               title="Minimize card"
               aria-label="Minimize authentication card"
             >
@@ -286,14 +286,14 @@ export const FlowLogin: React.FC<FlowLoginProps> = ({
               transition={{ duration: 0.5, ease }}
               className="text-center"
             >
-              <div className="mx-auto mb-2 inline-flex items-center gap-1.5 rounded-full border border-[#D5E1E8] bg-[#F5F9FB] px-3 py-1 text-[10px] font-mono font-semibold uppercase tracking-widest text-[#294D6B]">
+              <div className="mx-auto mb-2 inline-flex items-center gap-1.5 rounded-full liquid-glass-badge px-3 py-1 text-[10px] font-mono font-semibold uppercase tracking-widest text-[var(--orion-accent)]">
                 <ShieldCheck size={12} />
                 <span>ORION-9 IDENTITY GATEWAY</span>
               </div>
-              <h2 className="text-[26px] font-bold tracking-[-0.03em] text-[#111827]">
+              <h2 className="text-[26px] font-bold tracking-[-0.03em] text-[var(--orion-text-primary)]">
                 {forgotMode ? 'Recover Account' : title}
               </h2>
-              <p className="mt-1 text-[13px] font-medium text-[#566575]">
+              <p className="mt-1 text-[13px] font-medium text-[var(--orion-text-secondary)]">
                 {forgotMode
                   ? 'Enter your username or email address to receive password reset instructions.'
                   : subtitle}
@@ -349,7 +349,7 @@ export const FlowLogin: React.FC<FlowLoginProps> = ({
                   <div className="flex items-center justify-between mb-1.5">
                     <label
                       htmlFor="flow-login-identifier"
-                      className="block text-[11px] font-semibold uppercase tracking-wider text-[#566575]"
+                      className="block text-[11px] font-semibold uppercase tracking-wider text-[var(--orion-text-secondary)]"
                     >
                       Username or Work Email
                     </label>
@@ -383,7 +383,7 @@ export const FlowLogin: React.FC<FlowLoginProps> = ({
                       spellCheck={false}
                       autoComplete="username"
                       disabled={loading}
-                      className="h-[46px] w-full rounded-[13px] border border-[#D5E1E8] bg-[#F5F9FB] pl-10 pr-3.5 text-[13px] font-medium text-[#111827] outline-none transition placeholder:text-[#566575]/60 focus:border-[#294D6B] focus:bg-white focus:ring-2 focus:ring-[#294D6B]/12 disabled:opacity-60"
+                      className="h-[46px] w-full rounded-[13px] liquid-glass-input pl-10 pr-3.5 text-[13px] font-medium text-[var(--orion-text-primary)] outline-none transition placeholder:text-[var(--orion-text-muted)] focus:border-[var(--orion-accent)] disabled:opacity-60"
                     />
                   </div>
                 </motion.div>
@@ -398,7 +398,7 @@ export const FlowLogin: React.FC<FlowLoginProps> = ({
                   >
                     <label
                       htmlFor="flow-login-password"
-                      className="mb-1.5 block text-[11px] font-semibold uppercase tracking-wider text-[#566575]"
+                      className="mb-1.5 block text-[11px] font-semibold uppercase tracking-wider text-[var(--orion-text-secondary)]"
                     >
                       Password
                     </label>
@@ -416,7 +416,7 @@ export const FlowLogin: React.FC<FlowLoginProps> = ({
                         placeholder="Enter your password"
                         autoComplete="current-password"
                         disabled={loading}
-                        className="h-[46px] w-full rounded-[13px] border border-[#D5E1E8] bg-[#F5F9FB] pl-10 pr-10 text-[13px] font-medium text-[#111827] outline-none transition placeholder:text-[#566575]/60 focus:border-[#294D6B] focus:bg-white focus:ring-2 focus:ring-[#294D6B]/12 disabled:opacity-60"
+                        className="h-[46px] w-full rounded-[13px] liquid-glass-input pl-10 pr-10 text-[13px] font-medium text-[var(--orion-text-primary)] outline-none transition placeholder:text-[var(--orion-text-muted)] focus:border-[var(--orion-accent)] disabled:opacity-60"
                       />
 
                       <button

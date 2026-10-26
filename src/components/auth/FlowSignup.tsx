@@ -282,7 +282,7 @@ export const FlowSignup: React.FC<FlowSignupProps> = ({
             borderRadius: expanded ? 28 : 22,
           }}
           transition={{ duration: 0.65, ease }}
-          className="relative w-full overflow-hidden border border-[#D5E1E8] bg-white/95 shadow-[0_28px_80px_rgba(16,24,32,0.12),0_2px_12px_rgba(41,77,107,0.06)] backdrop-blur-2xl"
+          className="relative w-full overflow-hidden rounded-3xl liquid-glass-elevated border border-[var(--glass-border)] text-[var(--orion-text-primary)] shadow-2xl"
         >
           <motion.div
             animate={{
@@ -297,7 +297,7 @@ export const FlowSignup: React.FC<FlowSignupProps> = ({
             <button
               type="button"
               onClick={toggle}
-              className="absolute right-4 top-4 z-20 flex h-7 w-7 items-center justify-center rounded-full border border-[#D5E1E8] bg-[#F5F9FB] text-[#566575] transition hover:border-[#294D6B]/40 hover:text-[#111827] cursor-pointer"
+              className="absolute right-4 top-4 z-20 flex h-7 w-7 items-center justify-center rounded-full border border-[var(--glass-border)] liquid-glass-button text-[var(--orion-text-secondary)] hover:text-[var(--orion-text-primary)] transition cursor-pointer"
               title="Minimize card"
               aria-label="Minimize authentication card"
             >
@@ -311,14 +311,14 @@ export const FlowSignup: React.FC<FlowSignupProps> = ({
               transition={{ duration: 0.5, ease }}
               className="text-center"
             >
-              <div className="mx-auto mb-2 inline-flex items-center gap-1.5 rounded-full border border-[#D5E1E8] bg-[#F5F9FB] px-3 py-1 text-[10px] font-mono font-semibold uppercase tracking-widest text-[#294D6B]">
+              <div className="mx-auto mb-2 inline-flex items-center gap-1.5 rounded-full liquid-glass-badge px-3 py-1 text-[10px] font-mono font-semibold uppercase tracking-widest text-[var(--orion-accent)]">
                 <ShieldCheck size={12} />
                 <span>OPERATOR PROVISIONING</span>
               </div>
-              <h2 className="text-[26px] font-bold tracking-[-0.03em] text-[#111827]">
+              <h2 className="text-[26px] font-bold tracking-[-0.03em] text-[var(--orion-text-primary)]">
                 {title}
               </h2>
-              <p className="mt-1 text-[13px] font-medium text-[#566575]">
+              <p className="mt-1 text-[13px] font-medium text-[var(--orion-text-secondary)]">
                 {subtitle}
               </p>
             </motion.div>
@@ -369,7 +369,7 @@ export const FlowSignup: React.FC<FlowSignupProps> = ({
                 <motion.div variants={fieldVariant} initial="hidden" animate="show">
                   <label
                     htmlFor="flow-signup-name"
-                    className="mb-1 block text-[11px] font-semibold uppercase tracking-wider text-[#566575]"
+                    className="mb-1 block text-[11px] font-semibold uppercase tracking-wider text-[var(--orion-text-secondary)]"
                   >
                     Full Name
                   </label>
@@ -386,7 +386,7 @@ export const FlowSignup: React.FC<FlowSignupProps> = ({
                       placeholder="Elena Rostova"
                       autoComplete="name"
                       disabled={loading}
-                      className="h-[44px] w-full rounded-[13px] border border-[#D5E1E8] bg-[#F5F9FB] pl-10 pr-3.5 text-[13px] font-medium text-[#111827] outline-none transition placeholder:text-[#566575]/60 focus:border-[#294D6B] focus:bg-white focus:ring-2 focus:ring-[#294D6B]/12 disabled:opacity-60"
+                      className="h-[44px] w-full rounded-[13px] liquid-glass-input pl-10 pr-3.5 text-[13px] font-medium text-[var(--orion-text-primary)] outline-none transition placeholder:text-[var(--orion-text-muted)] focus:border-[var(--orion-accent)] disabled:opacity-60"
                     />
                   </div>
                 </motion.div>
@@ -401,7 +401,7 @@ export const FlowSignup: React.FC<FlowSignupProps> = ({
                   <div className="flex items-center justify-between mb-1">
                     <label
                       htmlFor="flow-signup-username"
-                      className="block text-[11px] font-semibold uppercase tracking-wider text-[#566575]"
+                      className="block text-[11px] font-semibold uppercase tracking-wider text-[var(--orion-text-secondary)]"
                     >
                       Operator Username
                     </label>
@@ -466,7 +466,7 @@ export const FlowSignup: React.FC<FlowSignupProps> = ({
                 >
                   <label
                     htmlFor="flow-signup-email"
-                    className="mb-1 block text-[11px] font-semibold uppercase tracking-wider text-[#566575]"
+                    className="mb-1 block text-[11px] font-semibold uppercase tracking-wider text-[var(--orion-text-secondary)]"
                   >
                     Work Email Address
                   </label>
@@ -483,7 +483,7 @@ export const FlowSignup: React.FC<FlowSignupProps> = ({
                       placeholder="elena@enterprise.com"
                       autoComplete="email"
                       disabled={loading}
-                      className="h-[44px] w-full rounded-[13px] border border-[#D5E1E8] bg-[#F5F9FB] pl-10 pr-3.5 text-[13px] font-medium text-[#111827] outline-none transition placeholder:text-[#566575]/60 focus:border-[#294D6B] focus:bg-white focus:ring-2 focus:ring-[#294D6B]/12 disabled:opacity-60"
+                      className="h-[44px] w-full rounded-[13px] liquid-glass-input pl-10 pr-3.5 text-[13px] font-medium text-[var(--orion-text-primary)] outline-none transition placeholder:text-[var(--orion-text-muted)] focus:border-[var(--orion-accent)] disabled:opacity-60"
                     />
                   </div>
                 </motion.div>
@@ -497,7 +497,7 @@ export const FlowSignup: React.FC<FlowSignupProps> = ({
                 >
                   <label
                     htmlFor="flow-signup-password"
-                    className="mb-1 block text-[11px] font-semibold uppercase tracking-wider text-[#566575]"
+                    className="mb-1 block text-[11px] font-semibold uppercase tracking-wider text-[var(--orion-text-secondary)]"
                   >
                     Password (min 8 chars with numbers/symbols)
                   </label>
@@ -514,7 +514,7 @@ export const FlowSignup: React.FC<FlowSignupProps> = ({
                       placeholder="At least 8 characters"
                       autoComplete="new-password"
                       disabled={loading}
-                      className="h-[44px] w-full rounded-[13px] border border-[#D5E1E8] bg-[#F5F9FB] pl-10 pr-10 text-[13px] font-medium text-[#111827] outline-none transition placeholder:text-[#566575]/60 focus:border-[#294D6B] focus:bg-white focus:ring-2 focus:ring-[#294D6B]/12 disabled:opacity-60"
+                      className="h-[44px] w-full rounded-[13px] liquid-glass-input pl-10 pr-10 text-[13px] font-medium text-[var(--orion-text-primary)] outline-none transition placeholder:text-[var(--orion-text-muted)] focus:border-[var(--orion-accent)] disabled:opacity-60"
                     />
                     <button
                       type="button"
@@ -565,7 +565,7 @@ export const FlowSignup: React.FC<FlowSignupProps> = ({
                 >
                   <label
                     htmlFor="flow-signup-confirm"
-                    className="mb-1 block text-[11px] font-semibold uppercase tracking-wider text-[#566575]"
+                    className="mb-1 block text-[11px] font-semibold uppercase tracking-wider text-[var(--orion-text-secondary)]"
                   >
                     Confirm Password
                   </label>
@@ -582,7 +582,7 @@ export const FlowSignup: React.FC<FlowSignupProps> = ({
                       placeholder="Re-enter your password"
                       autoComplete="new-password"
                       disabled={loading}
-                      className="h-[44px] w-full rounded-[13px] border border-[#D5E1E8] bg-[#F5F9FB] pl-10 pr-10 text-[13px] font-medium text-[#111827] outline-none transition placeholder:text-[#566575]/60 focus:border-[#294D6B] focus:bg-white focus:ring-2 focus:ring-[#294D6B]/12 disabled:opacity-60"
+                      className="h-[44px] w-full rounded-[13px] liquid-glass-input pl-10 pr-10 text-[13px] font-medium text-[var(--orion-text-primary)] outline-none transition placeholder:text-[var(--orion-text-muted)] focus:border-[var(--orion-accent)] disabled:opacity-60"
                     />
                     <button
                       type="button"

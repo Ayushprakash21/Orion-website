@@ -6,6 +6,7 @@
 import React, { useEffect, useState } from 'react';
 import { AuthProvider } from './context/AuthContext';
 import { SiteConfigProvider, useSiteConfig } from './context/SiteConfigContext';
+import { ThemeProvider } from './context/ThemeContext';
 import { Navbar } from './components/Navbar';
 import { OrionWorldExperience } from './components/OrionWorldExperience';
 import { EditorialCapabilities } from './components/EditorialCapabilities';
@@ -78,7 +79,7 @@ const AppContent: React.FC = () => {
   }
 
   return (
-    <div className="min-h-screen bg-[#F2F9FD] text-[#070B19] selection:bg-[#070B19] selection:text-white flex flex-col font-sans">
+    <div className="min-h-screen bg-[var(--orion-canvas)] text-[var(--orion-text-primary)] selection:bg-[#0284C7] selection:text-white flex flex-col font-sans transition-colors duration-300">
       <Navbar onNavigate={navigate} onOpenDownload={() => setDownloadModalOpen(true)} />
 
       <main className="flex-1">
@@ -115,11 +116,13 @@ const AppContent: React.FC = () => {
 
 export function App() {
   return (
-    <AuthProvider>
-      <SiteConfigProvider>
-        <AppContent />
-      </SiteConfigProvider>
-    </AuthProvider>
+    <ThemeProvider>
+      <AuthProvider>
+        <SiteConfigProvider>
+          <AppContent />
+        </SiteConfigProvider>
+      </AuthProvider>
+    </ThemeProvider>
   );
 }
 

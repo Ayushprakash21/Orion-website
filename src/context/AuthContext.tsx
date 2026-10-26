@@ -256,7 +256,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     (customTargetUrl?: string) => {
       const safeTarget = customTargetUrl ? resolveLaunchUrl(customTargetUrl).url : destinationUrl;
       setIsTransitioning(true);
-      setTransitionMessage('Connecting to the Orion-9 Control Tower at ' + safeTarget);
+      setTransitionMessage('Connecting to Orion-9 OS at ' + safeTarget);
 
       setTimeout(() => {
         window.location.href = safeTarget;
@@ -267,9 +267,15 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const launchOrion = useCallback(
     (customTargetUrl?: string) => {
+      if (!user) {
+        if (typeof window !== 'undefined') {
+          window.location.href = '/login';
+        }
+        return;
+      }
       executeLiveLaunch(customTargetUrl);
     },
-    [executeLiveLaunch]
+    [user, executeLiveLaunch]
   );
 
   const clearRememberedUsername = useCallback(() => {

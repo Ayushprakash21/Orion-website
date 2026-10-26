@@ -1,10 +1,10 @@
-import {
+import type {
   BrandingConfig,
   HomepageConfig,
   NavigationConfig,
   SeoConfig,
   FooterConfig,
-} from '../types/cms';
+} from '../types/cms.ts';
 
 /**
  * Validates that a URL is safe for use in CTAs, navigation links, or media assets.
@@ -67,6 +67,27 @@ export function sanitizeCmsText(input: string, maxLength = 300): string {
     .slice(0, maxLength);
 }
 
+export function isSafeLogoUrl(url: string): boolean {
+  if (!url || typeof url !== 'string') return false;
+  const trimmed = url.trim();
+  if (!trimmed) return false;
+  const lower = trimmed.toLowerCase();
+  if (
+    lower.startsWith('javascript:') ||
+    lower.startsWith('vbscript:') ||
+    lower.startsWith('file:')
+  ) {
+    return false;
+  }
+  if (lower.startsWith('data:image/')) {
+    if (lower.startsWith('data:image/svg+xml') && (lower.includes('<script') || lower.includes('onload=') || lower.includes('onerror='))) {
+      return false;
+    }
+    return true;
+  }
+  return isSafeCmsUrl(trimmed);
+}
+
 export function validateBrandingConfig(config: BrandingConfig): {
   valid: boolean;
   errors: string[];
@@ -82,8 +103,17 @@ export function validateBrandingConfig(config: BrandingConfig): {
   if (!config.tagline || config.tagline.trim().length < 4 || config.tagline.length > 160) {
     errors.push('Tagline must be between 4 and 160 characters.');
   }
-  if (config.logoUrl && !isSafeCmsUrl(config.logoUrl)) {
-    errors.push('Logo URL must be a valid https:// or relative / path.');
+  if (config.logoUrl && !isSafeLogoUrl(config.logoUrl)) {
+    errors.push('Logo URL must be a valid https://, relative path, or safe image data URL.');
+  }
+  if (config.headerLogo && !isSafeLogoUrl(config.headerLogo)) {
+    errors.push('Header Logo URL must be a valid https://, relative path, or safe image data URL.');
+  }
+  if (config.authLogo && !isSafeLogoUrl(config.authLogo)) {
+    errors.push('Authentication Logo URL must be a valid https://, relative path, or safe image data URL.');
+  }
+  if (config.footerLogo && !isSafeLogoUrl(config.footerLogo)) {
+    errors.push('Footer Logo URL must be a valid https://, relative path, or safe image data URL.');
   }
 
   const colorFields: [string, string][] = [

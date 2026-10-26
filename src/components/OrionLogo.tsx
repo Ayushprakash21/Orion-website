@@ -1,4 +1,5 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
+import { useOptionalSiteConfig } from '../context/SiteConfigContext';
 import type { HeroIntroSequenceState } from '../utils/cinematic-choreography';
 
 interface OrionLogoProps {
@@ -7,6 +8,8 @@ interface OrionLogoProps {
   tone?: 'dark' | 'light';
   showMark?: boolean;
   className?: string;
+  placement?: 'header' | 'auth' | 'footer' | 'default';
+  customLogoUrl?: string | null;
 }
 
 /**
@@ -19,8 +22,32 @@ export const OrionLogo: React.FC<OrionLogoProps> = ({
   tone = 'dark',
   showMark = true,
   className = '',
+  placement,
+  customLogoUrl,
 }) => {
   const isLight = tone === 'light';
+  const [imgError, setImgError] = useState(false);
+  const siteConfig = useOptionalSiteConfig();
+  const branding = siteConfig?.activeConfig?.branding;
+
+  let effectiveLogoUrl = customLogoUrl;
+  if (effectiveLogoUrl === undefined && branding) {
+    if (placement === 'header') {
+      effectiveLogoUrl = branding.headerLogo || branding.logoUrl || null;
+    } else if (placement === 'auth') {
+      effectiveLogoUrl = branding.authLogo || branding.logoUrl || null;
+    } else if (placement === 'footer') {
+      effectiveLogoUrl = branding.footerLogo || branding.logoUrl || null;
+    } else {
+      effectiveLogoUrl = branding.logoUrl || null;
+    }
+  }
+
+  useEffect(() => {
+    setImgError(false);
+  }, [effectiveLogoUrl]);
+
+  const hasCustomLogo = Boolean(effectiveLogoUrl && !imgError);
 
   const markSizes = {
     sm: 'w-7 h-7',
@@ -41,11 +68,19 @@ export const OrionLogo: React.FC<OrionLogoProps> = ({
     <span className={`inline-flex items-center gap-2.5 select-none ${className}`}>
       {showMark && (
         <span
-          className={`${markSizes[size]} rounded-lg flex items-center justify-center shrink-0 shadow-2xs border border-[#38BDF8]/30`}
+          className={`${markSizes[size]} rounded-lg flex items-center justify-center shrink-0 shadow-2xs border border-[#38BDF8]/30 overflow-hidden p-0.5`}
           style={{ backgroundColor: badgeBg }}
           aria-hidden="true"
         >
-          <svg
+          {hasCustomLogo ? (
+            <img
+              src={effectiveLogoUrl!}
+              alt={`${companyName} Logo`}
+              className="w-full h-full object-contain select-none"
+              onError={() => setImgError(true)}
+            />
+          ) : (
+            <svg
             viewBox="0 0 64 64"
             className="w-6 h-6"
             fill="none"
@@ -76,6 +111,7 @@ export const OrionLogo: React.FC<OrionLogoProps> = ({
             <circle cx="48" cy="18" r="2.5" fill="#7DD3FC" />
             <circle cx="58" cy="31" r="2.8" fill="#070B19" stroke="#38BDF8" strokeWidth="1.6" />
           </svg>
+          )}
         </span>
       )}
       <span

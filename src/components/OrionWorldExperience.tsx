@@ -1071,11 +1071,11 @@ export const OrionWorldExperience: React.FC = () => {
             <button
               type="button"
               onClick={() => scrollToNormalizedProgress(0.26)}
-              className="px-5 py-2.5 rounded-lg bg-white border border-[#BDD6E8] text-xs font-semibold text-[#070B19] hover:border-[#070B19] transition-colors cursor-pointer shadow-2xs"
+              className="px-5 py-2.5 rounded-full liquid-glass-button text-xs font-semibold text-[var(--orion-text-primary)] hover:border-[#0284C7] transition-all cursor-pointer shadow-sm hover:scale-[1.02]"
             >
               Scroll to Discover Our Process
             </button>
-            <div className="w-px h-6 sm:h-8 bg-[#070B19]/40 mt-1" />
+            <div className="w-px h-6 sm:h-8 bg-[var(--orion-text-primary)]/40 mt-1" />
           </div>
         </div>
 
@@ -1098,16 +1098,16 @@ export const OrionWorldExperience: React.FC = () => {
                   className="transition-all duration-300"
                 >
                   {isActive ? (
-                    <div className="bg-white/96 border border-[#C8DFEE] rounded-2xl p-5 shadow-[0_12px_32px_rgba(7,11,25,0.06)]">
+                    <div className="liquid-glass-elevated rounded-2xl p-5 shadow-[0_12px_32px_rgba(0,0,0,0.12)] border border-[var(--glass-border)]">
                       <div className="flex items-start gap-3.5">
-                        <span className="w-7 h-7 rounded-md bg-[#070B19] text-white font-mono text-xs font-medium flex items-center justify-center shrink-0 mt-0.5">
+                        <span className="w-7 h-7 rounded-lg bg-[var(--orion-text-primary)] text-[var(--orion-canvas)] font-mono text-xs font-medium flex items-center justify-center shrink-0 mt-0.5">
                           {step.number}
                         </span>
                         <div className="space-y-2">
-                          <h2 className="font-editorial text-xl sm:text-2xl font-bold tracking-[-0.015em] text-[#070B19] leading-tight">
+                          <h2 className="font-editorial text-xl sm:text-2xl font-bold tracking-[-0.015em] text-[var(--orion-text-primary)] leading-tight">
                             {step.title}
                           </h2>
-                          <p className="text-xs sm:text-sm text-[#334155] leading-relaxed">
+                          <p className="text-xs sm:text-sm text-[var(--orion-text-secondary)] leading-relaxed">
                             {step.description}
                           </p>
                           <div className="pt-1 flex items-center gap-2 text-[11px] font-mono text-[#0284C7] font-medium">
@@ -1123,10 +1123,10 @@ export const OrionWorldExperience: React.FC = () => {
                       aria-label={`Jump to step ${step.number}: ${step.title}`}
                       className="group inline-flex items-center gap-2.5 text-left cursor-pointer focus:outline-hidden"
                     >
-                      <span className="w-7 h-7 rounded-md bg-[#070B19] text-white font-mono text-xs font-medium flex items-center justify-center group-hover:bg-[#0284C7] transition-colors shadow-2xs">
+                      <span className="w-7 h-7 rounded-lg liquid-glass text-[var(--orion-text-primary)] font-mono text-xs font-medium flex items-center justify-center group-hover:bg-[#0284C7] group-hover:text-white transition-all shadow-xs border border-[var(--glass-border)]">
                         {step.number}
                       </span>
-                      <span className="text-xs font-semibold text-[#070B19]/0 group-hover:text-[#070B19]/85 transition-colors">
+                      <span className="text-xs font-semibold text-[var(--orion-text-secondary)] opacity-0 group-hover:opacity-100 transition-colors">
                         {step.title}
                       </span>
                     </button>

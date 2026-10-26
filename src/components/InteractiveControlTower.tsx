@@ -34,19 +34,19 @@ export const InteractiveControlTower: React.FC = () => {
   };
 
   return (
-    <section id="network" className="py-24 bg-[#F5F9FB] border-b border-[#D5E1E8] relative">
+    <section id="network" className="py-24 bg-[var(--orion-canvas)] text-[var(--orion-text-primary)] border-b border-[var(--glass-border-subtle)] relative transition-colors duration-300">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         {/* Section Header */}
         <div className="flex flex-col lg:flex-row lg:items-end justify-between gap-6 mb-10">
           <div className="space-y-3 max-w-2xl">
-            <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-white border border-[#D5E1E8] text-[11px] font-mono uppercase tracking-widest text-[#294D6B] font-semibold">
+            <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full liquid-glass-badge text-[11px] font-mono uppercase tracking-widest text-[var(--orion-accent)] font-semibold">
               <Compass className="w-3.5 h-3.5" />
               <span>{hp.networkEyebrow}</span>
             </div>
-            <h2 className="text-3xl sm:text-5xl font-extrabold tracking-[-0.03em] text-[#111827] leading-tight">
+            <h2 className="text-3xl sm:text-5xl font-extrabold tracking-[-0.03em] text-[var(--orion-text-primary)] leading-tight">
               {hp.networkTitle}
             </h2>
-            <p className="text-sm sm:text-base text-[#566575] leading-relaxed">
+            <p className="text-sm sm:text-base text-[var(--orion-text-secondary)] leading-relaxed">
               {hp.networkSubtitle}
             </p>
           </div>
@@ -72,7 +72,7 @@ export const InteractiveControlTower: React.FC = () => {
             <button
               type="button"
               onClick={() => setIsSimulatorOpen(true)}
-              className="flex items-center gap-2 px-5 py-3 rounded-full bg-[#101820] text-white font-semibold text-xs hover:bg-[#294D6B] transition-all shadow-[0_8px_20px_rgba(16,24,32,0.12)] active:scale-[0.98] cursor-pointer"
+              className="flex items-center gap-2 px-5 py-3 rounded-full bg-[var(--orion-text-primary)] text-[var(--orion-surface)] font-semibold text-xs hover:bg-[var(--orion-accent)] hover:text-white transition-all shadow-md active:scale-[0.98] cursor-pointer"
             >
               <AlertTriangle className="w-3.5 h-3.5 text-[#A8C2D2]" />
               <span>Open Scenario Solver</span>
@@ -82,41 +82,41 @@ export const InteractiveControlTower: React.FC = () => {
 
         {/* Telemetry Ribbon */}
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6 font-mono text-xs">
-          <div className="p-5 rounded-2xl bg-white border border-[#D5E1E8] space-y-1 shadow-2xs">
-            <span className="text-[10px] text-[#566575] block">ACTIVE MULTIMODAL FLEET</span>
+          <div className="p-5 rounded-2xl liquid-glass-card space-y-1">
+            <span className="text-[10px] text-[var(--orion-text-muted)] font-mono uppercase tracking-wider block">ACTIVE MULTIMODAL FLEET</span>
             <div className="flex items-baseline gap-2">
-              <span className="text-2xl font-bold text-[#111827] tabular-nums">216</span>
-              <span className="text-[11px] text-[#294D6B] font-semibold">COMMERCIAL UNITS</span>
+              <span className="text-2xl font-bold text-[var(--orion-text-primary)] tabular-nums">216</span>
+              <span className="text-[11px] text-[var(--orion-accent)] font-semibold">COMMERCIAL UNITS</span>
             </div>
           </div>
 
-          <div className="p-5 rounded-2xl bg-white border border-[#D5E1E8] space-y-1 shadow-2xs">
-            <span className="text-[10px] text-[#566575] block">CONTAINER VOLUME IN-FLIGHT</span>
+          <div className="p-5 rounded-2xl liquid-glass-card space-y-1">
+            <span className="text-[10px] text-[var(--orion-text-muted)] font-mono uppercase tracking-wider block">CONTAINER VOLUME IN-FLIGHT</span>
             <div className="flex items-baseline gap-2">
-              <span className="text-2xl font-bold text-[#111827] tabular-nums">8,420</span>
-              <span className="text-[11px] text-[#294D6B] font-semibold">TEU EQUIV</span>
+              <span className="text-2xl font-bold text-[var(--orion-text-primary)] tabular-nums">8,420</span>
+              <span className="text-[11px] text-[var(--orion-accent)] font-semibold">TEU EQUIV</span>
             </div>
           </div>
 
-          <div className="p-5 rounded-2xl bg-white border border-[#D5E1E8] space-y-1 shadow-2xs">
-            <span className="text-[10px] text-[#566575] block">NETWORK SLA INTEGRITY</span>
+          <div className="p-5 rounded-2xl liquid-glass-card space-y-1">
+            <span className="text-[10px] text-[var(--orion-text-muted)] font-mono uppercase tracking-wider block">NETWORK SLA INTEGRITY</span>
             <div className="flex items-baseline gap-2">
-              <span className="text-2xl font-bold text-[#111827] tabular-nums">
+              <span className="text-2xl font-bold text-[var(--orion-text-primary)] tabular-nums">
                 {disruptionActive ? '99.4%' : '98.4%'}
               </span>
-              <span className="text-[11px] text-[#294D6B] font-semibold">
+              <span className="text-[11px] text-[var(--orion-accent)] font-semibold">
                 {disruptionActive ? 'BYPASS PROTECTED' : 'NOMINAL'}
               </span>
             </div>
           </div>
 
-          <div className="p-5 rounded-2xl bg-white border border-[#D5E1E8] space-y-1 shadow-2xs">
-            <span className="text-[10px] text-[#566575] block">ACTIVE EXCEPTIONS</span>
+          <div className="p-5 rounded-2xl liquid-glass-card space-y-1">
+            <span className="text-[10px] text-[var(--orion-text-muted)] font-mono uppercase tracking-wider block">ACTIVE EXCEPTIONS</span>
             <div className="flex items-baseline gap-2">
-              <span className="text-2xl font-bold text-[#111827] tabular-nums">
+              <span className="text-2xl font-bold text-[var(--orion-text-primary)] tabular-nums">
                 {disruptionActive ? '01' : '02'}
               </span>
-              <span className="text-[11px] text-[#294D6B] font-semibold">
+              <span className="text-[11px] text-[var(--orion-accent)] font-semibold">
                 {disruptionActive ? 'REROUTED' : 'TRIAGED'}
               </span>
             </div>
@@ -285,9 +285,9 @@ export const InteractiveControlTower: React.FC = () => {
           ].map(({ mode, label, sub, Icon }) => (
             <div
               key={mode}
-              className="p-4 rounded-2xl bg-white border border-[#D5E1E8] space-y-2.5 shadow-2xs"
+              className="p-4 rounded-2xl liquid-glass-card space-y-2.5"
             >
-              <div className="flex items-center justify-between text-[11px] pb-2 border-b border-[#D5E1E8] text-[#566575]">
+              <div className="flex items-center justify-between text-[11px] pb-2 border-b border-[var(--glass-border-subtle)] text-[var(--orion-text-muted)]">
                 <span className="font-bold text-[#294D6B]">{label}</span>
                 <span>{sub}</span>
               </div>

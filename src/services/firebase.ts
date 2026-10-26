@@ -1,4 +1,5 @@
 import { initializeApp, getApps, type FirebaseApp } from 'firebase/app';
+import { getStorage, type FirebaseStorage } from 'firebase/storage';
 import {
   getAuth,
   type Auth,
@@ -115,6 +116,7 @@ export function saveRuntimeFirebaseConfig(config: FirebaseClientConfig | null): 
   app = null;
   auth = null;
   db = null;
+  storage = null;
 }
 
 export function clearRuntimeFirebaseConfig(): void {
@@ -124,21 +126,26 @@ export function clearRuntimeFirebaseConfig(): void {
 let app: FirebaseApp | null = null;
 let auth: Auth | null = null;
 let db: Firestore | null = null;
+let storage: FirebaseStorage | null = null;
 
 export function initializeFirebase(): {
   app: FirebaseApp | null;
   auth: Auth | null;
   db: Firestore | null;
+  storage: FirebaseStorage | null;
   isConfigured: boolean;
 } {
   if (auth && app && db) {
-    return { app, auth, db, isConfigured: true };
+    if (!storage) {
+      try { storage = getStorage(app); } catch {}
+    }
+    return { app, auth, db, storage, isConfigured: true };
   }
 
   const config = getFirebaseConfig();
 
   if (!config || !config.apiKey || !config.projectId) {
-    return { app: null, auth: null, db: null, isConfigured: false };
+    return { app: null, auth: null, db: null, storage: null, isConfigured: false };
   }
 
   try {
@@ -149,11 +156,18 @@ export function initializeFirebase(): {
     }
     auth = getAuth(app);
     db = config.firestoreDatabaseId ? getFirestore(app, config.firestoreDatabaseId) : getFirestore(app);
-    return { app, auth, db, isConfigured: true };
+    try { storage = getStorage(app); } catch {}
+    return { app, auth, db, storage, isConfigured: true };
   } catch (err) {
     console.warn('[Orion-9 Firebase] Failed to initialize Firebase SDK:', err);
-    return { app: null, auth: null, db: null, isConfigured: false };
+    return { app: null, auth: null, db: null, storage: null, isConfigured: false };
   }
+}
+
+export function getFirebaseStorageInstance(): FirebaseStorage | null {
+  if (storage) return storage;
+  const { storage: s } = initializeFirebase();
+  return s;
 }
 
 /**

@@ -91,11 +91,6 @@ export const DesktopDownloadModal: React.FC<DesktopDownloadModalProps> = ({
     platformReleases[0] ||
     DEFAULT_DESKTOP_RELEASES[0];
 
-  const formatBytes = (bytes: number) => {
-    const mb = bytes / (1024 * 1024);
-    return `${mb.toFixed(2)} MB (${bytes.toLocaleString()} bytes)`;
-  };
-
   const handleCopyHash = () => {
     if (typeof navigator !== 'undefined' && navigator.clipboard) {
       navigator.clipboard.writeText(activeRelease.sha256);
@@ -162,21 +157,15 @@ export const DesktopDownloadModal: React.FC<DesktopDownloadModalProps> = ({
       }
 
       const blob = await response.blob();
-      const objectUrl = window.URL.createObjectURL(blob);
-
-      // Trigger genuine client-side download with immutable filename
-      const anchor = document.createElement('a');
-      anchor.href = objectUrl;
-      anchor.download = activeRelease.filename;
-      anchor.setAttribute('aria-hidden', 'true');
-      document.body.appendChild(anchor);
-      anchor.click();
-      document.body.removeChild(anchor);
-
-      // Revoke blob URL after invocation
-      setTimeout(() => {
-        window.URL.revokeObjectURL(objectUrl);
-      }, 5000);
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.style.display = 'none';
+      a.href = url;
+      a.download = activeRelease.filename;
+      document.body.appendChild(a);
+      a.click();
+      window.URL.revokeObjectURL(url);
+      document.body.removeChild(a);
 
       // Increment local telemetry
       activeRelease.downloadCount = (activeRelease.downloadCount || 0) + 1;
@@ -198,130 +187,112 @@ export const DesktopDownloadModal: React.FC<DesktopDownloadModalProps> = ({
 
   return (
     <div
-      className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-[#070B19]/75 backdrop-blur-md animate-in fade-in duration-200"
+      className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-xl animate-in fade-in duration-200"
       role="dialog"
       aria-modal="true"
       aria-labelledby="download-modal-title"
     >
       <div
-        className="relative w-full max-w-2xl bg-white border border-[#DCE7F0] rounded-3xl shadow-2xl overflow-hidden flex flex-col text-[#070B19] animate-in zoom-in-95 duration-200"
+        className="relative w-full max-w-2xl liquid-glass-elevated border border-[var(--glass-border)] rounded-3xl shadow-2xl overflow-hidden flex flex-col text-[var(--orion-text-primary)] animate-in zoom-in-95 duration-200"
         onClick={(e) => e.stopPropagation()}
       >
-        {/* Header Bar */}
-        <div className="flex items-center justify-between px-6 py-5 border-b border-[#DCE7F0] bg-[#F8FAFC]">
+        {/* macOS Window Header Bar */}
+        <div className="flex items-center justify-between px-6 py-4.5 border-b border-[var(--glass-border-subtle)] bg-white/40 dark:bg-black/30">
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-xl bg-[#070B19] flex items-center justify-center text-white shadow-md">
+            {/* macOS Window Traffic Lights */}
+            <div className="flex items-center gap-1.5 mr-1">
+              <button
+                type="button"
+                onClick={onClose}
+                className="w-3 h-3 rounded-full bg-[#FF5F56] border border-[#E0443E] hover:opacity-80 transition cursor-pointer"
+                aria-label="Close"
+              />
+              <span className="w-3 h-3 rounded-full bg-[#FFBD2E] border border-[#DEA123]" />
+              <span className="w-3 h-3 rounded-full bg-[#27C93F] border border-[#1AAB29]" />
+            </div>
+
+            <div className="w-8 h-8 rounded-xl liquid-glass-subtle flex items-center justify-center text-[var(--orion-accent)] shadow-2xs">
               {selectedPlatform === 'windows' ? (
-                <Laptop className="w-5 h-5 text-[#38BDF8]" />
+                <Laptop className="w-4 h-4 text-[var(--orion-accent)]" />
               ) : (
-                <Apple className="w-5 h-5 text-[#38BDF8]" />
+                <Apple className="w-4 h-4 text-[var(--orion-accent)]" />
               )}
             </div>
             <div>
               <h3
                 id="download-modal-title"
-                className="text-lg font-bold text-[#070B19] tracking-tight flex items-center gap-2"
+                className="text-base font-bold text-[var(--orion-text-primary)] tracking-tight flex items-center gap-2"
               >
-                <span>Orion-9 Desktop Distribution</span>
-                <span className="px-2 py-0.5 rounded-full text-[11px] font-mono font-semibold bg-[#E0F2FE] text-[#0284C7] border border-[#BAE6FD]">
+                <span>Orion-9 Desktop</span>
+                <span className="px-2 py-0.5 rounded-full text-[10px] font-mono font-semibold liquid-glass-badge text-[var(--orion-accent)]">
                   v{activeRelease.version}
                 </span>
                 <span
                   className={`px-2 py-0.5 rounded-full text-[10px] font-mono font-bold uppercase ${
                     activeRelease.status === 'published'
-                      ? 'bg-emerald-50 text-emerald-700 border border-emerald-200'
-                      : 'bg-amber-50 text-amber-700 border border-amber-200'
+                      ? 'bg-emerald-500/15 text-emerald-500 border border-emerald-500/20'
+                      : 'bg-amber-500/15 text-amber-500 border border-amber-500/20'
                   }`}
                 >
                   {activeRelease.status}
                 </span>
               </h3>
-              <p className="text-xs text-[#64748B]">
-                Authenticated Enterprise Installer Portal &bull; Windows &amp; macOS Releases
-              </p>
             </div>
           </div>
+
           <button
             type="button"
             onClick={onClose}
-            className="w-8 h-8 rounded-full border border-[#DCE7F0] flex items-center justify-center text-[#64748B] hover:text-[#070B19] hover:bg-[#F1F5F9] transition-colors cursor-pointer"
+            className="w-8 h-8 rounded-full liquid-glass-button flex items-center justify-center text-[var(--orion-text-muted)] hover:text-[var(--orion-text-primary)] transition-colors cursor-pointer"
             aria-label="Close dialog"
           >
             <X className="w-4 h-4" />
           </button>
         </div>
 
-        {/* Content Body */}
+        {/* Modal Body */}
         <div className="p-6 sm:p-8 space-y-6 overflow-y-auto max-h-[75vh]">
-          {/* Platform Switcher Tabs */}
-          <div className="flex items-center justify-between gap-3 p-1.5 bg-[#F1F5F9] rounded-2xl border border-[#E2E8F0]">
+          {/* Segmented Platform Switcher */}
+          <div className="flex items-center justify-between gap-2 p-1.5 liquid-glass-subtle rounded-2xl border border-[var(--glass-border-subtle)]">
             <button
               type="button"
               onClick={() => handlePlatformChange('windows')}
               className={`flex-1 flex items-center justify-center gap-2 py-2.5 px-4 rounded-xl text-xs font-semibold transition-all cursor-pointer ${
                 selectedPlatform === 'windows'
-                  ? 'bg-white text-[#070B19] shadow-sm border border-[#CBD5E1]'
-                  : 'text-[#64748B] hover:text-[#070B19]'
+                  ? 'bg-[var(--orion-surface)] text-[var(--orion-text-primary)] shadow-sm'
+                  : 'text-[var(--orion-text-muted)] hover:text-[var(--orion-text-primary)]'
               }`}
             >
-              <Laptop className="w-4 h-4 text-[#0284C7]" />
-              <span>Windows 64-bit</span>
+              <Laptop className="w-4 h-4 text-[var(--orion-accent)]" />
+              <span>Windows 64-bit (.exe)</span>
             </button>
             <button
               type="button"
               onClick={() => handlePlatformChange('macos')}
               className={`flex-1 flex items-center justify-center gap-2 py-2.5 px-4 rounded-xl text-xs font-semibold transition-all cursor-pointer ${
                 selectedPlatform === 'macos'
-                  ? 'bg-white text-[#070B19] shadow-sm border border-[#CBD5E1]'
-                  : 'text-[#64748B] hover:text-[#070B19]'
+                  ? 'bg-[var(--orion-surface)] text-[var(--orion-text-primary)] shadow-sm'
+                  : 'text-[var(--orion-text-muted)] hover:text-[var(--orion-text-primary)]'
               }`}
             >
-              <Apple className="w-4 h-4 text-[#0284C7]" />
-              <span>macOS (Universal / M-Series)</span>
+              <Apple className="w-4 h-4 text-[var(--orion-accent)]" />
+              <span>macOS (.dmg)</span>
             </button>
           </div>
 
-          {/* Package Format Selector (EXE vs MSI for Windows, Universal vs ARM64 for macOS) */}
-          {platformReleases.length > 1 && (
-            <div className="flex items-center gap-2">
-              <span className="text-[11px] font-mono text-[#64748B] uppercase font-bold">
-                Package Format:
-              </span>
-              <div className="flex items-center gap-2">
-                {platformReleases.map((rel) => (
-                  <button
-                    key={rel.id}
-                    type="button"
-                    onClick={() => {
-                      setSelectedFormat(rel.format);
-                      setDownloadError(null);
-                    }}
-                    className={`px-3 py-1 rounded-lg text-xs font-mono font-medium transition-colors cursor-pointer ${
-                      activeRelease.id === rel.id
-                        ? 'bg-[#070B19] text-white font-bold'
-                        : 'bg-[#F1F5F9] text-[#475569] hover:bg-[#E2E8F0] border border-[#CBD5E1]'
-                    }`}
-                  >
-                    {rel.filename} ({rel.format.toUpperCase()})
-                  </button>
-                ))}
-              </div>
-            </div>
-          )}
-
-          {/* Authentication Status Gate */}
+          {/* Authentication Gate */}
           {!isAuthenticated ? (
-            <div className="p-4 rounded-2xl bg-[#FFFBEB] border border-[#FDE68A] text-left space-y-3">
+            <div className="p-4 rounded-2xl bg-amber-500/10 border border-amber-500/20 text-left space-y-3">
               <div className="flex items-start gap-3">
-                <div className="w-8 h-8 rounded-xl bg-amber-100 border border-amber-300 flex items-center justify-center text-amber-800 shrink-0">
+                <div className="w-8 h-8 rounded-xl bg-amber-500/20 text-amber-500 flex items-center justify-center shrink-0">
                   <Lock className="w-4 h-4" />
                 </div>
                 <div className="space-y-1">
-                  <h4 className="text-xs font-bold text-amber-900 uppercase font-mono tracking-wider">
+                  <h4 className="text-xs font-bold text-amber-600 dark:text-amber-400 uppercase font-mono tracking-wider">
                     Operator Authentication Required
                   </h4>
-                  <p className="text-xs text-amber-800 leading-relaxed">
-                    To prevent unverified distribution and preserve cryptographic boundary controls, Orion-9 desktop installers require an authenticated operator session.
+                  <p className="text-xs text-amber-700 dark:text-amber-300 leading-relaxed">
+                    To prevent unverified distribution and preserve cryptographic boundary controls, Orion-9 workstation installers require an authenticated operator profile.
                   </p>
                 </div>
               </div>
@@ -329,126 +300,109 @@ export const DesktopDownloadModal: React.FC<DesktopDownloadModalProps> = ({
                 <button
                   type="button"
                   onClick={() => handleNavigateAuth('login')}
-                  className="w-full sm:flex-1 inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl bg-[#070B19] text-white text-xs font-semibold hover:bg-[#1E293B] shadow-md transition-all cursor-pointer"
+                  className="w-full sm:flex-1 inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl bg-gradient-to-r from-[#0284C7] to-[#0369A1] text-white text-xs font-semibold shadow-md transition-all cursor-pointer"
                 >
                   <span>Sign In to Download</span>
-                  <ArrowRight className="w-3.5 h-3.5 text-[#38BDF8]" />
+                  <ArrowRight className="w-3.5 h-3.5" />
                 </button>
                 <button
                   type="button"
                   onClick={() => handleNavigateAuth('signup')}
-                  className="w-full sm:w-auto px-4 py-2.5 rounded-xl border border-[#D5E1E8] bg-white text-xs font-semibold text-[#111827] hover:bg-[#F8FAFC] transition-colors cursor-pointer"
+                  className="w-full sm:w-auto px-4 py-2.5 rounded-xl liquid-glass-button text-xs font-semibold text-[var(--orion-text-primary)] transition-colors cursor-pointer"
                 >
                   Create Account
                 </button>
               </div>
             </div>
           ) : (
-            <div className="p-3.5 rounded-2xl bg-emerald-50 border border-emerald-200 flex items-center justify-between text-xs text-emerald-900">
+            <div className="p-3.5 rounded-2xl bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-between text-xs text-emerald-600 dark:text-emerald-400">
               <div className="flex items-center gap-2">
-                <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
+                <CheckCircle2 className="w-4 h-4 text-emerald-500 shrink-0" />
                 <span>
                   Operator Session Verified:{' '}
                   <strong className="font-mono">{user?.email || username}</strong>
                 </span>
               </div>
-              <span className="text-[10px] font-mono uppercase bg-emerald-100 text-emerald-800 px-2 py-0.5 rounded-md font-semibold">
+              <span className="text-[10px] font-mono uppercase bg-emerald-500/20 px-2 py-0.5 rounded-md font-semibold">
                 Authorized
               </span>
             </div>
           )}
 
-          {/* Metadata Grid */}
+          {/* Metadata Grid in Liquid Glass */}
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-            <div className="p-3 rounded-2xl bg-[#F8FAFC] border border-[#E2E8F0]">
-              <span className="text-[10px] font-mono font-bold text-[#64748B] uppercase tracking-wider block">
+            <div className="p-3.5 rounded-2xl liquid-glass-card">
+              <span className="text-[10px] font-mono font-bold text-[var(--orion-text-muted)] uppercase tracking-wider block">
                 Platform
               </span>
-              <span className="text-xs font-semibold text-[#070B19] mt-0.5 block truncate">
+              <span className="text-xs font-semibold text-[var(--orion-text-primary)] mt-0.5 block truncate">
                 {activeRelease.platform}
               </span>
             </div>
-            <div className="p-3 rounded-2xl bg-[#F8FAFC] border border-[#E2E8F0]">
-              <span className="text-[10px] font-mono font-bold text-[#64748B] uppercase tracking-wider block">
+            <div className="p-3.5 rounded-2xl liquid-glass-card">
+              <span className="text-[10px] font-mono font-bold text-[var(--orion-text-muted)] uppercase tracking-wider block">
                 Format
               </span>
-              <span className="text-xs font-semibold text-[#070B19] mt-0.5 block">
-                {activeRelease.format.toUpperCase()} Installer
+              <span className="text-xs font-semibold text-[var(--orion-text-primary)] mt-0.5 block">
+                {activeRelease.format.toUpperCase()}
               </span>
             </div>
-            <div className="p-3 rounded-2xl bg-[#F8FAFC] border border-[#E2E8F0]">
-              <span className="text-[10px] font-mono font-bold text-[#64748B] uppercase tracking-wider block">
+            <div className="p-3.5 rounded-2xl liquid-glass-card">
+              <span className="text-[10px] font-mono font-bold text-[var(--orion-text-muted)] uppercase tracking-wider block">
                 Package Size
               </span>
-              <span className="text-xs font-semibold text-[#070B19] mt-0.5 block">
+              <span className="text-xs font-semibold text-[var(--orion-text-primary)] mt-0.5 block">
                 {(activeRelease.sizeBytes / (1024 * 1024)).toFixed(2)} MB
               </span>
             </div>
-            <div className="p-3 rounded-2xl bg-[#F8FAFC] border border-[#E2E8F0]">
-              <span className="text-[10px] font-mono font-bold text-[#64748B] uppercase tracking-wider block">
+            <div className="p-3.5 rounded-2xl liquid-glass-card">
+              <span className="text-[10px] font-mono font-bold text-[var(--orion-text-muted)] uppercase tracking-wider block">
                 Min OS
               </span>
-              <span className="text-xs font-semibold text-[#070B19] mt-0.5 block truncate">
+              <span className="text-xs font-semibold text-[var(--orion-text-primary)] mt-0.5 block truncate">
                 {activeRelease.minimumOs}
               </span>
             </div>
           </div>
 
-          {/* SHA-256 Checksum Card */}
-          <div className="p-4 rounded-2xl bg-[#F1F5F9] border border-[#E2E8F0] space-y-2.5">
+          {/* Cryptographic SHA-256 Card in Terminal Glass */}
+          <div className="p-4 rounded-2xl bg-black/40 dark:bg-black/60 border border-[var(--glass-border)] space-y-2.5">
             <div className="flex items-center justify-between text-xs">
-              <span className="font-mono font-bold text-[#475569] flex items-center gap-1.5">
-                <ShieldCheck className="w-4 h-4 text-[#0284C7]" />
-                <span>CRYPTOGRAPHIC SHA-256 INTEGRITY HASH</span>
+              <span className="font-mono font-bold text-sky-400 flex items-center gap-1.5 text-[11px]">
+                <ShieldCheck className="w-3.5 h-3.5 text-sky-400" />
+                <span>SHA-256 INTEGRITY HASH</span>
               </span>
               <button
                 type="button"
                 onClick={handleCopyHash}
-                className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-white border border-[#CBD5E1] text-[11px] font-medium text-[#070B19] hover:bg-[#F8FAFC] transition-colors cursor-pointer"
+                className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-white/10 hover:bg-white/20 text-[11px] font-medium text-white transition-colors cursor-pointer border border-white/10"
               >
                 {copiedHash ? (
                   <>
-                    <Check className="w-3.5 h-3.5 text-emerald-600" />
-                    <span className="text-emerald-700 font-semibold">Copied!</span>
+                    <Check className="w-3.5 h-3.5 text-emerald-400" />
+                    <span className="text-emerald-400 font-semibold">Copied!</span>
                   </>
                 ) : (
                   <>
-                    <Copy className="w-3.5 h-3.5 text-[#64748B]" />
+                    <Copy className="w-3.5 h-3.5 text-slate-400" />
                     <span>Copy Hash</span>
                   </>
                 )}
               </button>
             </div>
-            <div className="p-2.5 bg-white rounded-xl border border-[#CBD5E1] font-mono text-[11px] text-[#334155] break-all select-all">
+            <div className="p-2.5 bg-black/60 rounded-xl border border-white/10 font-mono text-[11px] text-slate-300 break-all select-all">
               {activeRelease.sha256}
             </div>
-            <div className="flex items-center gap-2 text-[10px] text-[#64748B] font-mono">
-              <Terminal className="w-3 h-3 text-[#0284C7]" />
-              <span>Verify terminal command: <code className="bg-white/80 px-1 py-0.5 rounded border border-[#CBD5E1]">{getVerificationCommand()}</code></span>
+            <div className="flex items-center gap-2 text-[10px] text-slate-400 font-mono">
+              <Terminal className="w-3 h-3 text-sky-400" />
+              <span>Verify terminal command: <code className="bg-white/10 px-1 py-0.5 rounded text-sky-300">{getVerificationCommand()}</code></span>
             </div>
           </div>
 
-          {/* Release Highlights */}
-          {activeRelease.releaseNotes && activeRelease.releaseNotes.length > 0 && (
-            <div className="space-y-2">
-              <h4 className="text-xs font-bold font-mono uppercase tracking-wider text-[#64748B]">
-                Release Highlights (v{activeRelease.version} &bull; {activeRelease.filename})
-              </h4>
-              <ul className="space-y-1.5">
-                {activeRelease.releaseNotes.map((note, idx) => (
-                  <li key={idx} className="flex items-start gap-2.5 text-xs text-[#334155]">
-                    <CheckCircle2 className="w-4 h-4 text-[#0284C7] shrink-0 mt-0.5" />
-                    <span>{note}</span>
-                  </li>
-                ))}
-              </ul>
-            </div>
-          )}
-
           {/* Error Banner */}
           {downloadError && (
-            <div className="p-3.5 rounded-2xl bg-rose-50 border border-rose-200 text-left text-xs text-rose-800 flex items-start gap-2">
-              <AlertTriangle className="w-4 h-4 text-rose-600 shrink-0 mt-0.5" />
+            <div className="p-3.5 rounded-2xl bg-rose-500/10 border border-rose-500/20 text-left text-xs text-rose-500 flex items-start gap-2">
+              <AlertTriangle className="w-4 h-4 shrink-0 mt-0.5" />
               <div>
                 <strong className="font-semibold block">Download Aborted:</strong>
                 <span>{downloadError}</span>
@@ -458,9 +412,9 @@ export const DesktopDownloadModal: React.FC<DesktopDownloadModalProps> = ({
 
           {/* Success Banner */}
           {downloadSuccess && (
-            <div className="p-3.5 rounded-2xl bg-emerald-50 border border-emerald-200 text-left text-xs text-emerald-800 flex items-center gap-2">
-              <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
-              <span>Installer binary stream started successfully. Check your browser downloads folder.</span>
+            <div className="p-3.5 rounded-2xl bg-emerald-500/10 border border-emerald-500/20 text-left text-xs text-emerald-500 flex items-center gap-2">
+              <CheckCircle2 className="w-4 h-4 shrink-0" />
+              <span>Installer binary stream verified. Check your downloads directory.</span>
             </div>
           )}
 
@@ -471,16 +425,16 @@ export const DesktopDownloadModal: React.FC<DesktopDownloadModalProps> = ({
                 type="button"
                 onClick={handleAuthenticatedDownload}
                 disabled={isDownloading}
-                className="w-full sm:flex-1 inline-flex items-center justify-center gap-2.5 px-6 py-3.5 rounded-xl bg-[#070B19] text-white font-semibold text-sm hover:bg-[#1E293B] shadow-lg transition-all cursor-pointer disabled:opacity-60"
+                className="w-full sm:flex-1 inline-flex items-center justify-center gap-2.5 px-6 py-3.5 rounded-xl bg-gradient-to-r from-[#0284C7] to-[#0369A1] hover:from-[#0369A1] hover:to-[#075985] text-white font-semibold text-xs shadow-lg transition-all cursor-pointer disabled:opacity-60"
               >
                 {isDownloading ? (
                   <>
-                    <Loader2 className="w-4 h-4 text-[#38BDF8] animate-spin" />
-                    <span>Streaming Installer Binary...</span>
+                    <Loader2 className="w-4 h-4 text-sky-300 animate-spin" />
+                    <span>Streaming Verified Binary...</span>
                   </>
                 ) : (
                   <>
-                    <Download className="w-4 h-4 text-[#38BDF8]" />
+                    <Download className="w-4 h-4 text-sky-200" />
                     <span>Download {activeRelease.filename}</span>
                   </>
                 )}
@@ -489,9 +443,9 @@ export const DesktopDownloadModal: React.FC<DesktopDownloadModalProps> = ({
               <button
                 type="button"
                 onClick={() => handleNavigateAuth('login')}
-                className="w-full sm:flex-1 inline-flex items-center justify-center gap-2.5 px-6 py-3.5 rounded-xl bg-[#070B19] text-white font-semibold text-sm hover:bg-[#1E293B] shadow-lg transition-all cursor-pointer"
+                className="w-full sm:flex-1 inline-flex items-center justify-center gap-2.5 px-6 py-3.5 rounded-xl bg-gradient-to-r from-[#0284C7] to-[#0369A1] text-white font-semibold text-xs shadow-lg transition-all cursor-pointer"
               >
-                <Lock className="w-4 h-4 text-[#38BDF8]" />
+                <Lock className="w-4 h-4 text-sky-300" />
                 <span>Authenticate to Download {activeRelease.filename}</span>
               </button>
             )}
@@ -499,21 +453,10 @@ export const DesktopDownloadModal: React.FC<DesktopDownloadModalProps> = ({
             <button
               type="button"
               onClick={onClose}
-              className="w-full sm:w-auto px-5 py-3.5 rounded-xl border border-[#CBD5E1] text-xs font-semibold text-[#475569] hover:bg-[#F8FAFC] transition-colors cursor-pointer"
+              className="w-full sm:w-auto px-5 py-3.5 rounded-xl liquid-glass-button text-xs font-semibold text-[var(--orion-text-secondary)] hover:text-[var(--orion-text-primary)] transition-colors cursor-pointer"
             >
               Close
             </button>
-          </div>
-
-          {/* Security & Integrity Architecture Notice */}
-          <div className="p-3.5 rounded-2xl bg-[#EAF4FB] border border-[#BAE6FD] text-left text-xs text-[#0369A1] space-y-1">
-            <div className="flex items-center gap-1.5 font-semibold">
-              <Info className="w-3.5 h-3.5" />
-              <span>Cryptographic Packaging Guarantee</span>
-            </div>
-            <p className="text-[11px] leading-relaxed text-[#0c4a6e]">
-              All Orion-9 workstation binaries are compiled with strict PE / Mach-O header integrity, SHA-256 digests, and hardware-isolated execution boundaries. No plain web redirect is ever treated as an installer binary.
-            </p>
           </div>
         </div>
       </div>

@@ -14,7 +14,7 @@ const architectureLayers: Layer[] = [
     number: '07',
     title: 'Operational Dashboards & User Experiences',
     summary: 'Role-based operational control towers, interactive risk maps, executive summaries, and mobile alert centers.',
-    components: ['Control Tower Web UI', 'Executive Summaries', 'Mobile Incident App', 'Custom Viewports'],
+    components: ['Orion-9 OS Web UI', 'Executive Summaries', 'Mobile Incident App', 'Custom Viewports'],
     securityNote: 'Multi-factor authentication, granular RBAC, session integrity validation',
   },
   {

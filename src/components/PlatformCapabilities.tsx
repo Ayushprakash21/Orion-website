@@ -33,7 +33,7 @@ const capabilities: CapabilityItem[] = [
   {
     id: 'control-tower',
     letter: 'A',
-    title: 'Control Tower',
+    title: 'Orion-9 OS',
     shortDesc: 'Monitor orders, inventory, shipments, suppliers, and exceptions from a unified operational view.',
     icon: Compass,
     accent: '#f5f5f5',
@@ -126,19 +126,19 @@ export const PlatformCapabilities: React.FC = () => {
   const [selectedCapability, setSelectedCapability] = useState<CapabilityItem>(capabilities[0]);
 
   return (
-    <section id="platform" className="py-24 bg-[#0f1626] border-b border-white/10 relative">
+    <section id="platform" className="py-24 bg-[var(--orion-canvas)] text-[var(--orion-text-primary)] border-b border-[var(--glass-border-subtle)] relative transition-colors duration-300">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         {/* Section Header */}
         <div className="max-w-3xl mb-16 space-y-4">
-          <div className="text-xs font-mono uppercase tracking-widest text-[#f5f5f5]">
+          <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full liquid-glass-badge text-[11px] font-mono uppercase tracking-widest text-[var(--orion-accent)] font-semibold">
             SYSTEM CORE CAPABILITIES
           </div>
-          <h2 className="text-3xl sm:text-5xl font-extrabold tracking-tight text-white leading-tight">
+          <h2 className="text-3xl sm:text-5xl font-extrabold tracking-tight text-[var(--orion-text-primary)] leading-tight">
             One Operating System.
             <br />
             Every Supply Chain Signal.
           </h2>
-          <p className="text-base sm:text-lg text-white/70 leading-relaxed">
+          <p className="text-base sm:text-lg text-[var(--orion-text-secondary)] leading-relaxed">
             Orion-9 brings fragmented operational systems together, transforming disconnected events into coordinated decisions.
           </p>
         </div>
@@ -153,16 +153,16 @@ export const PlatformCapabilities: React.FC = () => {
               <div
                 key={cap.id}
                 onClick={() => setSelectedCapability(cap)}
-                className={`relative rounded-2xl p-7 transition-all cursor-pointer border flex flex-col justify-between ${
+                className={`relative rounded-3xl p-7 transition-all cursor-pointer border flex flex-col justify-between ${
                   isSelected
-                    ? 'bg-[#1d293d] border-[#f5f5f5]/60 shadow-xl shadow-black/40 ring-1 ring-[#f5f5f5]/40'
-                    : 'bg-[#151e30] border-white/10 hover:border-white/25 hover:bg-[#182338]'
+                    ? 'liquid-glass-elevated border-2 border-[var(--orion-accent)] shadow-xl ring-2 ring-[var(--orion-accent)]/20'
+                    : 'liquid-glass-card hover:border-[var(--glass-border-highlight)]'
                 }`}
               >
                 <div>
                   {/* Top Bar inside card: clean editorial index + icon */}
                   <div className="flex items-center justify-between mb-5">
-                    <span className="text-xs font-mono font-bold tracking-wider text-white/40">
+                    <span className="text-xs font-mono font-bold tracking-wider text-[var(--orion-text-muted)]">
                       [{cap.letter}]
                     </span>
                     <div
@@ -177,20 +177,20 @@ export const PlatformCapabilities: React.FC = () => {
                   </div>
 
                   {/* Title */}
-                  <h3 className="text-xl font-bold text-white mb-2.5 tracking-tight">
+                  <h3 className="text-xl font-bold text-[var(--orion-text-primary)] mb-2.5 tracking-tight">
                     {cap.title}
                   </h3>
 
                   {/* Description */}
-                  <p className="text-sm text-white/70 leading-relaxed mb-6 font-normal">
+                  <p className="text-sm text-[var(--orion-text-secondary)] leading-relaxed mb-6 font-normal">
                     {cap.shortDesc}
                   </p>
                 </div>
 
                 {/* Focus Items List */}
-                <div className="pt-4 border-t border-white/10 space-y-2">
+                <div className="pt-4 border-t border-[var(--glass-border-subtle)] space-y-2">
                   {cap.operationalFocus.map((focus, idx) => (
-                    <div key={idx} className="flex items-center gap-2 text-xs text-white/60">
+                    <div key={idx} className="flex items-center gap-2 text-xs text-[var(--orion-text-secondary)]">
                       <CheckCircle2 className="w-3.5 h-3.5 shrink-0" style={{ color: cap.accent }} />
                       <span className="truncate">{focus}</span>
                     </div>
@@ -201,7 +201,7 @@ export const PlatformCapabilities: React.FC = () => {
                       {isSelected ? 'Inspecting Architecture' : 'Click to inspect'}
                     </span>
                     <ArrowRight
-                      className={`w-3.5 h-3.5 transition-transform ${isSelected ? 'translate-x-1 text-white' : 'text-white/40'}`}
+                      className={`w-3.5 h-3.5 transition-transform ${isSelected ? 'translate-x-1 text-white' : 'text-[var(--orion-text-muted)]'}`}
                     />
                   </div>
                 </div>
@@ -211,11 +211,11 @@ export const PlatformCapabilities: React.FC = () => {
         </div>
 
         {/* Interactive Capability Architecture Inspector */}
-        <div className="mt-12 rounded-2xl bg-[#151e30] border border-white/15 p-6 sm:p-8">
-          <div className="flex flex-wrap items-center justify-between gap-4 pb-6 border-b border-white/10">
+        <div className="mt-12 rounded-3xl liquid-glass-elevated border border-[var(--glass-border)] p-6 sm:p-8 shadow-2xl">
+          <div className="flex flex-wrap items-center justify-between gap-4 pb-6 border-b border-[var(--glass-border-subtle)]">
             <div className="flex items-center gap-3">
               <Layers className="w-5 h-5 text-[#f5f5f5]" />
-              <h4 className="text-base sm:text-lg font-bold text-white tracking-tight">
+              <h4 className="text-base sm:text-lg font-bold text-[var(--orion-text-primary)] tracking-tight">
                 Operational Pipeline: {selectedCapability.title}
               </h4>
             </div>
@@ -226,37 +226,37 @@ export const PlatformCapabilities: React.FC = () => {
 
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 pt-6">
             <div className="space-y-2">
-              <span className="text-xs font-mono text-white/40 uppercase tracking-wider block">
+              <span className="text-xs font-mono text-[var(--orion-text-muted)] uppercase tracking-wider block">
                 01. Operational Inputs
               </span>
-              <p className="text-sm text-white/80 leading-relaxed">
+              <p className="text-sm text-[var(--orion-text-secondary)] leading-relaxed">
                 {selectedCapability.architectureDetail.inputs}
               </p>
             </div>
 
             <div className="space-y-2">
-              <span className="text-xs font-mono text-white/40 uppercase tracking-wider block">
+              <span className="text-xs font-mono text-[var(--orion-text-muted)] uppercase tracking-wider block">
                 02. Real-Time Engine
               </span>
-              <p className="text-sm text-white/80 leading-relaxed">
+              <p className="text-sm text-[var(--orion-text-secondary)] leading-relaxed">
                 {selectedCapability.architectureDetail.processing}
               </p>
             </div>
 
             <div className="space-y-2">
-              <span className="text-xs font-mono text-white/40 uppercase tracking-wider block">
+              <span className="text-xs font-mono text-[var(--orion-text-muted)] uppercase tracking-wider block">
                 03. Actionable Outcome
               </span>
-              <p className="text-sm text-white/80 leading-relaxed">
+              <p className="text-sm text-[var(--orion-text-secondary)] leading-relaxed">
                 {selectedCapability.architectureDetail.outcome}
               </p>
             </div>
 
             <div className="space-y-2">
-              <span className="text-xs font-mono text-white/40 uppercase tracking-wider block">
+              <span className="text-xs font-mono text-[var(--orion-text-muted)] uppercase tracking-wider block">
                 04. Enterprise Governance
               </span>
-              <p className="text-sm text-white/80 leading-relaxed">
+              <p className="text-sm text-[var(--orion-text-secondary)] leading-relaxed">
                 {selectedCapability.architectureDetail.governance}
               </p>
             </div>

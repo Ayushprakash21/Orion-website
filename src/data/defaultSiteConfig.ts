@@ -1,5 +1,5 @@
-import { SiteConfigurationBundle, DesktopReleaseRecord } from '../types/cms';
-import { DEFAULT_ORION_APP_URL } from '../utils/auth-validation';
+import type { SiteConfigurationBundle, DesktopReleaseRecord } from '../types/cms.ts';
+import { DEFAULT_ORION_APP_URL } from '../utils/auth-validation.ts';
 
 export const DEFAULT_DESKTOP_RELEASES: DesktopReleaseRecord[] = [
   {
@@ -115,6 +115,12 @@ export const DEFAULT_SITE_CONFIG: SiteConfigurationBundle = {
     shortMark: 'Ω9',
     tagline: 'The New Standard in Supply Chain Control',
     logoUrl: '',
+    headerLogo: null,
+    authLogo: null,
+    footerLogo: null,
+    headerLogoConfig: undefined,
+    authLogoConfig: undefined,
+    footerLogoConfig: undefined,
     canvasColor: '#F2F9FD',
     altSectionColor: '#FFFFFF',
     surfaceColor: '#FFFFFF',
@@ -129,14 +135,14 @@ export const DEFAULT_SITE_CONFIG: SiteConfigurationBundle = {
     items: [
       { id: 'nav-overview', label: 'Our Process', href: '#process', visible: true },
       { id: 'nav-network', label: 'Capabilities', href: '#capabilities', visible: true },
-      { id: 'nav-tower', label: 'Control Tower', href: '#control-tower', visible: true },
+      { id: 'nav-tower', label: 'Orion-9 OS', href: '#control-tower', visible: true },
       { id: 'nav-integrations', label: 'Readiness', href: '#faq', visible: true },
     ],
     showSignIn: true,
     showSignUp: true,
-    primaryCtaLabel: 'Launch Control Tower',
+    primaryCtaLabel: 'Launch Orion-9 OS',
     primaryCtaHref: DEFAULT_ORION_APP_URL,
-    launchControlTowerLabel: 'Launch Control Tower',
+    launchControlTowerLabel: 'Launch Orion-9 OS',
     launchControlTowerUrl: DEFAULT_ORION_APP_URL,
   },
   homepage: {
@@ -145,7 +151,7 @@ export const DEFAULT_SITE_CONFIG: SiteConfigurationBundle = {
     heroHeadlineLine2: 'Supply Chain Control',
     heroSubheadline:
       'Autonomous risk sensing, canonical graph intelligence, and governed execution—built to keep global operations moving.',
-    primaryCtaText: 'Launch Control Tower',
+    primaryCtaText: 'Launch Orion-9 OS',
     primaryCtaHref: DEFAULT_ORION_APP_URL,
     secondaryCtaText: 'Scroll to Discover Our Process',
     secondaryCtaUrl: '#process',
@@ -198,7 +204,7 @@ export const DEFAULT_SITE_CONFIG: SiteConfigurationBundle = {
     finalCtaEyebrow: '06 / PRODUCTION DEPLOYMENT',
     finalCtaTitle: 'Command your supply chain with fast response, and execution you can rely on.',
     finalCtaSubtitle:
-      'Create an operator account, connect your enterprise ERP, or launch the live Orion-9 Control Tower.',
+      'Create an operator account, connect your enterprise ERP, or launch the live Orion-9 OS.',
     sectionVisibility: {
       platformOverview: true,
       scrollStorytelling: true,
@@ -224,7 +230,7 @@ export const DEFAULT_SITE_CONFIG: SiteConfigurationBundle = {
         links: [
           { label: 'Our Process', href: '#process' },
           { label: 'Capabilities', href: '#capabilities' },
-          { label: 'Control Tower Cockpit', href: '#control-tower' },
+          { label: 'Orion-9 OS Cockpit', href: '#control-tower' },
           { label: 'Operational Readiness', href: '#faq' },
         ],
       },
@@ -242,7 +248,7 @@ export const DEFAULT_SITE_CONFIG: SiteConfigurationBundle = {
   seo: {
     metaTitle: 'Orion-9 | The New Standard in Supply Chain Control',
     metaDescription:
-      'Orion-9 is an AI-powered Supply Chain Operating System and Control Tower connecting global freight visibility, inventory intelligence, risk sensing, and governed execution.',
+      'Orion-9 is an AI-powered Supply Chain Operating System connecting global freight visibility, inventory intelligence, risk sensing, and governed execution.',
     ogTitle: 'Orion-9 | Autonomous Supply Chain Operating System',
     ogDescription:
       'Autonomous risk sensing, canonical graph intelligence, and governed execution—engineered to keep global operations moving.',
@@ -278,7 +284,7 @@ export const DEFAULT_SITE_CONFIG: SiteConfigurationBundle = {
     },
     {
       id: 'media-3',
-      title: 'Control Tower Operational Cockpit',
+      title: 'Orion-9 OS Operational Cockpit',
       category: 'diagram',
       url: '/#control-tower',
       altText: 'Live vs bottleneck vs autonomous bypass telemetry inspection',

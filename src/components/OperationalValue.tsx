@@ -145,7 +145,7 @@ export const OperationalValue: React.FC = () => {
               READY FOR OPERATIONAL COMMAND
             </span>
             <h3 className="text-2xl sm:text-3xl font-extrabold text-white tracking-tight">
-              Access the Orion-9 Control Tower
+              Access Orion-9 OS
             </h3>
             <p className="text-sm text-white/70 leading-relaxed">
               Connect your enterprise supply chain data and experience the intelligence layer built for modern operations.

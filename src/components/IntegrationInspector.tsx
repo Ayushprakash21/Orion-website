@@ -45,7 +45,7 @@ export const IntegrationInspector: React.FC = () => {
                 <span>Verified Live Target</span>
               </div>
               <p className="text-[#566575] leading-relaxed text-xs font-sans">
-                The primary Launch action targets the deployed Orion-9 Control Tower on Cloudflare Workers edge runtime.
+                The primary Launch action targets the deployed Orion-9 OS on Cloudflare Workers edge runtime.
               </p>
               <div className="p-2.5 rounded-xl bg-white text-[11px] text-[#294D6B] break-all border border-[#D5E1E8] font-mono">
                 {destinationUrl}
