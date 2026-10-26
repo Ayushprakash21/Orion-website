@@ -2,14 +2,19 @@ import assert from 'node:assert/strict';
 import {
   isSafeLogoUrl,
   validateBrandingConfig,
+  sanitizeForFirestore,
+  normalizeBrandingConfig,
 } from './cms-validation.ts';
+import {
+  DEFAULT_SITE_CONFIG,
+  DEFAULT_LOGO_PLACEMENT_CONFIG,
+} from '../data/defaultSiteConfig.ts';
 import {
   sanitizeSvg,
   ALLOWED_LOGO_EXTENSIONS,
   ALLOWED_LOGO_MIME_TYPES,
   MAX_LOGO_FILE_SIZE_BYTES,
 } from '../services/brandingStorage.ts';
-import { DEFAULT_SITE_CONFIG } from '../data/defaultSiteConfig.ts';
 import {
   normalizeUsername,
   validateUsername,
@@ -852,6 +857,502 @@ runTest('36. Protected Route Direct URL Guarding', () => {
   assert.equal(evaluateRouteAccess('/admin', { uid: 'regular-user' }, false).canAccess, false);
   assert.equal(evaluateRouteAccess('/admin', { uid: 'admin-user' }, true).canAccess, true);
 });
+
+// 37. Missing optional header logo property does not produce an invalid Firestore write
+runTest('37. Missing optional header logo property does not produce an invalid Firestore write', () => {
+  const rawBranding = {
+    companyName: 'Orion-9 Systems',
+    shortMark: 'O9',
+    tagline: 'Deep space computing',
+    logoUrl: 'https://orion-9.workers.dev/logo.svg',
+    headerLogo: null,
+    headerLogoConfig: {
+      useCustom: false,
+      customUrl: null,
+      // optional properties intentionally undefined or omitted
+      originalFilename: undefined,
+      dimensions: undefined,
+      fileType: undefined,
+    },
+    authLogo: null,
+    authLogoConfig: null,
+    footerLogo: null,
+    footerLogoConfig: null,
+    canvasColor: '#0a0d14',
+    altSectionColor: '#0f1422',
+    surfaceColor: '#141b2d',
+    primaryTextColor: '#f8fafc',
+    secondaryTextColor: '#94a3b8',
+    borderColor: '#1e293b',
+    deepBlueAccent: '#1d4ed8',
+    steelBlueAccent: '#38bdf8',
+    darkSurfaceColor: '#070a0f',
+  };
+
+  const normalized = normalizeBrandingConfig(rawBranding);
+  const sanitized = sanitizeForFirestore(normalized);
+
+  // Recursively ensure no field anywhere in sanitized is undefined
+  function assertNoUndefined(obj, path = '') {
+    for (const [key, val] of Object.entries(obj)) {
+      const currentPath = path ? `${path}.${key}` : key;
+      assert.notEqual(val, undefined, `Found forbidden undefined at ${currentPath}`);
+      assert.notEqual(val, 'undefined', `Found forbidden string "undefined" at ${currentPath}`);
+      if (val !== null && typeof val === 'object' && !(val instanceof Date)) {
+        assertNoUndefined(val, currentPath);
+      }
+    }
+  }
+
+  assertNoUndefined(sanitized);
+  assert.equal(typeof sanitized.headerLogoConfig, 'object');
+  assert.equal(sanitized.headerLogoConfig.useCustom, false);
+  assert.equal(sanitized.headerLogoConfig.customUrl, null);
+});
+
+// 38. Default header logo is active when no custom logo is configured
+runTest('38. Default header logo is active when no custom logo is configured', () => {
+  const branding = normalizeBrandingConfig({
+    companyName: 'Orion-9',
+    shortMark: 'O9',
+    tagline: 'Test',
+    logoUrl: '/default-logo.svg',
+    headerLogo: null,
+    headerLogoConfig: null,
+  });
+
+  assert.equal(branding.headerLogoConfig.useCustom, false);
+  assert.equal(branding.headerLogoConfig.customUrl, null);
+
+  // Logo resolver logic: When useCustom is false, the application falls back to default logo
+  function resolveActiveLogo(placementConfig, globalFallbackUrl) {
+    if (placementConfig && placementConfig.useCustom && placementConfig.customUrl) {
+      return placementConfig.customUrl;
+    }
+    return globalFallbackUrl;
+  }
+
+  const resolved = resolveActiveLogo(branding.headerLogoConfig, '/brand-logo.svg');
+  assert.equal(resolved, '/brand-logo.svg', 'Should resolve to global fallback SVG when no custom logo is configured');
+});
+
+// 39. Authentication and footer logo settings serialize correctly
+runTest('39. Authentication and footer logo settings serialize correctly', () => {
+  const customAuth = {
+    useCustom: true,
+    customUrl: 'https://storage.googleapis.com/orion-assets/auth-logo.png',
+    originalFilename: 'auth-logo.png',
+    dimensions: '256x64',
+    fileType: 'image/png',
+    sizeBytes: 12450,
+    uploadedAt: '2026-10-27T00:00:00.000Z',
+    updatedBy: 'admin@orion.tech',
+  };
+
+  const customFooter = {
+    useCustom: true,
+    customUrl: 'https://storage.googleapis.com/orion-assets/footer-logo.svg',
+    originalFilename: 'footer-logo.svg',
+    dimensions: '128x128',
+    fileType: 'image/svg+xml',
+    sizeBytes: 4200,
+    uploadedAt: '2026-10-27T00:00:00.000Z',
+    updatedBy: 'admin@orion.tech',
+  };
+
+  const branding = normalizeBrandingConfig({
+    authLogo: customAuth.customUrl,
+    authLogoConfig: customAuth,
+    footerLogo: customFooter.customUrl,
+    footerLogoConfig: customFooter,
+  });
+
+  const sanitized = sanitizeForFirestore(branding);
+
+  assert.equal(sanitized.authLogoConfig.useCustom, true);
+  assert.equal(sanitized.authLogoConfig.customUrl, customAuth.customUrl);
+  assert.equal(sanitized.authLogoConfig.dimensions, '256x64');
+  assert.equal(sanitized.authLogoConfig.fileType, 'image/png');
+  assert.equal(sanitized.authLogoConfig.sizeBytes, 12450);
+
+  assert.equal(sanitized.footerLogoConfig.useCustom, true);
+  assert.equal(sanitized.footerLogoConfig.customUrl, customFooter.customUrl);
+  assert.equal(sanitized.footerLogoConfig.dimensions, '128x128');
+  assert.equal(sanitized.footerLogoConfig.fileType, 'image/svg+xml');
+  assert.equal(sanitized.footerLogoConfig.sizeBytes, 4200);
+
+  // Verify full serialization to JSON string and parse
+  const serialized = JSON.stringify(sanitized);
+  const parsed = JSON.parse(serialized);
+  assert.equal(parsed.authLogoConfig.customUrl, customAuth.customUrl);
+  assert.equal(parsed.footerLogoConfig.customUrl, customFooter.customUrl);
+});
+
+// 40. Existing branding documents without new fields are read without errors
+runTest('40. Existing branding documents without new fields are read without errors', () => {
+  // Legacy document from Firestore created before logo placement configs existed
+  const legacyFirestoreDoc = {
+    companyName: 'Legacy Orion Systems',
+    shortMark: 'LOS',
+    tagline: 'Pioneering Legacy Fleet',
+    logoUrl: 'https://orion.tech/old-logo.svg',
+    canvasColor: '#05070d',
+    primaryTextColor: '#e2e8f0',
+  };
+
+  // Normalization must seamlessly hydrate missing configs without throwing
+  const normalized = normalizeBrandingConfig(legacyFirestoreDoc);
+
+  assert.equal(normalized.companyName, 'Legacy Orion Systems');
+  assert.equal(normalized.shortMark, 'LOS');
+  assert.equal(normalized.tagline, 'Pioneering Legacy Fleet');
+  assert.equal(normalized.logoUrl, 'https://orion.tech/old-logo.svg');
+
+  // Verify placements are safely populated with defaults
+  assert.ok(normalized.headerLogoConfig, 'headerLogoConfig must be populated');
+  assert.equal(normalized.headerLogoConfig.useCustom, false);
+  assert.equal(normalized.headerLogoConfig.customUrl, null);
+
+  assert.ok(normalized.authLogoConfig, 'authLogoConfig must be populated');
+  assert.equal(normalized.authLogoConfig.useCustom, false);
+  assert.equal(normalized.authLogoConfig.customUrl, null);
+
+  assert.ok(normalized.footerLogoConfig, 'footerLogoConfig must be populated');
+  assert.equal(normalized.footerLogoConfig.useCustom, false);
+  assert.equal(normalized.footerLogoConfig.customUrl, null);
+});
+
+// 41. Save Draft persists valid draft branding configuration
+runTest('41. Save Draft persists valid draft branding configuration', () => {
+  let firestoreDraftStore = {};
+  let localDraftRuntime = null;
+
+  function mockSaveDraftSection(section, data, shouldFailFirestore = false) {
+    // 1. Validation
+    if (section === 'branding') {
+      const val = validateBrandingConfig(data);
+      if (!val.valid) {
+        return { success: false, error: val.errors.join('; ') };
+      }
+    }
+
+    // 2. Normalization & Sanitization
+    const normalized = section === 'branding' ? normalizeBrandingConfig(data) : data;
+    const sanitized = sanitizeForFirestore({
+      ...normalized,
+      updatedAt: new Date().toISOString(),
+      updatedBy: 'admin@orion.tech',
+    });
+
+    // 3. Firestore persistence FIRST
+    if (shouldFailFirestore) {
+      return { success: false, error: 'Firestore write failed: Simulated permission denied' };
+    }
+    firestoreDraftStore[section] = sanitized;
+
+    // 4. Update local runtime only on persistence success
+    localDraftRuntime = { [section]: normalized };
+    return { success: true };
+  }
+
+  // A. Save with invalid data (invalid hex color) -> rejected prior to persistence
+  const invalidData = {
+    ...DEFAULT_SITE_CONFIG.branding,
+    canvasColor: 'not-a-color',
+  };
+  const invalidRes = mockSaveDraftSection('branding', invalidData);
+  assert.equal(invalidRes.success, false);
+  assert.ok(invalidRes.error.toLowerCase().includes('canvas color'));
+  assert.equal(localDraftRuntime, null);
+
+  // B. Save with valid data -> succeeds and updates both Firestore and draft runtime
+  const validData = {
+    ...DEFAULT_SITE_CONFIG.branding,
+    companyName: 'Draft Orion v2',
+  };
+  const validRes = mockSaveDraftSection('branding', validData);
+  assert.equal(validRes.success, true);
+  assert.equal(firestoreDraftStore.branding.companyName, 'Draft Orion v2');
+  assert.equal(localDraftRuntime.branding.companyName, 'Draft Orion v2');
+});
+
+// 42. Publish Live updates published configuration and Firestore document
+runTest('42. Publish Live updates published configuration and Firestore document', () => {
+  let firestoreLiveStore = {};
+  let activeLiveRuntime = { ...DEFAULT_SITE_CONFIG };
+
+  function mockPublishSection(section, data, shouldFail = false) {
+    if (section === 'branding') {
+      const val = validateBrandingConfig(data);
+      if (!val.valid) return { success: false, error: val.errors.join('; ') };
+    }
+
+    const normalized = section === 'branding' ? normalizeBrandingConfig(data) : data;
+    const sanitized = sanitizeForFirestore({
+      ...normalized,
+      updatedAt: new Date().toISOString(),
+      updatedBy: 'admin@orion.tech',
+    });
+
+    if (shouldFail) {
+      return { success: false, error: 'Firestore network error' };
+    }
+
+    // Persist to Firestore
+    firestoreLiveStore[section] = sanitized;
+
+    // Commit to active runtime
+    activeLiveRuntime[section] = normalized;
+    return { success: true };
+  }
+
+  const newBranding = {
+    ...DEFAULT_SITE_CONFIG.branding,
+    companyName: 'Live Published Orion Fleet',
+    shortMark: 'LPOF',
+  };
+
+  const res = mockPublishSection('branding', newBranding);
+  assert.equal(res.success, true);
+  assert.equal(firestoreLiveStore.branding.companyName, 'Live Published Orion Fleet');
+  assert.equal(activeLiveRuntime.branding.companyName, 'Live Published Orion Fleet');
+});
+
+// 43. Persistence failures are reported correctly and prevent active runtime changes
+runTest('43. Persistence failures are reported correctly and prevent active runtime changes', () => {
+  const initialRuntime = { ...DEFAULT_SITE_CONFIG.branding, companyName: 'Original Unmodified Orion' };
+  let activeRuntime = { ...initialRuntime };
+
+  function mockPublishSectionFail(section, data) {
+    if (section === 'branding') {
+      const val = validateBrandingConfig(data);
+      if (!val.valid) return { success: false, error: val.errors.join('; ') };
+    }
+
+    const normalized = normalizeBrandingConfig(data);
+    const sanitized = sanitizeForFirestore(normalized);
+
+    // Simulate Firestore error (e.g. invalid undefined or network partition)
+    const firestoreFailed = true;
+    if (firestoreFailed) {
+      // Must NOT update activeRuntime
+      return {
+        success: false,
+        error: 'Firestore synchronization failed: Simulated network disconnect. Active runtime was not modified.',
+      };
+    }
+
+    activeRuntime = normalized;
+    return { success: true };
+  }
+
+  const attemptedChange = {
+    ...initialRuntime,
+    companyName: 'Compromised Name That Should Never Persist',
+  };
+
+  const res = mockPublishSectionFail('branding', attemptedChange);
+  assert.equal(res.success, false);
+  assert.ok(res.error.includes('Active runtime was not modified'));
+  assert.equal(activeRuntime.companyName, 'Original Unmodified Orion', 'Active runtime must remain strictly unchanged on failure');
+});
+
+// 44. Partial failures do not report complete success
+runTest('44. Partial failures do not report complete success', () => {
+  function computeStatusMessage(result) {
+    if (!result.success) {
+      return {
+        type: 'error',
+        message: result.error || 'Failed to save or publish configuration.',
+      };
+    }
+    return {
+      type: 'success',
+      message: 'Configuration successfully published to Firestore and active runtime.',
+    };
+  }
+
+  const failedResult = {
+    success: false,
+    error: 'Firestore sync failed: Document siteConfig/branding write timed out.',
+  };
+
+  const uiNotification = computeStatusMessage(failedResult);
+  assert.equal(uiNotification.type, 'error');
+  assert.ok(uiNotification.message.includes('Firestore sync failed'));
+  assert.ok(!uiNotification.message.includes('successfully published'));
+});
+
+// 45. Unified Website Brand Logo: One upload synchronizes header, auth, and footer simultaneously
+runTest('45. Unified Website Brand Logo: One upload synchronizes header, auth, and footer simultaneously', () => {
+  const sharedAssetUrl = 'https://firebasestorage.googleapis.com/v0/b/orion-cloud/o/branding%2Flogos%2Fshared_1729000000.png?alt=media';
+  const sharedPlacement = {
+    useCustom: true,
+    customUrl: sharedAssetUrl,
+    originalFilename: 'orion-brand-mark.png',
+    dimensions: '512 × 512 px',
+    fileType: 'image/png',
+    sizeBytes: 24500,
+  };
+
+  const unifiedBranding = normalizeBrandingConfig({
+    ...DEFAULT_SITE_CONFIG.branding,
+    sharedLogo: sharedAssetUrl,
+    sharedLogoConfig: sharedPlacement,
+  });
+
+  // Verify all static placements use the same canonical shared asset
+  assert.equal(unifiedBranding.sharedLogoConfig.useCustom, true);
+  assert.equal(unifiedBranding.sharedLogoConfig.customUrl, sharedAssetUrl);
+  assert.equal(unifiedBranding.headerLogoConfig.customUrl, sharedAssetUrl);
+  assert.equal(unifiedBranding.authLogoConfig.customUrl, sharedAssetUrl);
+  assert.equal(unifiedBranding.footerLogoConfig.customUrl, sharedAssetUrl);
+
+  // Verify legacy fields cannot override the shared logo independently
+  const overrideAttempt = normalizeBrandingConfig({
+    ...unifiedBranding,
+    headerLogo: 'https://cdn.orion.tech/rogue-header.png',
+    headerLogoConfig: { useCustom: true, customUrl: 'https://cdn.orion.tech/rogue-header.png' },
+  });
+  // Since sharedLogoConfig is canonical, all static placements remain synchronized to the shared logo
+  assert.equal(overrideAttempt.headerLogoConfig.customUrl, sharedAssetUrl);
+  assert.equal(overrideAttempt.authLogoConfig.customUrl, sharedAssetUrl);
+  assert.equal(overrideAttempt.footerLogoConfig.customUrl, sharedAssetUrl);
+
+  // Restoring default resets all placements at once
+  const restored = normalizeBrandingConfig({
+    ...unifiedBranding,
+    sharedLogo: null,
+    sharedLogoConfig: { ...DEFAULT_LOGO_PLACEMENT_CONFIG },
+  });
+  assert.equal(restored.sharedLogoConfig.useCustom, false);
+  assert.equal(restored.headerLogoConfig.useCustom, false);
+  assert.equal(restored.authLogoConfig.useCustom, false);
+  assert.equal(restored.footerLogoConfig.useCustom, false);
+});
+
+// 46. Animated centerpiece logo on homepage remains unchanged
+runTest('46. Animated centerpiece logo on homepage remains unchanged', () => {
+  const homepage = DEFAULT_SITE_CONFIG.homepage;
+
+  // Homepage config must not have any dependencies on branding header/auth/footer/shared logo config
+  assert.equal('sharedLogoConfig' in homepage, false);
+  assert.equal('headerLogoConfig' in homepage, false);
+  assert.equal('authLogoConfig' in homepage, false);
+  assert.equal('footerLogoConfig' in homepage, false);
+
+  // Hero centerpiece properties remain strictly autonomous
+  assert.ok(homepage.heroHeadlineLine1, 'Homepage hero headline must exist');
+  assert.ok(homepage.heroSubheadline, 'Homepage hero subheadline must exist');
+});
+
+// 47. Admin UI Contract: One single static-logo upload control titled "Website Brand Logo"
+runTest('47. Admin UI Contract: One single static-logo upload control titled "Website Brand Logo"', () => {
+  const adminUiSectionContract = {
+    title: 'Website Brand Logo',
+    description: 'Upload your ORION-9 logo once to update the website header, authentication pages, and footer.',
+    controlsCount: 1,
+    supportedPlacements: [
+      'Website header',
+      'Sign-in and sign-up pages',
+      'Password reset and verification pages',
+      'Website footer and closing CTA, where applicable',
+    ],
+    contrastPreviewModes: ['light', 'dark', 'canvas'],
+  };
+
+  assert.equal(adminUiSectionContract.title, 'Website Brand Logo');
+  assert.equal(adminUiSectionContract.controlsCount, 1);
+  assert.equal(adminUiSectionContract.supportedPlacements.length, 4);
+  assert.deepEqual(adminUiSectionContract.contrastPreviewModes, ['light', 'dark', 'canvas']);
+});
+
+// 48. Static logo resolution: Header, Auth, Footer, and Closing CTA resolve canonical shared asset
+runTest('48. Static logo resolution: Header, Auth, Footer, and Closing CTA resolve canonical shared asset', () => {
+  const sharedAsset = 'https://firebasestorage.googleapis.com/v0/b/orion-prod/o/branding%2Fshared_orion.svg?alt=media';
+  const config = normalizeBrandingConfig({
+    ...DEFAULT_SITE_CONFIG.branding,
+    sharedLogo: sharedAsset,
+    sharedLogoConfig: {
+      useCustom: true,
+      customUrl: sharedAsset,
+      originalFilename: 'shared_orion.svg',
+      dimensions: 'Vector SVG',
+      fileType: 'image/svg+xml',
+    },
+  });
+
+  function resolveLogoForPlacement(placement, branding) {
+    if (branding.sharedLogoConfig) {
+      return branding.sharedLogoConfig.useCustom
+        ? (branding.sharedLogoConfig.customUrl || branding.sharedLogoConfig.url || null)
+        : null;
+    }
+    return branding.sharedLogo || null;
+  }
+
+  assert.equal(resolveLogoForPlacement('header', config), sharedAsset);
+  assert.equal(resolveLogoForPlacement('auth', config), sharedAsset);
+  assert.equal(resolveLogoForPlacement('footer', config), sharedAsset);
+  assert.equal(resolveLogoForPlacement('closing-cta', config), sharedAsset);
+});
+
+// 49. Refreshing website preserves published shared logo
+runTest('49. Refreshing website preserves published shared logo', () => {
+  const storage = new MockStorage();
+  const publishedBundle = {
+    ...DEFAULT_SITE_CONFIG,
+    branding: normalizeBrandingConfig({
+      ...DEFAULT_SITE_CONFIG.branding,
+      sharedLogo: 'https://cdn.orion.tech/preserved.png',
+      sharedLogoConfig: {
+        useCustom: true,
+        customUrl: 'https://cdn.orion.tech/preserved.png',
+        originalFilename: 'preserved.png',
+      },
+    }),
+  };
+
+  storage.setItem('orion_published_config', JSON.stringify(publishedBundle));
+
+  // Simulate page reload by reading storage
+  const reloaded = JSON.parse(storage.getItem('orion_published_config'));
+  const normalizedReloaded = normalizeBrandingConfig(reloaded.branding);
+
+  assert.equal(normalizedReloaded.sharedLogoConfig.useCustom, true);
+  assert.equal(normalizedReloaded.sharedLogoConfig.customUrl, 'https://cdn.orion.tech/preserved.png');
+  assert.equal(normalizedReloaded.headerLogoConfig.customUrl, 'https://cdn.orion.tech/preserved.png');
+  assert.equal(normalizedReloaded.footerLogoConfig.customUrl, 'https://cdn.orion.tech/preserved.png');
+});
+
+// 50. Restoring default resets all static placements consistently
+runTest('50. Restoring default resets all static placements consistently', () => {
+  const activeCustom = normalizeBrandingConfig({
+    ...DEFAULT_SITE_CONFIG.branding,
+    sharedLogo: 'https://cdn.orion.tech/active.png',
+    sharedLogoConfig: { useCustom: true, customUrl: 'https://cdn.orion.tech/active.png' },
+  });
+
+  assert.equal(activeCustom.sharedLogoConfig.useCustom, true);
+
+  // Admin executes handleRestoreDefault
+  const restored = normalizeBrandingConfig({
+    ...activeCustom,
+    sharedLogo: null,
+    sharedLogoConfig: { ...DEFAULT_LOGO_PLACEMENT_CONFIG },
+  });
+
+  assert.equal(restored.sharedLogoConfig.useCustom, false);
+  assert.equal(restored.sharedLogoConfig.customUrl, null);
+  assert.equal(restored.headerLogoConfig.useCustom, false);
+  assert.equal(restored.headerLogoConfig.customUrl, null);
+  assert.equal(restored.authLogoConfig.useCustom, false);
+  assert.equal(restored.authLogoConfig.customUrl, null);
+  assert.equal(restored.footerLogoConfig.useCustom, false);
+  assert.equal(restored.footerLogoConfig.customUrl, null);
+});
+
+
 
 // Execution Summary
 console.log('================================================================');

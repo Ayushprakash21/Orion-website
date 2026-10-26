@@ -802,3 +802,269 @@ export function evaluateVehicleKinematics(params: {
     operationalState,
   };
 }
+
+// ============================================================================
+// 9-STAGE MASTER END-TO-END SUPPLY CHAIN SCENE DEFINITIONS
+// ============================================================================
+export interface SupplyChainMetric {
+  label: string;
+  value: string;
+  status?: 'normal' | 'warning' | 'optimal';
+}
+
+export interface SupplyChainSceneDefinition {
+  index: number;
+  number: string;
+  id: string;
+  shortLabel: string;
+  title: string;
+  subtitle: string;
+  narrative: string;
+  telemetryTag: string;
+  metrics: SupplyChainMetric[];
+  scrollTarget: number;
+  cameraPos: Vec3;
+  lookAt: Vec3;
+  fov: number;
+}
+
+export const SUPPLY_CHAIN_SCENES: SupplyChainSceneDefinition[] = [
+  {
+    index: 0,
+    number: '01',
+    id: 'raw-materials',
+    shortLabel: '01 Origins',
+    title: 'Raw Material Origins',
+    subtitle: 'Mineral Extraction, Agriculture & Sourcing Verification',
+    narrative:
+      'The journey begins before components ever enter a factory. Orion-9 integrates mineral extraction terraces, agricultural silos, and raw material processing hubs—monitoring purity grades, extraction velocity, and certified source traceability in real time.',
+    telemetryTag: 'EXTRACTION ORIGINS · 98.4% LOT INTEGRITY · BATCH LOT #RM-4421',
+    metrics: [
+      { label: 'Extraction Yield', value: '14,250 T/Day', status: 'optimal' },
+      { label: 'Reserve Buffer', value: '28.5 Days', status: 'normal' },
+      { label: 'Origin Verification', value: '100% Cryptographic', status: 'optimal' },
+    ],
+    scrollTarget: 0.14,
+    cameraPos: { x: -84, y: 16.5, z: 28 },
+    lookAt: { x: -82, y: 3.2, z: 2 },
+    fov: 30,
+  },
+  {
+    index: 1,
+    number: '02',
+    id: 'suppliers',
+    shortLabel: '02 Suppliers',
+    title: 'Supplier & Component Network',
+    subtitle: 'Multi-Tier Precision Foundries & Staging Buffers',
+    narrative:
+      'Raw materials transition into Tier-1 and Tier-2 component fabrication plants. Orion-9 continuously links multi-enterprise procurement agreements, monitoring live machine utilization, sub-assembly lead times, and supplier operational risk.',
+    telemetryTag: 'TIER-1 & TIER-2 SYNCHRONIZED · 84% CAPACITY UTILIZATION',
+    metrics: [
+      { label: 'Supplier Health Index', value: '99.2% Nominal', status: 'optimal' },
+      { label: 'Sub-Assembly Lead Time', value: '4.6 Days', status: 'normal' },
+      { label: 'Connected Fabricators', value: '318 Facilities', status: 'normal' },
+    ],
+    scrollTarget: 0.26,
+    cameraPos: { x: -48, y: 14.5, z: 24 },
+    lookAt: { x: -44, y: 2.8, z: 0 },
+    fov: 29,
+  },
+  {
+    index: 2,
+    number: '03',
+    id: 'manufacturing',
+    shortLabel: '03 Factory',
+    title: 'Intelligent Smart Manufacturing',
+    subtitle: 'Robotic Assembly, Station Cycle Time & Automated Optical QC',
+    narrative:
+      'Inside the automated smart factory, modular assembly lines synchronize articulated 6-axis robotic arms with holographic optical inspection scanners—verifying structural tolerances and zero-defect compliance at line speed.',
+    telemetryTag: 'OEE 94.8% · SUB-MILLIMETER OPTICAL QC · ZERO-DEFECT GATE',
+    metrics: [
+      { label: 'Overall Equipment Effectiveness', value: '94.8% OEE', status: 'optimal' },
+      { label: 'Robotic Station Cycle', value: '3.8 Sec', status: 'optimal' },
+      { label: 'First-Pass Quality Yield', value: '99.98%', status: 'optimal' },
+    ],
+    scrollTarget: 0.38,
+    cameraPos: { x: -4, y: 12.0, z: 22 },
+    lookAt: { x: 0, y: 2.5, z: 0 },
+    fov: 28,
+  },
+  {
+    index: 3,
+    number: '04',
+    id: 'warehousing',
+    shortLabel: '04 Warehousing',
+    title: 'Warehousing & Inventory Optimization',
+    subtitle: 'ASRS High-Bay Vertical Storage & Autonomous AGV Routing',
+    narrative:
+      'Finished products enter the automated distribution center. High-bay ASRS storage aisles and floor-level AGVs dynamically balance inventory staging against live consumer demand—preventing bullwhip distortions and stockouts.',
+    telemetryTag: 'ASRS HIGH-BAY ACTIVE · 14.8X ANNUAL TURNS · AGV FLEET LOCK',
+    metrics: [
+      { label: 'Inventory Velocity', value: '14.8x Annually', status: 'optimal' },
+      { label: 'Safety Stock Buffer', value: '14.2 Days', status: 'normal' },
+      { label: 'Autonomous AGV Dispatch', value: '100% On-Target', status: 'optimal' },
+    ],
+    scrollTarget: 0.50,
+    cameraPos: { x: 38, y: 15.5, z: 25 },
+    lookAt: { x: 40, y: 3.5, z: 0 },
+    fov: 29,
+  },
+  {
+    index: 4,
+    number: '05',
+    id: 'multimodal',
+    shortLabel: '05 Multimodal',
+    title: 'Multimodal Global Distribution',
+    subtitle: 'Deepwater Container Berth, Air Cargo Freighters, Rail & Highway',
+    narrative:
+      'Goods move into the international physical corridor. Orion-9 harmonizes ultra-large container vessels berthed under post-Panamax gantry cranes, intercontinental air-freight jets, container rail cars, and commercial line-haul trucks under unified satellite tracking.',
+    telemetryTag: 'AIS VESSEL LOCK · ADS-B TELEMETRY · 142 GLOBAL HUBS',
+    metrics: [
+      { label: 'Tracked Maritime/Air Fleets', value: '1,420 En Route', status: 'normal' },
+      { label: 'Port Quay Turnaround', value: '-18% Dwell Time', status: 'optimal' },
+      { label: 'Multimodal Schedule Adherence', value: '99.6%', status: 'optimal' },
+    ],
+    scrollTarget: 0.63,
+    cameraPos: { x: 22, y: 22.0, z: 46 },
+    lookAt: { x: 20, y: 1.5, z: 12 },
+    fov: 32,
+  },
+  {
+    index: 5,
+    number: '06',
+    id: 'fulfillment',
+    shortLabel: '06 Fulfillment',
+    title: 'Retail & End-Customer Fulfillment',
+    subtitle: 'Store Replenishment, Business Handoffs & Verified Proof-of-Delivery',
+    narrative:
+      'The physical supply chain reaches completion at retail storefronts, commercial partners, and direct enterprise facilities. Electric delivery fleets execute cryptographic proof-of-delivery handoffs, verifying SLA compliance end-to-end.',
+    telemetryTag: 'VERIFIED CUSTOMER RECEIPT · 99.8% OTIF · ZERO-TRUST POD',
+    metrics: [
+      { label: 'On-Time In-Full (OTIF)', value: '99.8%', status: 'optimal' },
+      { label: 'Delivery Time Precision', value: '±4 Minutes', status: 'optimal' },
+      { label: 'Customer SLA Satisfaction', value: '99.9%', status: 'optimal' },
+    ],
+    scrollTarget: 0.75,
+    cameraPos: { x: 86, y: 12.5, z: 24 },
+    lookAt: { x: 88, y: 2.5, z: 0 },
+    fov: 28,
+  },
+  {
+    index: 6,
+    number: '07',
+    id: 'intelligence',
+    shortLabel: '07 Intelligence',
+    title: 'Orion-9 Intelligence Engine',
+    subtitle: 'Neural Knowledge Graph, Predictive Sensing & Governed Orchestration',
+    narrative:
+      'A continuous intelligence matrix binds every node across the supply chain into an active operational graph. Orion-9 detects multi-echelon demand swings, simulates stochastic corridor delays, and coordinates governed decisions with sub-second execution.',
+    telemetryTag: 'NEURAL REASONING MATRIX · 1.42M ENTITY NODES · ZERO-LATENCY',
+    metrics: [
+      { label: 'Harmonized Knowledge Graph', value: '1.42M Entities', status: 'optimal' },
+      { label: 'Event Ingestion Throughput', value: '42.8K Events/Sec', status: 'optimal' },
+      { label: 'Governed Autonomous Action', value: 'Closed-Loop', status: 'optimal' },
+    ],
+    scrollTarget: 0.84,
+    cameraPos: { x: 4, y: 52.0, z: 72 },
+    lookAt: { x: 0, y: 4.0, z: 0 },
+    fov: 35,
+  },
+  {
+    index: 7,
+    number: '08',
+    id: 'disruption',
+    shortLabel: '08 Disruption Sim',
+    title: 'Predictive Disruption & Stochastic Bypass',
+    subtitle: '[SIMULATED DEMONSTRATION SCENARIO] Automated Pareto Reroute',
+    narrative:
+      'DEMONSTRATION SCENARIO: A simulated 48-hour supplier port delay threatens factory starvation. Orion-9 flags the bottleneck, models downstream delivery exposure, and executes a stochastic Pareto reroute via air cargo bypass—restoring production buffers before SLAs break.',
+    telemetryTag: '[SIMULATED DEMO] BOTTLENECK DETECTED → AIR BYPASS REROUTE ACTIVE',
+    metrics: [
+      { label: 'Disruption Event', value: 'Simulated Feeder Delay', status: 'warning' },
+      { label: 'Mitigation Corridor', value: 'Secondary Air Bypass', status: 'optimal' },
+      { label: 'Financial Exposure Protected', value: '$1.85M Recovered', status: 'optimal' },
+    ],
+    scrollTarget: 0.92,
+    cameraPos: { x: -28, y: 22.0, z: 36 },
+    lookAt: { x: -23, y: 3.5, z: -2 },
+    fov: 31,
+  },
+  {
+    index: 8,
+    number: '09',
+    id: 'global-reveal',
+    shortLabel: '09 Global Twin',
+    title: 'Global Digital Twin Overview',
+    subtitle: 'Complete End-to-End Orchestration · Raw Materials to Customer',
+    narrative:
+      'From raw-material extraction to supplier networks, smart manufacturing, automated warehousing, multimodal transit corridors, and final customer delivery—Orion-9 is the intelligent operating system commanding global supply chains.',
+    telemetryTag: 'END-TO-END VISIBILITY · CLOSED-LOOP OPERATING SYSTEM',
+    metrics: [
+      { label: 'Full Network Coverage', value: 'Global Multi-Tier', status: 'optimal' },
+      { label: 'Corridor Resiliency Index', value: '99.98%', status: 'optimal' },
+      { label: 'Operational Operating System', value: 'Live Orion-9 OS', status: 'optimal' },
+    ],
+    scrollTarget: 1.0,
+    cameraPos: { x: 0, y: 82.0, z: 128 },
+    lookAt: { x: 0, y: 2.0, z: 0 },
+    fov: 38,
+  },
+];
+
+export interface MasterSupplyChainState extends WorldScrollState {
+  activeSceneIndex: number;
+  activeScene: SupplyChainSceneDefinition;
+  sceneLocalProgress: number;
+  disruptionTriggered: boolean;
+  rerouteResolved: boolean;
+}
+
+export function evaluateMasterSupplyChainState(
+  rawScrollProgress: number,
+  manualDisruptionOverride?: boolean | null
+): MasterSupplyChainState {
+  const p = clamp01(rawScrollProgress);
+  const baseState = evaluateWorldScrollState(p);
+
+  // Map progress to the 9 scenes
+  const sceneCount = SUPPLY_CHAIN_SCENES.length;
+  let activeSceneIndex = 0;
+  if (p < 0.18) {
+    activeSceneIndex = 0;
+  } else if (p < 0.31) {
+    activeSceneIndex = 1;
+  } else if (p < 0.44) {
+    activeSceneIndex = 2;
+  } else if (p < 0.56) {
+    activeSceneIndex = 3;
+  } else if (p < 0.69) {
+    activeSceneIndex = 4;
+  } else if (p < 0.79) {
+    activeSceneIndex = 5;
+  } else if (p < 0.88) {
+    activeSceneIndex = 6;
+  } else if (p < 0.96) {
+    activeSceneIndex = 7;
+  } else {
+    activeSceneIndex = 8;
+  }
+
+  const activeScene = SUPPLY_CHAIN_SCENES[activeSceneIndex];
+  const sceneLocalProgress = clamp01((p - (activeSceneIndex / sceneCount)) * sceneCount);
+
+  // Smooth camera interpolation toward the active scene
+  const disruptionTriggered = manualDisruptionOverride === true || (activeSceneIndex === 7 && p >= 0.89);
+  const rerouteResolved = manualDisruptionOverride === false || (activeSceneIndex === 7 && p >= 0.93) || activeSceneIndex >= 8;
+
+  return {
+    ...baseState,
+    cameraPos: activeScene.cameraPos,
+    lookAt: activeScene.lookAt,
+    fov: activeScene.fov,
+    activeSceneIndex,
+    activeScene,
+    sceneLocalProgress,
+    disruptionTriggered,
+    rerouteResolved,
+  };
+}

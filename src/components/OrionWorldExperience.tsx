@@ -1,23 +1,54 @@
+/**
+ * ORION-9 MASTER ANIMATION — END-TO-END INTELLIGENT SUPPLY CHAIN OPERATING SYSTEM
+ * Homepage Centerpiece Interactive Digital Twin
+ * 
+ * Communicates the complete physical and intelligence journey spanning:
+ * Scene 1: Raw Material Origins (Mining, Agriculture, Material Processing)
+ * Scene 2: Supplier & Component Network (Tier-1/Tier-2 Foundries & Facilities)
+ * Scene 3: Intelligent Manufacturing (Smart Factory, Robotic Arms, Optical QC)
+ * Scene 4: Warehousing & Inventory (ASRS High-Bay Storage, AGVs, Replenishment)
+ * Scene 5: Multimodal Global Distribution (Deepwater Port, Cargo Jets, Rail & Road)
+ * Scene 6: Retail, Business & End Customer (Fulfillment, Verified Proof-of-Delivery)
+ * Scene 7: Orion-9 Intelligence Engine (Neural Knowledge Graph, Real-Time Ingestion)
+ * Scene 8: Predictive Disruption & Stochastic Reroute (Simulated Demonstration Scenario)
+ * Scene 9: Global Digital Twin Overview (Continuous End-to-End Operating Picture)
+ */
+
 import React, { useEffect, useRef, useState, useCallback } from 'react';
 import * as THREE from 'three';
 import {
-  WORLD_PROCESS_STEPS,
-  evaluateWorldScrollState,
+  SUPPLY_CHAIN_SCENES,
+  evaluateMasterSupplyChainState,
   evaluateHeroIntroSequence,
   clamp01,
   lerpScalar,
+  catmullRomVec3,
+  smoothstep,
+  type MasterSupplyChainState,
 } from '../utils/cinematic-choreography';
 import {
   detectSoftwareWebGL,
   createGpuFramePacer,
   setupStudioEnvironment,
   createRoutePulseShaderMaterial,
-  createCompositeContainerShip,
-  createCompositeCargoAircraft,
-  createCompositeFreightTruck,
 } from '../utils/three-logistics-craft';
+import { buildEndToEndSupplyChainWorld } from '../utils/end-to-end-supply-chain-craft';
 import { useSiteConfig } from '../context/SiteConfigContext';
 import { OrionHeroBrandLockup } from './OrionLogo';
+import {
+  AlertTriangle,
+  CheckCircle2,
+  Cpu,
+  Layers,
+  ArrowRight,
+  RotateCcw,
+  Sparkles,
+  Zap,
+  Globe2,
+  ShieldCheck,
+  ChevronRight,
+  TrendingUp,
+} from 'lucide-react';
 
 export const OrionWorldExperience: React.FC = () => {
   const { activeConfig } = useSiteConfig();
@@ -26,9 +57,17 @@ export const OrionWorldExperience: React.FC = () => {
 
   const scrollProgressRef = useRef<number>(0);
   const smoothedScrollRef = useRef<number>(0);
-  const [hudState, setHudState] = useState(() => evaluateWorldScrollState(0));
+
+  const [hudState, setHudState] = useState<MasterSupplyChainState>(() =>
+    evaluateMasterSupplyChainState(0)
+  );
   const lastHudUpdateRef = useRef<number>(0);
 
+  // Interactive Disruption Simulation State
+  const [manualDisruption, setManualDisruption] = useState<boolean | null>(null);
+  const [isSimulatingReroute, setIsSimulatingReroute] = useState<boolean>(false);
+
+  // 5-Stage Hero Logo Intro State (Preserves initial 3.8s reveal & ambient loop)
   const [introState, setIntroState] = useState(() => {
     const prefersReduced =
       typeof window !== 'undefined' &&
@@ -63,7 +102,6 @@ export const OrionWorldExperience: React.FC = () => {
       if (elapsed <= 3850) {
         setIntroState(evaluateHeroIntroSequence(elapsed, false));
       } else if (scrollProgressRef.current < 0.16 && now - lastAmbientUpdate >= 64) {
-        // Throttled post-reveal 8s ambient loop (~15fps only while hero is visible)
         lastAmbientUpdate = now;
         setIntroState(evaluateHeroIntroSequence(elapsed, false));
       }
@@ -118,6 +156,26 @@ export const OrionWorldExperience: React.FC = () => {
     };
   }, []);
 
+  // Trigger Simulated Disruption Scenario
+  const handleTriggerDisruption = () => {
+    setManualDisruption(true);
+    setIsSimulatingReroute(false);
+  };
+
+  const handleExecuteReroute = () => {
+    setIsSimulatingReroute(true);
+    setTimeout(() => {
+      setManualDisruption(false);
+      setIsSimulatingReroute(false);
+    }, 1800);
+  };
+
+  const handleResetSimulation = () => {
+    setManualDisruption(null);
+    setIsSimulatingReroute(false);
+  };
+
+  // Three.js World Construction
   useEffect(() => {
     const mount = canvasMountRef.current;
     if (!mount) return;
@@ -129,10 +187,10 @@ export const OrionWorldExperience: React.FC = () => {
     const scene = new THREE.Scene();
     const skyColor = new THREE.Color(0xe6f3fb);
     scene.background = skyColor;
-    scene.fog = new THREE.Fog(0xe6f3fb, 68, 185);
+    scene.fog = new THREE.Fog(0xe6f3fb, 75, 230);
 
-    const camera = new THREE.PerspectiveCamera(31, width / height, 0.5, 260);
-    const initialChoreo = evaluateWorldScrollState(0);
+    const camera = new THREE.PerspectiveCamera(31, width / height, 0.5, 320);
+    const initialChoreo = evaluateMasterSupplyChainState(0);
     camera.position.set(
       initialChoreo.cameraPos.x,
       initialChoreo.cameraPos.y,
@@ -158,7 +216,7 @@ export const OrionWorldExperience: React.FC = () => {
     renderer.setSize(width, height);
     renderer.setPixelRatio(isSoftwareGl ? 1 : Math.min(window.devicePixelRatio, 2));
     renderer.toneMapping = THREE.ACESFilmicToneMapping;
-    renderer.toneMappingExposure = 1.02;
+    renderer.toneMappingExposure = 1.05;
     renderer.outputColorSpace = THREE.SRGBColorSpace;
     renderer.shadowMap.enabled = !isSoftwareGl;
     renderer.shadowMap.type = THREE.PCFSoftShadowMap;
@@ -168,91 +226,37 @@ export const OrionWorldExperience: React.FC = () => {
 
     const envTexture = setupStudioEnvironment(renderer, scene);
 
-    // Calibrated architectural lighting: crisp directional key + cool ice-blue shadow fill
-    const hemiLight = new THREE.HemisphereLight(0xffffff, 0x99bdd8, 0.88);
-    hemiLight.position.set(0, 60, 0);
+    // Studio Lighting for Digital Twin Atmosphere
+    const hemiLight = new THREE.HemisphereLight(0xffffff, 0x99bdd8, 0.92);
+    hemiLight.position.set(0, 70, 0);
     scene.add(hemiLight);
 
-    const dirLight = new THREE.DirectionalLight(0xfffdf8, 1.65);
-    dirLight.position.set(-28, 52, 34);
+    const dirLight = new THREE.DirectionalLight(0xfffdf8, 1.75);
+    dirLight.position.set(-35, 60, 40);
     if (!isSoftwareGl) {
       dirLight.castShadow = true;
       dirLight.shadow.mapSize.width = 1024;
       dirLight.shadow.mapSize.height = 1024;
       dirLight.shadow.camera.near = 10;
-      dirLight.shadow.camera.far = 195;
-      dirLight.shadow.camera.left = -55;
-      dirLight.shadow.camera.right = 105;
-      dirLight.shadow.camera.top = 50;
-      dirLight.shadow.camera.bottom = -50;
-      dirLight.shadow.bias = -0.0005;
+      dirLight.shadow.camera.far = 240;
+      dirLight.shadow.camera.left = -90;
+      dirLight.shadow.camera.right = 110;
+      dirLight.shadow.camera.top = 60;
+      dirLight.shadow.camera.bottom = -60;
+      dirLight.shadow.bias = -0.0004;
     }
     scene.add(dirLight);
 
-    const rimLight = new THREE.DirectionalLight(0xa4d4f4, 0.55);
-    rimLight.position.set(45, 28, -36);
+    const rimLight = new THREE.DirectionalLight(0xa4d4f4, 0.65);
+    rimLight.position.set(50, 35, -45);
     scene.add(rimLight);
 
-    // Shared architectural materials with crisp volumetric contrast
-    const whiteArchMat = new THREE.MeshStandardMaterial({
-      color: 0xffffff,
-      roughness: 0.62,
-      metalness: 0.08,
-    });
-    const iceSlateMat = new THREE.MeshStandardMaterial({
-      color: 0xcbe2f2,
-      roughness: 0.45,
-      metalness: 0.15,
-    });
-    const steelBlueMat = new THREE.MeshStandardMaterial({
-      color: 0x3b6e96,
-      roughness: 0.36,
-      metalness: 0.35,
-    });
-    const darkNavyMat = new THREE.MeshStandardMaterial({
-      color: 0x0b1930,
-      roughness: 0.32,
-      metalness: 0.45,
-    });
-    const glassBlueMat = new THREE.MeshStandardMaterial({
-      color: 0x98c4e4,
-      roughness: 0.22,
-      metalness: 0.35,
-    });
-    const roadSurfaceMat = new THREE.MeshStandardMaterial({
-      color: 0xd0e6f5,
-      roughness: 0.78,
-      metalness: 0.05,
-    });
-    const runwaySurfaceMat = new THREE.MeshStandardMaterial({
-      color: 0xc2dced,
-      roughness: 0.65,
-      metalness: 0.08,
-    });
-    const archEdgeMat = new THREE.LineBasicMaterial({
-      color: 0xa6c7df,
-      transparent: true,
-      opacity: 0.55,
-    });
-    const cyanEmissiveMat = new THREE.MeshStandardMaterial({
-      color: 0x0099ff,
-      emissive: new THREE.Color(0x0088ff),
-      emissiveIntensity: 1.5,
-      roughness: 0.2,
-      metalness: 0.1,
-    });
-    const redSignalMat = new THREE.MeshStandardMaterial({
-      color: 0xff3b30,
-      emissive: new THREE.Color(0xff3b30),
-      emissiveIntensity: 1.35,
-      roughness: 0.25,
-      metalness: 0.1,
-    });
+    // Build the Complete Procedural 3D World Rig
+    const worldRig = buildEndToEndSupplyChainWorld(isSoftwareGl);
+    scene.add(worldRig.rootGroup);
 
-    // ============================================================================
-    // 1. CONTINUOUS ARCHITECTURAL GROUND PLANE, SHIPPING CANAL & HIGHWAY NETWORK
-    // ============================================================================
-    const groundGeo = new THREE.PlaneGeometry(360, 240);
+    // Continuous Ground Plane
+    const groundGeo = new THREE.PlaneGeometry(420, 260);
     groundGeo.rotateX(-Math.PI / 2);
     const groundMat = new THREE.MeshStandardMaterial({
       color: 0xdfeff9,
@@ -263,643 +267,10 @@ export const OrionWorldExperience: React.FC = () => {
     groundMesh.receiveShadow = !isSoftwareGl;
     scene.add(groundMesh);
 
-    // Subtle architectural grid lines on ground (offset Y = 0.025)
-    const gridHelper = new THREE.GridHelper(300, 75, 0xbfd8ea, 0xcfe4f2);
-    gridHelper.position.set(28, 0.025, 0);
+    // Precision Architectural Grid
+    const gridHelper = new THREE.GridHelper(380, 95, 0xbfd8ea, 0xd4e7f3);
+    gridHelper.position.set(0, 0.025, 0);
     scene.add(gridHelper);
-
-    // Continuous deep-water shipping canal spanning from opening port to Distribution Hub Berth (X: -65 to +105, Z: 18.5)
-    const canalGeo = new THREE.PlaneGeometry(176, 13.5);
-    canalGeo.rotateX(-Math.PI / 2);
-    const canalMat = new THREE.MeshStandardMaterial({
-      color: 0xb6daf2,
-      roughness: 0.2,
-      metalness: 0.28,
-    });
-    const canalMesh = new THREE.Mesh(canalGeo, canalMat);
-    canalMesh.position.set(20, 0.05, 18.8);
-    scene.add(canalMesh);
-
-    // Continuous concrete quay wall along the shipping canal & port terminal
-    const quayGeo = new THREE.BoxGeometry(176, 0.5, 1.2);
-    const quayMesh = new THREE.Mesh(quayGeo, whiteArchMat);
-    quayMesh.position.set(20, 0.25, 11.9);
-    scene.add(quayMesh);
-
-    // Elevated Highway Corridor & Intermodal Logistics Road Network (X: -48 to +94, Z: 8.4)
-    const highwayGroup = new THREE.Group();
-    const deckGeo = new THREE.BoxGeometry(144, 0.36, 3.5);
-    const deckMesh = new THREE.Mesh(deckGeo, roadSurfaceMat);
-    deckMesh.position.set(22, 1.15, 8.4);
-    highwayGroup.add(deckMesh);
-
-    const railGeo = new THREE.BoxGeometry(144, 0.48, 0.18);
-    const railNorth = new THREE.Mesh(railGeo, whiteArchMat);
-    railNorth.position.set(22, 1.38, 6.72);
-    const railSouth = new THREE.Mesh(railGeo, whiteArchMat);
-    railSouth.position.set(22, 1.38, 10.08);
-    highwayGroup.add(railNorth, railSouth);
-
-    const pierGeo = new THREE.BoxGeometry(0.95, 1.1, 2.4);
-    for (let px = -42; px <= 90; px += 11) {
-      const pier = new THREE.Mesh(pierGeo, iceSlateMat);
-      pier.position.set(px, 0.55, 8.4);
-      highwayGroup.add(pier);
-    }
-    scene.add(highwayGroup);
-
-    // ============================================================================
-    // 2. ZONE 0: SKYLINE TOWERS & PORT GANTY CRANES IN HERO VISTA
-    // ============================================================================
-    const createArchitecturalTower = (
-      x: number,
-      z: number,
-      w: number,
-      h: number,
-      d: number
-    ) => {
-      const tower = new THREE.Group();
-      tower.position.set(x, 0, z);
-
-      const coreGeo = new THREE.BoxGeometry(w, h, d);
-      const core = new THREE.Mesh(coreGeo, whiteArchMat);
-      core.position.y = h / 2;
-      core.castShadow = !isSoftwareGl;
-      core.receiveShadow = !isSoftwareGl;
-      core.add(new THREE.LineSegments(new THREE.EdgesGeometry(coreGeo), archEdgeMat));
-      tower.add(core);
-
-      const bandCount = Math.floor(h / 2.2);
-      const bandGeo = new THREE.BoxGeometry(w + 0.08, 0.45, d + 0.08);
-      for (let i = 1; i <= bandCount; i++) {
-        const band = new THREE.Mesh(bandGeo, glassBlueMat);
-        band.position.y = i * 2.0;
-        tower.add(band);
-      }
-
-      const crownGeo = new THREE.BoxGeometry(w * 0.68, 1.2, d * 0.68);
-      const crown = new THREE.Mesh(crownGeo, iceSlateMat);
-      crown.position.y = h + 0.6;
-      tower.add(crown);
-
-      return tower;
-    };
-
-    const towersData = [
-      { x: -42, z: -12, w: 5.0, h: 21, d: 5.0 },
-      { x: -35, z: -15, w: 5.4, h: 17.5, d: 5.2 },
-      { x: -28, z: -11, w: 4.4, h: 12.0, d: 4.4 },
-      { x: -22, z: -14, w: 4.6, h: 9.5, d: 4.4 },
-      { x: -46, z: -5, w: 4.0, h: 14.0, d: 4.0 },
-      { x: -15, z: -16, w: 4.2, h: 7.5, d: 4.2 },
-    ];
-    towersData.forEach((t) => {
-      scene.add(createArchitecturalTower(t.x, t.z, t.w, t.h, t.d));
-    });
-
-    // Reusable Ship-to-Shore Port Gantry Crane builder
-    const craneTrolleys: { group: THREE.Group; baseZ: number; phase: number }[] = [];
-    const createPortGantryCrane = (x: number, z: number, phaseOffset: number) => {
-      const craneGroup = new THREE.Group();
-      craneGroup.position.set(x, 0, z);
-
-      const legGeo = new THREE.BoxGeometry(0.45, 7.6, 0.45);
-      const legOffsets = [
-        [-1.6, -1.2],
-        [1.6, -1.2],
-        [-1.6, 1.2],
-        [1.6, 1.2],
-      ];
-      legOffsets.forEach(([lx, lz]) => {
-        const leg = new THREE.Mesh(legGeo, whiteArchMat);
-        leg.position.set(lx, 3.8, lz);
-        leg.castShadow = !isSoftwareGl;
-        craneGroup.add(leg);
-      });
-
-      // Cross-beams
-      const crossBeamGeo = new THREE.BoxGeometry(3.6, 0.42, 2.8);
-      const midBeam = new THREE.Mesh(crossBeamGeo, iceSlateMat);
-      midBeam.position.set(0, 4.2, 0);
-      craneGroup.add(midBeam);
-
-      // High cantilevered boom extending over the shipping canal (+Z)
-      const boomGeo = new THREE.BoxGeometry(1.6, 0.55, 10.5);
-      const boom = new THREE.Mesh(boomGeo, steelBlueMat);
-      boom.position.set(0, 7.6, 2.8);
-      boom.castShadow = !isSoftwareGl;
-      craneGroup.add(boom);
-
-      // Apex A-frame tower & machinery house
-      const houseGeo = new THREE.BoxGeometry(2.6, 1.2, 2.4);
-      const house = new THREE.Mesh(houseGeo, whiteArchMat);
-      house.position.set(0, 8.3, -0.5);
-      craneGroup.add(house);
-
-      // Animated container spreader trolley + suspended container
-      const trolleyGroup = new THREE.Group();
-      trolleyGroup.position.set(0, 7.2, 3.5);
-
-      const trolleyCar = new THREE.Mesh(
-        new THREE.BoxGeometry(1.2, 0.35, 1.2),
-        darkNavyMat
-      );
-      trolleyGroup.add(trolleyCar);
-
-      const cableGeo = new THREE.CylinderGeometry(0.05, 0.05, 2.8, 6);
-      const cable = new THREE.Mesh(cableGeo, iceSlateMat);
-      cable.position.y = -1.4;
-      trolleyGroup.add(cable);
-
-      const liftedContainer = new THREE.Mesh(
-        new THREE.BoxGeometry(1.15, 0.95, 2.2),
-        new THREE.MeshStandardMaterial({
-          color: 0x0284c7,
-          roughness: 0.35,
-          metalness: 0.25,
-        })
-      );
-      liftedContainer.position.y = -2.85;
-      trolleyGroup.add(liftedContainer);
-
-      craneGroup.add(trolleyGroup);
-      craneTrolleys.push({ group: trolleyGroup, baseZ: 3.2, phase: phaseOffset });
-
-      return craneGroup;
-    };
-
-    // Place Gantry Cranes at Opening Port (-28, -18) and at Final Distribution Hub Port (68, 82)
-    scene.add(createPortGantryCrane(-28, 12.2, 0.0));
-    scene.add(createPortGantryCrane(-18, 12.2, 1.6));
-    scene.add(createPortGantryCrane(67, 12.2, 0.8));
-    scene.add(createPortGantryCrane(81, 12.2, 2.4));
-
-    // Wind Turbines on the ridge
-    const turbineRotors: THREE.Group[] = [];
-    const createWindTurbine = (x: number, z: number, height: number) => {
-      const group = new THREE.Group();
-      group.position.set(x, 0, z);
-
-      const mastGeo = new THREE.CylinderGeometry(0.18, 0.42, height, 12);
-      const mast = new THREE.Mesh(mastGeo, whiteArchMat);
-      mast.position.y = height / 2;
-      group.add(mast);
-
-      const nacelleGeo = new THREE.CapsuleGeometry(0.32, 1.1, 6, 12);
-      nacelleGeo.rotateX(Math.PI / 2);
-      const nacelle = new THREE.Mesh(nacelleGeo, iceSlateMat);
-      nacelle.position.set(0, height, 0.2);
-      group.add(nacelle);
-
-      const rotorGroup = new THREE.Group();
-      rotorGroup.position.set(0, height, 0.85);
-      const bladeGeo = new THREE.BoxGeometry(0.24, 3.6, 0.08);
-      bladeGeo.translate(0, 1.7, 0);
-      for (let b = 0; b < 3; b++) {
-        const blade = new THREE.Mesh(bladeGeo, whiteArchMat);
-        blade.rotation.z = (b * Math.PI * 2) / 3;
-        rotorGroup.add(blade);
-      }
-      group.add(rotorGroup);
-      turbineRotors.push(rotorGroup);
-      return group;
-    };
-
-    [
-      { x: -38, z: -22, h: 13 },
-      { x: 24, z: -21, h: 13.5 },
-      { x: 46, z: -18, h: 14 },
-    ].forEach((tb) => scene.add(createWindTurbine(tb.x, tb.z, tb.h)));
-
-    // ============================================================================
-    // 3. ZONE 1: ORION-9 CENTRAL COMMAND HUB (Stage 01 Target at X: 2, Z: -1)
-    // ============================================================================
-    const commandHubGroup = new THREE.Group();
-    commandHubGroup.position.set(2, 0, -1);
-
-    const hubPodiumGeo = new THREE.BoxGeometry(12.8, 0.55, 9.6);
-    const hubPodium = new THREE.Mesh(hubPodiumGeo, iceSlateMat);
-    hubPodium.position.y = 0.28;
-    commandHubGroup.add(hubPodium);
-
-    const hubBodyGeo = new THREE.BoxGeometry(9.6, 4.4, 6.6);
-    const hubBody = new THREE.Mesh(hubBodyGeo, whiteArchMat);
-    hubBody.position.set(0, 2.75, 0);
-    hubBody.castShadow = !isSoftwareGl;
-    hubBody.receiveShadow = !isSoftwareGl;
-    hubBody.add(new THREE.LineSegments(new THREE.EdgesGeometry(hubBodyGeo), archEdgeMat));
-    commandHubGroup.add(hubBody);
-
-    const hubGlassGeo = new THREE.BoxGeometry(9.8, 1.35, 6.8);
-    const hubGlass = new THREE.Mesh(hubGlassGeo, glassBlueMat);
-    hubGlass.position.set(0, 3.25, 0);
-    commandHubGroup.add(hubGlass);
-
-    const hubRoofGeo = new THREE.BoxGeometry(10.6, 0.48, 7.4);
-    const hubRoof = new THREE.Mesh(hubRoofGeo, iceSlateMat);
-    hubRoof.position.set(0, 5.15, 0);
-    hubRoof.add(new THREE.LineSegments(new THREE.EdgesGeometry(hubRoofGeo), archEdgeMat));
-    commandHubGroup.add(hubRoof);
-
-    // Glowing Orion-9 Emblem on Command Hub Facade
-    const facadeEmblemGroup = new THREE.Group();
-    facadeEmblemGroup.position.set(1.8, 2.6, 3.42);
-    const emblemBarGeo = new THREE.BoxGeometry(1.95, 0.46, 0.18);
-    const bar1 = new THREE.Mesh(emblemBarGeo, cyanEmissiveMat);
-    bar1.rotation.z = Math.PI / 4;
-    const bar2 = new THREE.Mesh(emblemBarGeo, cyanEmissiveMat);
-    bar2.rotation.z = -Math.PI / 4;
-    facadeEmblemGroup.add(bar1, bar2);
-    commandHubGroup.add(facadeEmblemGroup);
-
-    const domeGeo = new THREE.SphereGeometry(0.75, 16, 12, 0, Math.PI * 2, 0, Math.PI / 2);
-    [-2.6, -0.8].forEach((dx) => {
-      const dome = new THREE.Mesh(domeGeo, whiteArchMat);
-      dome.position.set(dx, 5.38, -1.2);
-      commandHubGroup.add(dome);
-    });
-
-    scene.add(commandHubGroup);
-
-    // ============================================================================
-    // 4. GLOWING RED ORIGIN TRACES & CONTINUOUS ELECTRIC-CYAN PIPELINE
-    // ============================================================================
-    const redTracePoints1 = [
-      new THREE.Vector3(-36, 0.16, 4),
-      new THREE.Vector3(-22, 0.16, 4),
-      new THREE.Vector3(-14, 0.16, -1),
-      new THREE.Vector3(-3, 0.16, -1),
-    ];
-    const redCurve1 = new THREE.CatmullRomCurve3(redTracePoints1);
-    const redTubeGeo1 = new THREE.TubeGeometry(redCurve1, 64, 0.18, 8, false);
-    const redTube1 = new THREE.Mesh(redTubeGeo1, redSignalMat);
-    scene.add(redTube1);
-
-    const redTracePoints2 = [
-      new THREE.Vector3(-26, 0.16, 6.2),
-      new THREE.Vector3(-14, 0.16, 2.2),
-      new THREE.Vector3(-3, 0.16, 0.5),
-    ];
-    const redCurve2 = new THREE.CatmullRomCurve3(redTracePoints2);
-    const redTubeGeo2 = new THREE.TubeGeometry(redCurve2, 48, 0.15, 8, false);
-    const redTube2 = new THREE.Mesh(redTubeGeo2, redSignalMat);
-    scene.add(redTube2);
-
-    // Continuous Electric-Cyan Energy Pipeline from Command Hub (X: 6.5) -> Zone 2 -> Global Distribution Warehouse Hub (X: 64.5)
-    const cyanPipelinePoints = [
-      new THREE.Vector3(6.5, 0.38, -1.0),
-      new THREE.Vector3(15.0, 0.38, -1.0),
-      new THREE.Vector3(23.0, 0.38, 2.2),
-      new THREE.Vector3(34.0, 0.38, -2.5),
-      new THREE.Vector3(46.0, 0.38, 1.5),
-      new THREE.Vector3(56.0, 0.38, -1.0),
-      new THREE.Vector3(64.5, 0.38, -1.0),
-    ];
-    const cyanPipelineCurve = new THREE.CatmullRomCurve3(cyanPipelinePoints);
-    const cyanPipelineGeo = new THREE.TubeGeometry(cyanPipelineCurve, 140, 0.32, 12, false);
-    const cyanPipelineMat = createRoutePulseShaderMaterial({
-      baseColorHex: 0x0077ee,
-      pulseColorHex: 0x7dd3fc,
-      initialDrawProgress: 0.18,
-      opacity: 0.98,
-    });
-    const cyanPipelineMesh = new THREE.Mesh(cyanPipelineGeo, cyanPipelineMat);
-    scene.add(cyanPipelineMesh);
-
-    const channelGeo = new THREE.TubeGeometry(cyanPipelineCurve, 100, 0.46, 8, false);
-    const channelMesh = new THREE.Mesh(channelGeo, iceSlateMat);
-    channelMesh.position.y = -0.2;
-    scene.add(channelMesh);
-
-    // ============================================================================
-    // 5. ZONE 2: TWIN COOLING TOWERS, CONTAINER YARDS & INSPECTION GATES (X: 18..54)
-    // ============================================================================
-    const createCoolingTower = (x: number, z: number, radius: number, h: number) => {
-      const group = new THREE.Group();
-      group.position.set(x, 0, z);
-
-      const pts = [
-        new THREE.Vector2(radius * 1.18, 0),
-        new THREE.Vector2(radius * 0.96, h * 0.35),
-        new THREE.Vector2(radius * 0.82, h * 0.7),
-        new THREE.Vector2(radius * 0.92, h),
-        new THREE.Vector2(radius * 0.78, h),
-      ];
-      const latheGeo = new THREE.LatheGeometry(pts, 28);
-      const shell = new THREE.Mesh(latheGeo, whiteArchMat);
-      shell.castShadow = !isSoftwareGl;
-      shell.receiveShadow = !isSoftwareGl;
-      group.add(shell);
-
-      const rimGeo = new THREE.RingGeometry(radius * 0.75, radius * 0.92, 28);
-      rimGeo.rotateX(-Math.PI / 2);
-      const rim = new THREE.Mesh(rimGeo, glassBlueMat);
-      rim.position.y = h + 0.04;
-      group.add(rim);
-
-      return group;
-    };
-
-    scene.add(createCoolingTower(24, -9.5, 3.2, 8.5));
-    scene.add(createCoolingTower(32, -10.5, 2.8, 7.6));
-
-    const checkpointGates: THREE.Mesh[] = [];
-    [19, 34, 48].forEach((gx) => {
-      const pt = cyanPipelineCurve.getPointAt((gx - 6.5) / 58);
-      const gateGroup = new THREE.Group();
-      gateGroup.position.set(pt.x, 0, pt.z);
-
-      const archGeo = new THREE.BoxGeometry(1.25, 3.6, 4.6);
-      const arch = new THREE.Mesh(archGeo, whiteArchMat);
-      arch.position.y = 1.8;
-      arch.add(new THREE.LineSegments(new THREE.EdgesGeometry(archGeo), archEdgeMat));
-      gateGroup.add(arch);
-
-      const scannerGeo = new THREE.BoxGeometry(1.36, 0.35, 4.78);
-      const scanner = new THREE.Mesh(scannerGeo, cyanEmissiveMat.clone());
-      scanner.position.y = 3.25;
-      gateGroup.add(scanner);
-      checkpointGates.push(scanner);
-
-      scene.add(gateGroup);
-    });
-
-    const containerColors = [0xffffff, 0xcbe2f2, 0x8abce0, 0x0b1930];
-    const boxGeo = new THREE.BoxGeometry(2.4, 1.1, 1.15);
-    const yardPositions = [
-      { x: 22, z: 4.8, stacks: 3 },
-      { x: 25.5, z: 4.8, stacks: 2 },
-      { x: 37, z: 4.8, stacks: 3 },
-      { x: 40.5, z: 4.8, stacks: 2 },
-      { x: 42, z: -7.5, stacks: 3 },
-      { x: 45.5, z: -7.5, stacks: 2 },
-    ];
-    yardPositions.forEach((yp, idx) => {
-      for (let s = 0; s < yp.stacks; s++) {
-        const cMat = new THREE.MeshStandardMaterial({
-          color: containerColors[(idx + s) % containerColors.length],
-          roughness: 0.45,
-          metalness: 0.2,
-        });
-        const container = new THREE.Mesh(boxGeo, cMat);
-        container.position.set(yp.x, 0.55 + s * 1.12, yp.z);
-        container.castShadow = !isSoftwareGl;
-        scene.add(container);
-      }
-    });
-
-    // ============================================================================
-    // 6. ZONE 3 & 4: LIVING GLOBAL LOGISTICS WAREHOUSE & INTERMODAL DISTRIBUTION HUB (X: 75, Z: -1)
-    // ============================================================================
-    const distributionHubGroup = new THREE.Group();
-    distributionHubGroup.position.set(75, 0, -1);
-    scene.add(distributionHubGroup);
-
-    // 6A. Paved Intermodal Distribution Apron & Connected Roadways
-    const hubApronGeo = new THREE.BoxGeometry(34, 0.18, 22);
-    const hubApron = new THREE.Mesh(hubApronGeo, roadSurfaceMat);
-    hubApron.position.set(0, 0.09, 0.5);
-    hubApron.receiveShadow = !isSoftwareGl;
-    distributionHubGroup.add(hubApron);
-
-    // North-South Intermodal Connector Roads linking Port Quay (+Z) <-> Warehouse Bays <-> Air Cargo Apron (-Z)
-    [-13.5, 13.5].forEach((rx) => {
-      const roadLinkGeo = new THREE.BoxGeometry(3.2, 0.22, 26);
-      const roadLink = new THREE.Mesh(roadLinkGeo, roadSurfaceMat);
-      roadLink.position.set(rx, 0.11, 0);
-      distributionHubGroup.add(roadLink);
-    });
-
-    // 6B. Primary Global Distribution Warehouse Facility (Multi-Bay Architectural Building)
-    const whWidth = 21.5;
-    const whHeight = 4.8;
-    const whDepth = 10.6;
-
-    const whMainGeo = new THREE.BoxGeometry(whWidth, whHeight, whDepth);
-    const whMain = new THREE.Mesh(whMainGeo, whiteArchMat);
-    whMain.position.set(0, whHeight / 2 + 0.18, -0.8);
-    whMain.castShadow = !isSoftwareGl;
-    whMain.receiveShadow = !isSoftwareGl;
-    whMain.add(new THREE.LineSegments(new THREE.EdgesGeometry(whMainGeo), archEdgeMat));
-    distributionHubGroup.add(whMain);
-
-    // Upper clerestory glass band around warehouse perimeter
-    const whGlassGeo = new THREE.BoxGeometry(whWidth + 0.12, 0.95, whDepth + 0.12);
-    const whGlass = new THREE.Mesh(whGlassGeo, glassBlueMat);
-    whGlass.position.set(0, 3.85, -0.8);
-    distributionHubGroup.add(whGlass);
-
-    // Stepped architectural roof deck
-    const whRoofGeo = new THREE.BoxGeometry(whWidth - 1.2, 0.42, whDepth - 1.2);
-    const whRoof = new THREE.Mesh(whRoofGeo, iceSlateMat);
-    whRoof.position.set(0, whHeight + 0.38, -0.8);
-    whRoof.add(new THREE.LineSegments(new THREE.EdgesGeometry(whRoofGeo), archEdgeMat));
-    distributionHubGroup.add(whRoof);
-
-    // 8 Illuminated Rooftop Skylight Modules & Sorting Telemetry Bays
-    const skylightMats: THREE.MeshStandardMaterial[] = [];
-    const skylightFrameGeo = new THREE.BoxGeometry(3.6, 0.22, 2.4);
-    const skylightGeo = new THREE.BoxGeometry(3.2, 0.28, 2.0);
-    for (let row = 0; row < 2; row++) {
-      for (let col = 0; col < 4; col++) {
-        const sx = -6.6 + col * 4.4;
-        const sz = -2.6 + row * 3.6;
-
-        const frameMesh = new THREE.Mesh(skylightFrameGeo, steelBlueMat);
-        frameMesh.position.set(sx, whHeight + 0.62, sz);
-        distributionHubGroup.add(frameMesh);
-
-        const sMat = new THREE.MeshStandardMaterial({
-          color: 0x98c4e4,
-          emissive: new THREE.Color(0x0088ff),
-          emissiveIntensity: 0.25,
-          roughness: 0.2,
-          metalness: 0.3,
-        });
-        const skyMesh = new THREE.Mesh(skylightGeo, sMat);
-        skyMesh.position.set(sx, whHeight + 0.68, sz);
-        distributionHubGroup.add(skyMesh);
-        skylightMats.push(sMat);
-      }
-    }
-
-    // Sculpted Rooftop Orion-9 Hub Emblem (Visible from elevated Step 04 camera)
-    const roofEmblemGroup = new THREE.Group();
-    roofEmblemGroup.position.set(0, whHeight + 0.88, -0.8);
-    const roofBaseDisc = new THREE.Mesh(
-      new THREE.CylinderGeometry(2.3, 2.3, 0.14, 6),
-      darkNavyMat
-    );
-    roofEmblemGroup.add(roofBaseDisc);
-
-    const roofRingGeo = new THREE.RingGeometry(1.35, 1.95, 6);
-    roofRingGeo.rotateX(-Math.PI / 2);
-    const roofEmblemMat = new THREE.MeshStandardMaterial({
-      color: 0x38bdf8,
-      emissive: new THREE.Color(0x00a8ff),
-      emissiveIntensity: 0.9,
-      roughness: 0.25,
-      metalness: 0.3,
-      side: THREE.DoubleSide,
-    });
-    const roofRing = new THREE.Mesh(roofRingGeo, roofEmblemMat);
-    roofRing.position.y = 0.09;
-    roofEmblemGroup.add(roofRing);
-    distributionHubGroup.add(roofEmblemGroup);
-
-    // 6C. Six South Truck Loading Bays (Facing +Z toward the Port & Highway Apron)
-    const canopyGeo = new THREE.BoxGeometry(whWidth - 1.0, 0.32, 2.4);
-    const canopyMesh = new THREE.Mesh(canopyGeo, steelBlueMat);
-    canopyMesh.position.set(0, 2.95, 5.2);
-    distributionHubGroup.add(canopyMesh);
-
-    const bayDoorGeo = new THREE.BoxGeometry(2.1, 2.35, 0.16);
-    const bayApronGeo = new THREE.BoxGeometry(2.3, 0.06, 3.2);
-    const bayBeaconMats: THREE.MeshStandardMaterial[] = [];
-
-    for (let b = 0; b < 6; b++) {
-      const bx = -7.75 + b * 3.1;
-      const doorMesh = new THREE.Mesh(bayDoorGeo, darkNavyMat);
-      doorMesh.position.set(bx, 1.38, 4.52);
-      distributionHubGroup.add(doorMesh);
-
-      const levelerApron = new THREE.Mesh(bayApronGeo, iceSlateMat);
-      levelerApron.position.set(bx, 0.21, 6.2);
-      distributionHubGroup.add(levelerApron);
-
-      const beaconMat = new THREE.MeshStandardMaterial({
-        color: 0x00a8ff,
-        emissive: new THREE.Color(0x0088ff),
-        emissiveIntensity: 0.8,
-      });
-      const beaconMesh = new THREE.Mesh(
-        new THREE.BoxGeometry(0.9, 0.22, 0.2),
-        beaconMat
-      );
-      beaconMesh.position.set(bx, 2.72, 4.58);
-      distributionHubGroup.add(beaconMesh);
-      bayBeaconMats.push(beaconMat);
-    }
-
-    // 6D. Active Cargo Staging Zones (East & West Container Stacks + Automated Conveyor Link)
-    const hubContainerPositions = [
-      { x: -12.8, z: 5.5, stacks: 3 },
-      { x: -12.8, z: 2.5, stacks: 2 },
-      { x: 12.8, z: 5.5, stacks: 3 },
-      { x: 12.8, z: 2.5, stacks: 2 },
-      { x: -12.8, z: -4.5, stacks: 2 },
-      { x: 12.8, z: -4.5, stacks: 2 },
-    ];
-    hubContainerPositions.forEach((cp, idx) => {
-      for (let s = 0; s < cp.stacks; s++) {
-        const cMat = new THREE.MeshStandardMaterial({
-          color: containerColors[(idx + s) % containerColors.length],
-          roughness: 0.4,
-          metalness: 0.25,
-        });
-        const cMesh = new THREE.Mesh(boxGeo, cMat);
-        cMesh.position.set(cp.x, 0.65 + s * 1.12, cp.z);
-        cMesh.castShadow = !isSoftwareGl;
-        distributionHubGroup.add(cMesh);
-      }
-    });
-
-    // Automated Air-Cargo Transfer Bridge connecting Warehouse North Gate to Air-Freight Apron
-    const bridgeCorridorGeo = new THREE.BoxGeometry(3.4, 1.8, 5.2);
-    const bridgeCorridor = new THREE.Mesh(bridgeCorridorGeo, iceSlateMat);
-    bridgeCorridor.position.set(0, 1.2, -8.2);
-    bridgeCorridor.add(
-      new THREE.LineSegments(new THREE.EdgesGeometry(bridgeCorridorGeo), archEdgeMat)
-    );
-    distributionHubGroup.add(bridgeCorridor);
-
-    // 6E. Adjacent Air-Freight Terminal & Runway North of Warehouse (Z: -13.2)
-    const airTerminalGroup = new THREE.Group();
-    airTerminalGroup.position.set(75, 0, -13.2);
-    scene.add(airTerminalGroup);
-
-    const runwayGeo = new THREE.BoxGeometry(52, 0.16, 6.4);
-    const runwayMesh = new THREE.Mesh(runwayGeo, runwaySurfaceMat);
-    runwayMesh.position.set(0, 0.08, 0);
-    runwayMesh.receiveShadow = !isSoftwareGl;
-    airTerminalGroup.add(runwayMesh);
-
-    // Runway Centerline Dashes (offset Y = 0.19 to prevent Z-fighting)
-    const dashGeo = new THREE.BoxGeometry(2.4, 0.04, 0.28);
-    for (let dx = -22; dx <= 22; dx += 4.8) {
-      const dash = new THREE.Mesh(dashGeo, whiteArchMat);
-      dash.position.set(dx, 0.19, 0);
-      airTerminalGroup.add(dash);
-    }
-
-    // Air-Freight Terminal Hangar & Control Annex
-    const hangarGeo = new THREE.BoxGeometry(9.5, 3.4, 4.2);
-    const hangarMesh = new THREE.Mesh(hangarGeo, whiteArchMat);
-    hangarMesh.position.set(-13, 1.7, -5.2);
-    hangarMesh.castShadow = !isSoftwareGl;
-    hangarMesh.add(new THREE.LineSegments(new THREE.EdgesGeometry(hangarGeo), archEdgeMat));
-    airTerminalGroup.add(hangarMesh);
-
-    // Parked Cargo Aircraft on the Air-Freight Apron being loaded
-    const apronJet = createCompositeCargoAircraft(0x0284c7);
-    apronJet.scale.setScalar(0.45);
-    apronJet.rotation.y = Math.PI / 2;
-    apronJet.position.set(3.5, 0.6, 0.2);
-    airTerminalGroup.add(apronJet);
-
-    // ============================================================================
-    // 7. ANIMATED INTERMODAL FLEET (CONTAINER SHIPS, WAREHOUSE TRUCKS & CARGO AIRCRAFT)
-    // ============================================================================
-    // Ship 1: Operating in the opening canal
-    const ship1 = createCompositeContainerShip(0x1d4ed8);
-    ship1.scale.setScalar(0.5);
-    ship1.rotation.y = Math.PI / 2;
-    ship1.position.set(-32, 0.08, 15.6);
-    scene.add(ship1);
-
-    // Ship 2: Arriving at the Global Distribution Hub Port Berth (X: 64..82, Z: 15.8)
-    const ship2 = createCompositeContainerShip(0x0284c7);
-    ship2.scale.setScalar(0.56);
-    ship2.rotation.y = Math.PI / 2;
-    ship2.position.set(72, 0.08, 15.8);
-    scene.add(ship2);
-
-    // Highway Freight Trucks along main corridor
-    const truck1 = createCompositeFreightTruck(0x091428);
-    truck1.scale.setScalar(0.32);
-    truck1.rotation.y = Math.PI / 2;
-    truck1.position.set(-24, 1.35, 7.8);
-    scene.add(truck1);
-
-    const truck2 = createCompositeFreightTruck(0x0284c7);
-    truck2.scale.setScalar(0.32);
-    truck2.rotation.y = -Math.PI / 2;
-    truck2.position.set(22, 1.35, 9.0);
-    scene.add(truck2);
-
-    // Distribution Hub Delivery Trucks docking at & departing Warehouse Loading Bays
-    const hubTruck1 = createCompositeFreightTruck(0x070b19);
-    hubTruck1.scale.setScalar(0.35);
-    hubTruck1.rotation.y = 0;
-    distributionHubGroup.add(hubTruck1);
-
-    const hubTruck2 = createCompositeFreightTruck(0x0284c7);
-    hubTruck2.scale.setScalar(0.35);
-    hubTruck2.rotation.y = 0;
-    distributionHubGroup.add(hubTruck2);
-
-    // Hub Shuttle Truck moving along the East Intermodal Connector between Port & Air Terminal
-    const hubTruck3 = createCompositeFreightTruck(0x1e3a8a);
-    hubTruck3.scale.setScalar(0.35);
-    hubTruck3.rotation.y = Math.PI;
-    distributionHubGroup.add(hubTruck3);
-
-    // Airborne Cargo Freighter arriving/departing over the Air-Freight Terminal
-    const cargoJet = createCompositeCargoAircraft(0x091428);
-    cargoJet.scale.setScalar(0.44);
-    cargoJet.position.set(28, 10.5, -12);
-    cargoJet.rotation.y = Math.PI * 0.44;
-    scene.add(cargoJet);
 
     if (!isSoftwareGl) {
       renderer.compile(scene, camera);
@@ -923,89 +294,129 @@ export const OrionWorldExperience: React.FC = () => {
       const elapsed = clock.getElapsedTime();
 
       const targetScroll = scrollProgressRef.current;
-      const damping = 1 - Math.exp(-8.5 * Math.max(0.016, dt));
+      const damping = 1 - Math.exp(-8.0 * Math.max(0.016, dt));
       smoothedScrollRef.current = lerpScalar(smoothedScrollRef.current, targetScroll, damping);
 
-      const state = evaluateWorldScrollState(smoothedScrollRef.current);
+      const state = evaluateMasterSupplyChainState(smoothedScrollRef.current, manualDisruption);
 
-      camera.position.set(state.cameraPos.x, state.cameraPos.y, state.cameraPos.z);
-      camera.lookAt(state.lookAt.x, state.lookAt.y, state.lookAt.z);
+      // Smooth camera interpolation
+      camera.position.lerp(new THREE.Vector3(state.cameraPos.x, state.cameraPos.y, state.cameraPos.z), 0.08);
+      
+      const currentLookAt = new THREE.Vector3();
+      camera.getWorldDirection(currentLookAt);
+      const targetLookAt = new THREE.Vector3(state.lookAt.x, state.lookAt.y, state.lookAt.z);
+      camera.lookAt(targetLookAt);
+
       if (Math.abs(camera.fov - state.fov) > 0.05) {
-        camera.fov = state.fov;
+        camera.fov = lerpScalar(camera.fov, state.fov, 0.08);
         camera.updateProjectionMatrix();
       }
 
-      cyanPipelineMat.uniforms.uTime.value = elapsed;
-      cyanPipelineMat.uniforms.uDrawProgress.value = Math.max(
-        0.14,
-        state.cyanBeamProgress
-      );
+      // 1. Robotic Arms Kinematics (Smart Factory Assembly)
+      worldRig.roboticArms.forEach((arm, idx) => {
+        const cycle = elapsed * 1.5 + arm.phase;
+        arm.upperArm.rotation.z = Math.sin(cycle) * 0.45;
+        arm.forearm.rotation.z = Math.cos(cycle * 1.2) * 0.55;
+        arm.base.rotation.y = Math.sin(cycle * 0.7) * 0.6;
+        arm.sparkLight.intensity = (Math.sin(cycle * 8) > 0.3) ? 1.8 : 0.2;
+      });
 
-      for (let i = 0; i < turbineRotors.length; i++) {
-        turbineRotors[i].rotation.z = elapsed * 0.9 + i * 1.1;
+      // 2. Optical QC Scanner Laser Line
+      if (worldRig.qcScannerMesh) {
+        worldRig.qcScannerMesh.scale.y = 0.85 + Math.sin(elapsed * 4.2) * 0.15;
       }
 
-      // Animate Gantry Crane Trolleys transferring containers between ship & dock
-      for (let i = 0; i < craneTrolleys.length; i++) {
-        const ct = craneTrolleys[i];
-        ct.group.position.z = ct.baseZ + Math.sin(elapsed * 0.85 + ct.phase) * 2.4;
+      // 3. Conveyor Items Flow through Factory
+      worldRig.conveyorItems.forEach((ci) => {
+        ci.mesh.position.x += dt * 1.8;
+        if (ci.mesh.position.x > ci.endX) {
+          ci.mesh.position.x = ci.startX;
+        }
+      });
+
+      // 4. ASRS High-Bay Storage Carrier Lift
+      worldRig.asrsCarriers.forEach((ac) => {
+        const phase = (Math.sin(elapsed * ac.speed) + 1) * 0.5;
+        ac.mesh.position.y = lerpScalar(ac.startY, ac.targetY, phase);
+      });
+
+      // 5. Autonomous Guided Vehicles (AGVs) Navigation
+      worldRig.agvVehicles.forEach((agv) => {
+        const span = agv.maxZ - agv.minZ;
+        const phase = (Math.sin(elapsed * agv.speed) + 1) * 0.5;
+        agv.group.position.z = agv.minZ + phase * span;
+        agv.group.rotation.y = Math.cos(elapsed * agv.speed) >= 0 ? 0 : Math.PI;
+      });
+
+      // 6. Gantry Crane Container Trolleys
+      worldRig.craneTrolleys.forEach((ct) => {
+        ct.group.position.z = ct.baseZ + Math.sin(elapsed * 0.85 + ct.phase) * 2.2;
+      });
+
+      // 7. Quarry Haul Trucks
+      worldRig.haulTrucks.forEach((ht) => {
+        ht.group.position.x = ht.startX + ((elapsed * ht.speed * 2.5) % (ht.endX - ht.startX + 1));
+      });
+
+      // 8. Overhead High-Altitude Cargo Jet
+      if (worldRig.cargoJet) {
+        worldRig.cargoJet.position.x = -80 + ((elapsed * 5.2) % 180);
       }
 
-      // Animate Ships, Highway Trucks, and Air-Cargo Fleet along connected corridors
-      ship1.position.x = -38 + ((elapsed * 1.2) % 24);
-      ship2.position.x = 58 + ((elapsed * 1.05) % 26);
+      // 9. Neural Intelligence Graph Pulses
+      worldRig.intelligencePulses.forEach((ring, idx) => {
+        const pulse = 0.8 + 0.3 * Math.sin(elapsed * 3.5 + idx * 0.8);
+        ring.scale.set(pulse, pulse, 1);
+      });
 
-      truck1.position.x = -38 + ((elapsed * 4.5) % 115);
-      truck2.position.x = 82 - ((elapsed * 3.9) % 115);
+      // 10. Disruption Simulation Event Rig
+      const isDisrupted = manualDisruption === true || (state.activeSceneIndex === 7 && manualDisruption !== false);
+      const isRerouted = isSimulatingReroute || manualDisruption === false || (state.activeSceneIndex === 7 && state.sceneLocalProgress > 0.55);
 
-      // Warehouse Bay Docking & Departure Cycle for Hub Trucks 1 & 2
-      const bayCycle1 = (elapsed * 0.35) % 1.0;
-      const bayZ1 =
-        bayCycle1 < 0.45
-          ? lerpScalar(5.8, 7.6, bayCycle1 / 0.45)
-          : lerpScalar(7.6, 5.8, (bayCycle1 - 0.45) / 0.55);
-      hubTruck1.position.set(-4.65, 0.22, bayZ1);
+      if (worldRig.disruptionRig) {
+        const dRig = worldRig.disruptionRig;
+        const warnMat = dRig.supplierWarningBeacon.material as THREE.MeshStandardMaterial;
+        const bneckMat = dRig.bottleneckFlowMesh.material as THREE.MeshStandardMaterial;
+        const bypassMat = dRig.bypassCorridorMesh.material as THREE.MeshStandardMaterial;
+        const facMat = dRig.factoryStatusBeacon.material as THREE.MeshStandardMaterial;
 
-      const bayCycle2 = ((elapsed * 0.35) + 0.5) % 1.0;
-      const bayZ2 =
-        bayCycle2 < 0.45
-          ? lerpScalar(5.8, 7.6, bayCycle2 / 0.45)
-          : lerpScalar(7.6, 5.8, (bayCycle2 - 0.45) / 0.55);
-      hubTruck2.position.set(4.65, 0.22, bayZ2);
-
-      // Intermodal Connector Shuttle Truck moving between Port Apron (+9) and Air Cargo Terminal (-10)
-      const shuttlePhase = (Math.sin(elapsed * 0.55) + 1) * 0.5;
-      hubTruck3.position.set(13.5, 0.22, lerpScalar(-9.5, 8.5, shuttlePhase));
-      hubTruck3.rotation.y = Math.cos(elapsed * 0.55) >= 0 ? 0 : Math.PI;
-
-      // Airborne Cargo Aircraft glide path over the distribution hub
-      cargoJet.position.x = 18 + ((elapsed * 3.1) % 72);
-      cargoJet.position.y = 11.8 + Math.sin(elapsed * 1.2) * 0.35;
-
-      for (let i = 0; i < checkpointGates.length; i++) {
-        const gMat = checkpointGates[i].material as THREE.MeshStandardMaterial;
-        gMat.emissiveIntensity =
-          0.6 + state.checkpointScanWeight * (1.2 + 0.6 * Math.sin(elapsed * 4 + i));
+        if (isDisrupted && !isRerouted) {
+          // Warning state: Supplier bottleneck active
+          const blink = 0.5 + 0.5 * Math.sin(elapsed * 7.5);
+          warnMat.emissive.setHex(0xef4444);
+          warnMat.emissiveIntensity = 1.0 + blink * 1.5;
+          bneckMat.emissive.setHex(0xf59e0b);
+          bneckMat.emissiveIntensity = 0.8 + blink * 0.8;
+          bypassMat.emissiveIntensity = 0.15;
+          dRig.bypassGlowLight.intensity = 0.2;
+          facMat.emissive.setHex(0xf59e0b);
+        } else if (isRerouted) {
+          // Rerouted state: Stochastic Pareto bypass active & production recovered
+          warnMat.emissive.setHex(0x38bdf8);
+          warnMat.emissiveIntensity = 0.6;
+          bneckMat.emissive.setHex(0x38bdf8);
+          bneckMat.emissiveIntensity = 0.5;
+          bypassMat.emissive.setHex(0x0088ff);
+          bypassMat.emissiveIntensity = 1.6 + 0.4 * Math.sin(elapsed * 5.0);
+          dRig.bypassGlowLight.intensity = 2.4;
+          facMat.emissive.setHex(0x10b981);
+          facMat.emissiveIntensity = 1.4;
+        } else {
+          // Nominal operating state
+          warnMat.emissive.setHex(0x0088ff);
+          warnMat.emissiveIntensity = 0.4;
+          bneckMat.emissive.setHex(0x0088ff);
+          bneckMat.emissiveIntensity = 0.5;
+          bypassMat.emissiveIntensity = 0.3;
+          dRig.bypassGlowLight.intensity = 0.4;
+          facMat.emissive.setHex(0x10b981);
+        }
       }
-
-      // Illuminate Warehouse Skylights, Dock Beacons, and Rooftop Emblem during Steps 03 & 04
-      const hubActivation = Math.max(state.matrixWaveWeight, state.emblemLockWeight);
-      for (let i = 0; i < skylightMats.length; i++) {
-        const pulse = 0.5 + 0.5 * Math.sin(elapsed * 2.8 - i * 0.45);
-        skylightMats[i].emissiveIntensity = 0.15 + hubActivation * (0.55 + 0.45 * pulse);
-      }
-
-      for (let i = 0; i < bayBeaconMats.length; i++) {
-        const dockPulse = 0.5 + 0.5 * Math.sin(elapsed * 3.5 + i * 0.9);
-        bayBeaconMats[i].emissiveIntensity = 0.5 + hubActivation * (0.8 + 0.6 * dockPulse);
-      }
-
-      roofEmblemMat.emissiveIntensity = 0.65 + state.emblemLockWeight * 1.15;
 
       renderer.render(scene, camera);
 
       const now = performance.now();
-      if (now - lastHudUpdateRef.current > 65) {
+      if (now - lastHudUpdateRef.current > 60) {
         lastHudUpdateRef.current = now;
         setHudState(state);
       }
@@ -1021,23 +432,26 @@ export const OrionWorldExperience: React.FC = () => {
       envTexture.dispose();
       renderer.dispose();
     };
-  }, []);
+  }, [manualDisruption, isSimulatingReroute]);
 
   const heroLine1 =
     activeConfig.homepage.heroHeadlineLine1 || 'The New Standard in';
   const heroLine2 =
     activeConfig.homepage.heroHeadlineLine2 || 'Supply Chain Control';
 
+  const currentScene = hudState.activeScene || SUPPLY_CHAIN_SCENES[0];
+  const isDisruptionScene = hudState.activeSceneIndex === 7;
+
   return (
     <section
       id="process"
       ref={containerRef}
-      className="relative w-full h-[480vh] bg-[#E6F3FB] select-none"
-      aria-label="Orion-9 3D Supply Chain Operating World and Process"
+      className="relative w-full h-[520vh] bg-[#E6F3FB] select-none"
+      aria-label="Orion-9 End-to-End Intelligent Supply Chain World"
     >
       {/* Sticky Full-Viewport 3D Stage */}
       <div className="sticky top-0 left-0 w-full h-screen overflow-hidden">
-        {/* Dedicated Empty WebGL Canvas Mount */}
+        {/* Dedicated WebGL Canvas Mount */}
         <div
           ref={canvasMountRef}
           style={{ opacity: introState.environmentOpacity }}
@@ -1045,7 +459,7 @@ export const OrionWorldExperience: React.FC = () => {
         />
 
         {/* ==========================================================================
-            1. CENTERED ENTERPRISE HERO OVERLAY (5-STAGE CINEMATIC LOGO REVEAL)
+            1. HERO OVERLAY (ORION-9 CENTERPIECE REVEAL — SCENE 0 & 9 INTEGRATION)
            ========================================================================== */}
         <div
           style={{
@@ -1053,87 +467,184 @@ export const OrionWorldExperience: React.FC = () => {
             transform: `translate3d(0, ${hudState.heroTranslateY}px, 0)`,
             pointerEvents: hudState.heroOpacity > 0.25 ? 'auto' : 'none',
           }}
-          className="absolute inset-0 z-10 flex flex-col items-center justify-between pt-18 sm:pt-20 pb-0 px-4 sm:px-6 text-center transition-opacity duration-75"
+          className="absolute inset-0 z-10 flex flex-col items-center justify-between pt-16 sm:pt-20 pb-0 px-4 sm:px-6 text-center transition-opacity duration-75"
         >
           <div className="flex-1 flex items-center justify-center w-full">
             <OrionHeroBrandLockup
               introState={introState}
               headlineText={`${heroLine1} ${heroLine2}`.trim()}
-              supportingParagraph="Autonomous risk sensing, canonical graph intelligence, and governed execution—built to keep global operations moving."
+              supportingParagraph="From raw materials to suppliers, smart manufacturing, automated warehousing, multimodal transit, and customer delivery—an end-to-end intelligent operating system."
             />
           </div>
 
           {/* Bottom-Center Scroll Prompt */}
           <div
             style={{ opacity: introState.supportingTextOpacity }}
-            className="flex flex-col items-center shrink-0"
+            className="flex flex-col items-center shrink-0 mb-4"
           >
             <button
               type="button"
-              onClick={() => scrollToNormalizedProgress(0.26)}
-              className="px-5 py-2.5 rounded-full liquid-glass-button text-xs font-semibold text-[var(--orion-text-primary)] hover:border-[#0284C7] transition-all cursor-pointer shadow-sm hover:scale-[1.02]"
+              onClick={() => scrollToNormalizedProgress(0.14)}
+              className="px-5 py-2.5 rounded-full liquid-glass-button text-xs font-semibold text-[var(--orion-text-primary)] hover:border-[#0284C7] transition-all cursor-pointer shadow-sm hover:scale-[1.02] flex items-center gap-2"
             >
-              Scroll to Discover Our Process
+              <span>Explore the Complete Supply Chain</span>
+              <ArrowRight className="w-3.5 h-3.5 text-[#0284C7]" />
             </button>
             <div className="w-px h-6 sm:h-8 bg-[var(--orion-text-primary)]/40 mt-1" />
           </div>
         </div>
 
         {/* ==========================================================================
-            2. BOTTOM-LEFT PROGRESSIVE 4-STEP ACCORDION HUD (01-04)
+            2. TOP HORIZONTAL SUPPLY CHAIN STAGE NAVIGATOR (9 SCENES)
            ========================================================================== */}
         <div
           style={{
-            opacity: hudState.processHudOpacity,
-            pointerEvents: hudState.processHudOpacity > 0.2 ? 'auto' : 'none',
+            opacity: hudState.heroOpacity < 0.85 ? 1 : 0,
+            pointerEvents: hudState.heroOpacity < 0.85 ? 'auto' : 'none',
           }}
-          className="absolute bottom-8 sm:bottom-12 left-5 sm:left-12 z-20 w-[calc(100%-2.5rem)] max-w-[430px]"
+          className="absolute top-20 sm:top-22 left-0 right-0 z-30 flex justify-center px-4 transition-opacity duration-300"
         >
-          <div className="flex flex-col gap-2.5">
-            {WORLD_PROCESS_STEPS.map((step, idx) => {
-              const isActive = hudState.activeStepIndex === idx;
+          <nav
+            aria-label="Supply Chain Stage Navigator"
+            className="flex items-center gap-1 sm:gap-1.5 p-1.5 rounded-full liquid-glass-elevated border border-[var(--glass-border)] shadow-lg overflow-x-auto max-w-full scrollbar-none"
+          >
+            {SUPPLY_CHAIN_SCENES.map((scene, idx) => {
+              const isActive = hudState.activeSceneIndex === idx;
               return (
-                <div
-                  key={step.id}
-                  className="transition-all duration-300"
+                <button
+                  key={scene.id}
+                  type="button"
+                  onClick={() => scrollToNormalizedProgress(scene.scrollTarget)}
+                  className={`px-2.5 sm:px-3 py-1 rounded-full text-[11px] sm:text-xs font-medium whitespace-nowrap transition-all duration-200 cursor-pointer ${
+                    isActive
+                      ? 'bg-[#070B19] text-white shadow-xs font-semibold scale-[1.02]'
+                      : 'text-[var(--orion-text-secondary)] hover:text-[var(--orion-text-primary)] hover:bg-white/40'
+                  }`}
                 >
-                  {isActive ? (
-                    <div className="liquid-glass-elevated rounded-2xl p-5 shadow-[0_12px_32px_rgba(0,0,0,0.12)] border border-[var(--glass-border)]">
-                      <div className="flex items-start gap-3.5">
-                        <span className="w-7 h-7 rounded-lg bg-[var(--orion-text-primary)] text-[var(--orion-canvas)] font-mono text-xs font-medium flex items-center justify-center shrink-0 mt-0.5">
-                          {step.number}
-                        </span>
-                        <div className="space-y-2">
-                          <h2 className="font-editorial text-xl sm:text-2xl font-bold tracking-[-0.015em] text-[var(--orion-text-primary)] leading-tight">
-                            {step.title}
-                          </h2>
-                          <p className="text-xs sm:text-sm text-[var(--orion-text-secondary)] leading-relaxed">
-                            {step.description}
-                          </p>
-                          <div className="pt-1 flex items-center gap-2 text-[11px] font-mono text-[#0284C7] font-medium">
-                            <span>{step.telemetryTag}</span>
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-                  ) : (
-                    <button
-                      type="button"
-                      onClick={() => scrollToNormalizedProgress(step.scrollTarget)}
-                      aria-label={`Jump to step ${step.number}: ${step.title}`}
-                      className="group inline-flex items-center gap-2.5 text-left cursor-pointer focus:outline-hidden"
-                    >
-                      <span className="w-7 h-7 rounded-lg liquid-glass text-[var(--orion-text-primary)] font-mono text-xs font-medium flex items-center justify-center group-hover:bg-[#0284C7] group-hover:text-white transition-all shadow-xs border border-[var(--glass-border)]">
-                        {step.number}
-                      </span>
-                      <span className="text-xs font-semibold text-[var(--orion-text-secondary)] opacity-0 group-hover:opacity-100 transition-colors">
-                        {step.title}
-                      </span>
-                    </button>
-                  )}
-                </div>
+                  <span className="font-mono text-[10px] opacity-75 mr-1">{scene.number}</span>
+                  <span>{scene.shortLabel.split(' ')[1] || scene.shortLabel}</span>
+                </button>
               );
             })}
+          </nav>
+        </div>
+
+        {/* ==========================================================================
+            3. BOTTOM-LEFT PROGRESSIVE 9-STAGE OPERATIONAL HUD
+           ========================================================================== */}
+        <div
+          style={{
+            opacity: hudState.heroOpacity < 0.75 ? 1 : 0,
+            pointerEvents: hudState.heroOpacity < 0.75 ? 'auto' : 'none',
+          }}
+          className="absolute bottom-6 sm:bottom-10 left-4 sm:left-10 z-20 w-[calc(100%-2rem)] max-w-[480px] transition-opacity duration-300"
+        >
+          <div className="liquid-glass-elevated rounded-3xl p-5 sm:p-6 shadow-2xl border border-[var(--glass-border)] space-y-4">
+            {/* Header Stage Indicator */}
+            <div className="flex items-center justify-between border-b border-[var(--glass-border-subtle)] pb-3">
+              <div className="flex items-center gap-2.5">
+                <span className="w-7 h-7 rounded-lg bg-[#070B19] text-white font-mono text-xs font-bold flex items-center justify-center shrink-0 shadow-xs">
+                  {currentScene.number}
+                </span>
+                <div>
+                  <span className="text-[10px] font-mono uppercase tracking-wider text-[#0284C7] font-bold block">
+                    STAGE {currentScene.number} OF 09 · OPERATING SYSTEM
+                  </span>
+                  <h2 className="text-base sm:text-lg font-bold text-[#111827] leading-tight">
+                    {currentScene.title}
+                  </h2>
+                </div>
+              </div>
+
+              {/* Status Indicator */}
+              <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-[#F0F9FF] border border-[#BAE6FD] text-[10px] font-mono font-semibold text-[#0369A1]">
+                <span className="w-1.5 h-1.5 rounded-full bg-[#0284C7] animate-pulse" />
+                <span>LIVE LOCKED</span>
+              </div>
+            </div>
+
+            {/* Subtitle & Narrative */}
+            <div className="space-y-1.5">
+              <span className="text-xs font-medium text-[#475569] block">
+                {currentScene.subtitle}
+              </span>
+              <p className="text-xs text-[#566575] leading-relaxed">
+                {currentScene.narrative}
+              </p>
+            </div>
+
+            {/* Live Telemetry KPI Metrics Grid */}
+            <div className="grid grid-cols-3 gap-2 pt-1 border-t border-[var(--glass-border-subtle)]">
+              {currentScene.metrics.map((m) => (
+                <div
+                  key={m.label}
+                  className="p-2 rounded-xl bg-white/70 border border-[#E2E8F0] space-y-0.5"
+                >
+                  <span className="text-[9px] font-mono uppercase tracking-wider text-[#64748B] block truncate">
+                    {m.label}
+                  </span>
+                  <span className={`text-xs font-bold block font-mono ${
+                    m.status === 'warning' ? 'text-amber-600' : 'text-[#070B19]'
+                  }`}>
+                    {m.value}
+                  </span>
+                </div>
+              ))}
+            </div>
+
+            {/* ======================================================================
+                SCENE 8: PREDICTIVE DISRUPTION INTERACTIVE CONTROLS (SIMULATED)
+               ====================================================================== */}
+            {isDisruptionScene && (
+              <div className="p-3.5 rounded-2xl bg-amber-50/80 border border-amber-200/80 space-y-2.5 text-xs">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-1.5 font-bold text-amber-900">
+                    <AlertTriangle className="w-4 h-4 text-amber-600" />
+                    <span>SIMULATED DEMONSTRATION SCENARIO</span>
+                  </div>
+                  <span className="text-[9px] font-mono px-2 py-0.5 rounded bg-amber-200/60 text-amber-900 font-semibold">
+                    PARETO SOLVER
+                  </span>
+                </div>
+
+                <p className="text-[11px] text-amber-800 leading-snug">
+                  Demonstration of closed-loop disruption resolution: A simulated 48h bottleneck occurs at the primary supplier. Orion-9 computes alternative multi-modal paths in sub-second latency.
+                </p>
+
+                <div className="flex flex-wrap items-center gap-2 pt-1">
+                  <button
+                    type="button"
+                    onClick={handleTriggerDisruption}
+                    className="px-3 py-1.5 rounded-xl bg-amber-600 hover:bg-amber-700 text-white font-semibold text-[11px] transition shadow-xs cursor-pointer flex items-center gap-1.5"
+                  >
+                    <Zap className="w-3.5 h-3.5" />
+                    <span>Trigger 48h Bottleneck</span>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={handleExecuteReroute}
+                    className="px-3 py-1.5 rounded-xl bg-[#0284C7] hover:bg-[#0369A1] text-white font-semibold text-[11px] transition shadow-xs cursor-pointer flex items-center gap-1.5"
+                  >
+                    <CheckCircle2 className="w-3.5 h-3.5" />
+                    <span>Execute Air Bypass</span>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={handleResetSimulation}
+                    className="p-1.5 rounded-xl bg-white border border-amber-300 hover:bg-amber-100 text-amber-800 transition cursor-pointer"
+                    aria-label="Reset simulation"
+                  >
+                    <RotateCcw className="w-3.5 h-3.5" />
+                  </button>
+                </div>
+              </div>
+            )}
+
+            {/* Bottom Telemetry Tagline */}
+            <div className="text-[10px] font-mono text-[#0284C7] bg-[#F8FAFC] px-3 py-1.5 rounded-xl border border-[#E2E8F0] flex items-center justify-between">
+              <span className="truncate">{currentScene.telemetryTag}</span>
+              <span className="text-[9px] text-[#64748B] shrink-0 ml-2">ORION-9 KERNEL</span>
+            </div>
           </div>
         </div>
       </div>

@@ -294,10 +294,16 @@ export function AdminConsole({ onNavigate }: AdminConsoleProps) {
         brandingForm,
         'Updated Orion-9 branding, logo placements, and color tokens'
       );
-      showBanner(
-        res.success ? 'success' : 'error',
-        res.error || (publish ? 'Branding & Identity published live successfully.' : 'Branding & Identity saved to draft.')
-      );
+      if (res.success) {
+        showBanner(
+          'success',
+          publish
+            ? 'Branding & Identity published live successfully.'
+            : 'Branding & Identity saved to draft.'
+        );
+      } else {
+        showBanner('error', res.error || 'Failed to save Branding & Identity configuration.');
+      }
     } finally {
       setIsSavingBranding(false);
     }

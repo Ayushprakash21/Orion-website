@@ -11,6 +11,7 @@ import {
   AuditLogEntry,
 } from '../types/cms';
 import { DEFAULT_SITE_CONFIG } from '../data/defaultSiteConfig';
+import { sanitizeForFirestore, normalizeBrandingConfig, validateBrandingConfig } from '../utils/cms-validation';
 import {
   initializeFirebase,
   doc,
@@ -61,7 +62,7 @@ function loadStoredBundle(key: string, fallback: SiteConfigurationBundle): SiteC
     if (!raw) return fallback;
     const parsed = JSON.parse(raw) as Partial<SiteConfigurationBundle>;
     return {
-      branding: { ...fallback.branding, ...(parsed.branding || {}) },
+      branding: normalizeBrandingConfig({ ...fallback.branding, ...(parsed.branding || {}) }),
       navigation: { ...fallback.navigation, ...(parsed.navigation || {}) },
       homepage: {
         ...fallback.homepage,
@@ -161,10 +162,14 @@ export function SiteConfigProvider({ children }: { children: React.ReactNode }) 
           const snap = await getDoc(doc(db, 'siteConfig', sec));
           if (snap.exists()) {
             anyFound = true;
-            (nextPublished as unknown as Record<string, unknown>)[sec] = {
-              ...(DEFAULT_SITE_CONFIG[sec] as object),
-              ...snap.data(),
-            };
+            const docData = snap.data();
+            (nextPublished as unknown as Record<string, unknown>)[sec] =
+              sec === 'branding'
+                ? normalizeBrandingConfig({ ...(DEFAULT_SITE_CONFIG.branding), ...docData })
+                : {
+                    ...(DEFAULT_SITE_CONFIG[sec] as object),
+                    ...docData,
+                  };
           }
         } catch {
           // Continue with defaults for this doc
@@ -251,32 +256,49 @@ export function SiteConfigProvider({ children }: { children: React.ReactNode }) 
     data: SiteConfigurationBundle[K],
     summary: string
   ): Promise<{ success: boolean; error?: string }> => {
+    // 1. Validation for branding
+    if (section === 'branding') {
+      const check = validateBrandingConfig(data as BrandingConfig);
+      if (!check.valid) {
+        return { success: false, error: check.errors.join(' ') };
+      }
+    }
+
+    // 2. Normalization & Sanitization
+    const normalizedData =
+      section === 'branding' ? normalizeBrandingConfig(data as BrandingConfig) : data;
+
+    const payload = sanitizeForFirestore({
+      ...(typeof normalizedData === 'object' && !Array.isArray(normalizedData)
+        ? (normalizedData as unknown as Record<string, unknown>)
+        : { items: normalizedData }),
+      updatedAt: new Date().toISOString(),
+      updatedBy: user?.email || user?.uid || 'admin',
+    });
+
+    // 3. Firestore persistence FIRST: Only commit to runtime upon persistence success
+    const { db, isConfigured } = initializeFirebase();
+    if (isConfigured && db && user) {
+      try {
+        await setDoc(doc(db, 'siteConfigDrafts', String(section)), payload, { merge: true });
+      } catch (err: unknown) {
+        const errorMsg = err instanceof Error ? err.message : 'Firestore draft write failed.';
+        console.error(`[SiteConfigContext] Failed to persist draft for ${String(section)}:`, err);
+        return {
+          success: false,
+          error: `Draft not saved. Firestore write failed: ${errorMsg}`,
+        };
+      }
+    }
+
+    // 4. Update local draft state ONLY after persistence confirmation
     const nextDraft: SiteConfigurationBundle = {
       ...draftConfig,
-      [section]: data,
+      [section]: normalizedData as SiteConfigurationBundle[K],
     };
     setDraftConfig(nextDraft);
     if (typeof window !== 'undefined') {
       window.localStorage.setItem(DRAFT_STORAGE_KEY, JSON.stringify(nextDraft));
-    }
-
-    const { db, isConfigured } = initializeFirebase();
-    if (isConfigured && db && user) {
-      try {
-        await setDoc(doc(db, 'siteConfigDrafts', String(section)), {
-          ...(typeof data === 'object' && !Array.isArray(data) ? data : { items: data }),
-          updatedAt: new Date().toISOString(),
-          updatedBy: user.email || user.uid,
-        });
-      } catch (err: unknown) {
-        return {
-          success: false,
-          error:
-            err instanceof Error
-              ? `Saved locally to draft preview, but Firestore write failed: ${err.message}`
-              : 'Firestore draft write failed.',
-        };
-      }
     }
 
     await appendAuditLog(String(section), 'save_draft', summary);
@@ -289,13 +311,49 @@ export function SiteConfigProvider({ children }: { children: React.ReactNode }) 
     data: SiteConfigurationBundle[K],
     summary: string
   ): Promise<{ success: boolean; error?: string }> => {
+    // 1. Validation for branding
+    if (section === 'branding') {
+      const check = validateBrandingConfig(data as BrandingConfig);
+      if (!check.valid) {
+        return { success: false, error: check.errors.join(' ') };
+      }
+    }
+
+    // 2. Normalization & Sanitization
+    const normalizedData =
+      section === 'branding' ? normalizeBrandingConfig(data as BrandingConfig) : data;
+
+    const payload = sanitizeForFirestore({
+      ...(typeof normalizedData === 'object' && !Array.isArray(normalizedData)
+        ? (normalizedData as unknown as Record<string, unknown>)
+        : { items: normalizedData }),
+      updatedAt: new Date().toISOString(),
+      updatedBy: user?.email || user?.uid || 'admin',
+    });
+
+    // 3. Firestore persistence FIRST: Active runtime must NOT be updated if persistence fails
+    const { db, isConfigured } = initializeFirebase();
+    if (isConfigured && db && user) {
+      try {
+        await setDoc(doc(db, 'siteConfig', String(section)), payload, { merge: true });
+      } catch (err: unknown) {
+        const errorMsg = err instanceof Error ? err.message : 'Firestore publish failed.';
+        console.error(`[SiteConfigContext] Failed to publish ${String(section)} to Firestore:`, err);
+        return {
+          success: false,
+          error: `Publication failed. Firestore sync returned: ${errorMsg}`,
+        };
+      }
+    }
+
+    // 4. Update active runtime & local persistence ONLY after persistence confirms
     const nextPublished: SiteConfigurationBundle = {
       ...publishedConfig,
-      [section]: data,
+      [section]: normalizedData as SiteConfigurationBundle[K],
     };
     const nextDraft: SiteConfigurationBundle = {
       ...draftConfig,
-      [section]: data,
+      [section]: normalizedData as SiteConfigurationBundle[K],
     };
     setPublishedConfig(nextPublished);
     setDraftConfig(nextDraft);
@@ -303,25 +361,6 @@ export function SiteConfigProvider({ children }: { children: React.ReactNode }) 
     if (typeof window !== 'undefined') {
       window.localStorage.setItem(PUBLISHED_STORAGE_KEY, JSON.stringify(nextPublished));
       window.localStorage.setItem(DRAFT_STORAGE_KEY, JSON.stringify(nextDraft));
-    }
-
-    const { db, isConfigured } = initializeFirebase();
-    if (isConfigured && db && user) {
-      try {
-        await setDoc(doc(db, 'siteConfig', String(section)), {
-          ...(typeof data === 'object' && !Array.isArray(data) ? data : { items: data }),
-          updatedAt: new Date().toISOString(),
-          updatedBy: user.email || user.uid,
-        });
-      } catch (err: unknown) {
-        return {
-          success: false,
-          error:
-            err instanceof Error
-              ? `Published to active runtime, but Firestore sync returned: ${err.message}`
-              : 'Firestore publish failed.',
-        };
-      }
     }
 
     await appendAuditLog(String(section), 'publish', summary);

@@ -197,7 +197,7 @@ export async function validateLogoFile(file: File): Promise<FileValidationResult
  * or generates a persistent local URL fallback when Firebase Storage is offline.
  */
 export async function uploadBrandingLogoAsset(
-  placement: 'header' | 'auth' | 'footer' | 'default',
+  placement: 'header' | 'auth' | 'footer' | 'default' | 'shared',
   file: File,
   onProgress?: (progressPct: number) => void
 ): Promise<LogoPlacementMetadata> {

@@ -32,14 +32,24 @@ export const OrionLogo: React.FC<OrionLogoProps> = ({
 
   let effectiveLogoUrl = customLogoUrl;
   if (effectiveLogoUrl === undefined && branding) {
-    if (placement === 'header') {
-      effectiveLogoUrl = branding.headerLogo || branding.logoUrl || null;
-    } else if (placement === 'auth') {
-      effectiveLogoUrl = branding.authLogo || branding.logoUrl || null;
-    } else if (placement === 'footer') {
-      effectiveLogoUrl = branding.footerLogo || branding.logoUrl || null;
+    // Canonical unified brand logo takes precedence across all static placements
+    if (branding.sharedLogoConfig) {
+      effectiveLogoUrl = branding.sharedLogoConfig.useCustom
+        ? (branding.sharedLogoConfig.customUrl || branding.sharedLogoConfig.url || null)
+        : null;
+    } else if (branding.sharedLogo) {
+      effectiveLogoUrl = branding.sharedLogo;
     } else {
-      effectiveLogoUrl = branding.logoUrl || null;
+      // Fallback to legacy placements or default brand logo
+      if (placement === 'header') {
+        effectiveLogoUrl = branding.headerLogo || branding.logoUrl || null;
+      } else if (placement === 'auth') {
+        effectiveLogoUrl = branding.authLogo || branding.logoUrl || null;
+      } else if (placement === 'footer') {
+        effectiveLogoUrl = branding.footerLogo || branding.logoUrl || null;
+      } else {
+        effectiveLogoUrl = branding.logoUrl || null;
+      }
     }
   }
 

@@ -6,12 +6,24 @@ export interface NavItemConfig {
 }
 
 export interface LogoPlacementMetadata {
-  url: string | null;
+  url: string;
   dimensions?: string;
   fileType?: string;
   sizeBytes?: number;
   uploadedAt?: string;
-  updatedBy?: string;
+  originalFilename?: string;
+}
+
+export interface LogoPlacementConfig {
+  useCustom: boolean;
+  customUrl: string | null;
+  url?: string | null;
+  originalFilename?: string | null;
+  dimensions?: string | null;
+  fileType?: string | null;
+  sizeBytes?: number | null;
+  uploadedAt?: string | null;
+  updatedBy?: string | null;
 }
 
 export interface BrandingConfig {
@@ -19,12 +31,16 @@ export interface BrandingConfig {
   shortMark: string;
   tagline: string;
   logoUrl: string;
+  // Canonical unified static website logo
+  sharedLogo?: string | null;
+  sharedLogoConfig?: LogoPlacementConfig | null;
+  // Legacy placements preserved for compatibility & migration
   headerLogo?: string | null;
-  headerLogoConfig?: LogoPlacementMetadata;
+  headerLogoConfig?: LogoPlacementConfig | null;
   authLogo?: string | null;
-  authLogoConfig?: LogoPlacementMetadata;
+  authLogoConfig?: LogoPlacementConfig | null;
   footerLogo?: string | null;
-  footerLogoConfig?: LogoPlacementMetadata;
+  footerLogoConfig?: LogoPlacementConfig | null;
   canvasColor: string;
   altSectionColor: string;
   surfaceColor: string;

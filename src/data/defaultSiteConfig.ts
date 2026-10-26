@@ -1,4 +1,4 @@
-import type { SiteConfigurationBundle, DesktopReleaseRecord } from '../types/cms.ts';
+import type { SiteConfigurationBundle, DesktopReleaseRecord, LogoPlacementConfig } from '../types/cms.ts';
 import { DEFAULT_ORION_APP_URL } from '../utils/auth-validation.ts';
 
 export const DEFAULT_DESKTOP_RELEASES: DesktopReleaseRecord[] = [
@@ -109,6 +109,18 @@ export const DEFAULT_DESKTOP_RELEASES: DesktopReleaseRecord[] = [
   }
 ];
 
+export const DEFAULT_LOGO_PLACEMENT_CONFIG: LogoPlacementConfig = {
+  useCustom: false,
+  customUrl: null,
+  url: null,
+  originalFilename: null,
+  dimensions: null,
+  fileType: null,
+  sizeBytes: null,
+  uploadedAt: null,
+  updatedBy: null,
+};
+
 export const DEFAULT_SITE_CONFIG: SiteConfigurationBundle = {
   branding: {
     companyName: 'Orion-9',
@@ -118,9 +130,9 @@ export const DEFAULT_SITE_CONFIG: SiteConfigurationBundle = {
     headerLogo: null,
     authLogo: null,
     footerLogo: null,
-    headerLogoConfig: undefined,
-    authLogoConfig: undefined,
-    footerLogoConfig: undefined,
+    headerLogoConfig: { ...DEFAULT_LOGO_PLACEMENT_CONFIG },
+    authLogoConfig: { ...DEFAULT_LOGO_PLACEMENT_CONFIG },
+    footerLogoConfig: { ...DEFAULT_LOGO_PLACEMENT_CONFIG },
     canvasColor: '#F2F9FD',
     altSectionColor: '#FFFFFF',
     surfaceColor: '#FFFFFF',
