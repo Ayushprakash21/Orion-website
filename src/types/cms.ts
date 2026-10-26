@@ -5,13 +5,26 @@ export interface NavItemConfig {
   visible: boolean;
 }
 
+export interface LogoPlacementMetadata {
+  url: string | null;
+  dimensions?: string;
+  fileType?: string;
+  sizeBytes?: number;
+  uploadedAt?: string;
+  updatedBy?: string;
+}
+
 export interface BrandingConfig {
   companyName: string;
   shortMark: string;
   tagline: string;
   logoUrl: string;
-  showOrb?: boolean;
-  customOrbUrl?: string;
+  headerLogo?: string | null;
+  headerLogoConfig?: LogoPlacementMetadata;
+  authLogo?: string | null;
+  authLogoConfig?: LogoPlacementMetadata;
+  footerLogo?: string | null;
+  footerLogoConfig?: LogoPlacementMetadata;
   canvasColor: string;
   altSectionColor: string;
   surfaceColor: string;

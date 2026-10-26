@@ -50,13 +50,13 @@ const mockDirectory: Record<string, { uid: string; email: string; passHash: stri
     uid: 'uid-elena-01',
     email: 'elena@enterprise.com',
     passHash: 'SecurePass1!',
-    role: 'member',
+    role: 'operator',
   },
   'marcus_v': {
     uid: 'uid-marcus-02',
     email: 'marcus@globalfreight.org',
     passHash: 'OrionControl2026!',
-    role: 'member',
+    role: 'operator',
   },
 };
 
@@ -153,7 +153,7 @@ function simulatePasswordReset(identifier: string): { success: boolean; message:
 test('1. Username validation: valid characters, min/max length, and rejected characters', () => {
   // Valid usernames
   assert.equal(validateUsername('elena_r').isValid, true);
-  assert.equal(validateUsername('member_99').isValid, true);
+  assert.equal(validateUsername('operator_99').isValid, true);
   assert.equal(validateUsername('john123').isValid, true);
   assert.equal(validateUsername('abc').isValid, true); // min length 3
   assert.equal(validateUsername('a'.repeat(30)).isValid, true); // max length 30
@@ -181,7 +181,7 @@ test('1. Username validation: valid characters, min/max length, and rejected cha
 test('2. Case-insensitive uniqueness logic and normalization', () => {
   assert.equal(normalizeUsername('  Elena_R  '), 'elena_r');
   assert.equal(normalizeUsername('ALEX_HUNTER'), 'alex_hunter');
-  assert.equal(normalizeUsername('Member_01'), 'member_01');
+  assert.equal(normalizeUsername('Operator_01'), 'operator_01');
 
   // Same username with different casing normalizes to identical key
   const key1 = normalizeUsername('SupplyChainLead');
@@ -285,8 +285,8 @@ test('9. Persistent storage of remembered usernames across sessions', () => {
 // TEST 10: Clearing of remembered usernames upon request
 test('10. Clearing of remembered usernames upon request', () => {
   const storage = new MockStorage();
-  saveRememberedUsername('member_7', storage);
-  assert.equal(getRememberedUsername(storage), 'member_7');
+  saveRememberedUsername('operator_7', storage);
+  assert.equal(getRememberedUsername(storage), 'operator_7');
 
   // Clear remembered username
   clearRememberedUsername(storage);
@@ -331,7 +331,7 @@ test('13. Prevention of privilege escalation via regular user registration', () 
   assert.equal(regSuper.isValid, false);
   assert.match(regSuper.errors.username || '', /reserved/);
 
-  // Even if a user registers a legal username, their role is locked to standard member
+  // Even if a user registers a legal username, their role is locked to operator
   const legitReg = validateSignUp('Legit User', 'supply_analyst', 'analyst@company.com', 'StrongPass1!', 'StrongPass1!');
   assert.equal(legitReg.isValid, true);
 });

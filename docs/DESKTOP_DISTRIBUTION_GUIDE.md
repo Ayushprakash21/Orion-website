@@ -105,7 +105,7 @@ spctl -a -t open --context context:primary-signature -v "src-tauri/target/univer
 2. **Anti-SPA Fallback Protection**: Binary streaming triggers inspect `Content-Type` headers to prevent returning HTML single-page app fallbacks as downloads.
 3. **Cryptographic Verification**: Every release card displays the exact SHA-256 hash alongside terminal verification commands (`Get-FileHash` / `shasum -a 256`).
 4. **Lifecycle Enforcement**:
-   - `published`: Publicly downloadable by authenticated users.
+   - `published`: Publicly downloadable by authenticated operators.
    - `draft`: Only visible and downloadable by verified administrators.
    - `disabled`: Blocked immediately from client downloads.
    - `retired`: Permanently archived; blocked from downloads.

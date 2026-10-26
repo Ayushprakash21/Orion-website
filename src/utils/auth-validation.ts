@@ -16,7 +16,7 @@ export const TRUSTED_ORION_HOSTS = [
 export const REMEMBERED_USERNAME_STORAGE_KEY = 'orion_remembered_username';
 
 /**
- * Enterprise reserved usernames that regular users can never claim or register.
+ * Enterprise reserved usernames that regular operators can never claim or register.
  * Prevents system impersonation, administrative spoofing, and routing collisions.
  */
 export const RESERVED_USERNAMES = [
@@ -29,6 +29,7 @@ export const RESERVED_USERNAMES = [
   'orion9',
   'support',
   'security',
+  'operator',
   'superadmin',
   'moderator',
   'mod',

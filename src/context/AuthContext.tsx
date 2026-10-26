@@ -417,7 +417,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       actualEmail = emailOrPass;
       actualPass = pass;
     } else {
-      actualUsername = usernameOrEmail.split('@')[0] || 'member';
+      actualUsername = usernameOrEmail.split('@')[0] || 'operator';
       actualEmail = usernameOrEmail;
       actualPass = emailOrPass;
     }
@@ -484,6 +484,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
                   username: actualUsername,
                   displayName: name.trim(),
                   email: actualEmail.trim().toLowerCase(),
+                  role: 'operator',
                   createdAt: serverTimestamp(),
                   updatedAt: serverTimestamp(),
                 },
@@ -541,6 +542,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
               uid: cred.user.uid,
               displayName: cred.user.displayName || '',
               email: cred.user.email || '',
+              role: 'operator',
               updatedAt: serverTimestamp(),
             },
             { merge: true }

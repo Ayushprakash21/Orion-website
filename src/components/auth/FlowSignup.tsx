@@ -17,7 +17,6 @@ import {
 } from 'lucide-react';
 import { validateSignUp, validateUsername } from '../../utils/auth-validation';
 import { useAuth } from '../../context/AuthContext';
-import { useOptionalSiteConfig } from '../../context/SiteConfigContext';
 
 const ease: [number, number, number, number] = [0.22, 1, 0.36, 1];
 
@@ -69,19 +68,18 @@ export interface FlowSignupProps {
 
 export const FlowSignup: React.FC<FlowSignupProps> = ({
   title = 'Orion-9',
-  subtitle = 'Create your account credentials and get started.',
+  subtitle = 'Provision your operator credentials and get started.',
   trigger = 'click',
   defaultExpanded = true,
   showSocial = true,
   showTerms = true,
-  compactText = 'Create account',
+  compactText = 'Create operator account',
   primaryText = 'Create Orion-9 Account',
   onSubmit,
   onGoogleSignIn,
   onNavigateLogin,
 }) => {
   const { checkUsernameAvailability } = useAuth();
-  const siteConfig = useOptionalSiteConfig();
 
   const [expanded, setExpanded] = useState<boolean>(defaultExpanded);
   const [passwordVisible, setPasswordVisible] = useState<boolean>(false);
@@ -257,42 +255,25 @@ export const FlowSignup: React.FC<FlowSignupProps> = ({
       />
 
       <div className="relative flex w-full max-w-[440px] flex-col items-center">
-        {/* Floating Brand Sphere */}
-        {siteConfig?.activeConfig?.branding?.showOrb !== false && (
-          <motion.div
-            animate={{
-              y: expanded ? -16 : 0,
-              scale: expanded ? 1.04 : 1,
-            }}
-            transition={{ duration: 0.75, ease }}
-            className="absolute -top-[48px] z-30"
-          >
-            <div className="relative h-[46px] w-[46px]">
-              {(siteConfig?.activeConfig?.branding?.customOrbUrl || siteConfig?.activeConfig?.branding?.logoUrl) ? (
-                <div className="absolute inset-[2px] rounded-full bg-white p-1 border border-[#D5E1E8] shadow-[0_10px_28px_rgba(41,77,107,0.38),0_0_40px_rgba(168,194,210,0.35)] flex items-center justify-center overflow-hidden">
-                  <img
-                    src={siteConfig.activeConfig.branding.customOrbUrl || siteConfig.activeConfig.branding.logoUrl}
-                    alt={siteConfig.activeConfig.branding.companyName || 'Brand'}
-                    className="w-full h-full object-contain rounded-full"
-                    onError={(e) => {
-                      (e.currentTarget as HTMLElement).style.display = 'none';
-                    }}
-                  />
-                </div>
-              ) : (
-                <>
-                  <div className="absolute inset-[2px] rounded-full bg-[radial-gradient(circle_at_30%_24%,#FFFFFF_0%,#D5E8F2_22%,#5682A3_56%,#294D6B_82%,#101820_100%)] shadow-[0_10px_28px_rgba(41,77,107,0.38),0_0_40px_rgba(168,194,210,0.35)]" />
-                  <div className="absolute left-[10px] top-[7px] h-[9px] w-[13px] rotate-[-20deg] rounded-full bg-white/85 blur-[1.5px]" />
-                </>
-              )}
-              <motion.div
-                animate={{ rotate: 360 }}
-                transition={{ duration: 8, repeat: Infinity, ease: 'linear' }}
-                className="absolute -inset-[3px] rounded-full border border-[#294D6B]/25"
-              />
-            </div>
-          </motion.div>
-        )}
+        {/* Floating Sphere */}
+        <motion.div
+          animate={{
+            y: expanded ? -16 : 0,
+            scale: expanded ? 1.04 : 1,
+          }}
+          transition={{ duration: 0.75, ease }}
+          className="absolute -top-[48px] z-30"
+        >
+          <div className="relative h-[46px] w-[46px]">
+            <div className="absolute inset-[2px] rounded-full bg-[radial-gradient(circle_at_30%_24%,#FFFFFF_0%,#D5E8F2_22%,#5682A3_56%,#294D6B_82%,#101820_100%)] shadow-[0_10px_28px_rgba(41,77,107,0.38),0_0_40px_rgba(168,194,210,0.35)]" />
+            <div className="absolute left-[10px] top-[7px] h-[9px] w-[13px] rotate-[-20deg] rounded-full bg-white/85 blur-[1.5px]" />
+            <motion.div
+              animate={{ rotate: 360 }}
+              transition={{ duration: 8, repeat: Infinity, ease: 'linear' }}
+              className="absolute -inset-[3px] rounded-full border border-[#294D6B]/25"
+            />
+          </div>
+        </motion.div>
 
         {/* Frosted Card */}
         <motion.div
@@ -301,7 +282,7 @@ export const FlowSignup: React.FC<FlowSignupProps> = ({
             borderRadius: expanded ? 28 : 22,
           }}
           transition={{ duration: 0.65, ease }}
-          className="relative w-full overflow-hidden border border-[#D5E1E8] bg-white/95 shadow-[0_28px_80px_rgba(16,24,32,0.12),0_2px_12px_rgba(41,77,107,0.06)] backdrop-blur-2xl"
+          className="relative w-full overflow-hidden rounded-3xl liquid-glass-elevated border border-[var(--glass-border)] text-[var(--orion-text-primary)] shadow-2xl"
         >
           <motion.div
             animate={{
@@ -316,7 +297,7 @@ export const FlowSignup: React.FC<FlowSignupProps> = ({
             <button
               type="button"
               onClick={toggle}
-              className="absolute right-4 top-4 z-20 flex h-7 w-7 items-center justify-center rounded-full border border-[#D5E1E8] bg-[#F5F9FB] text-[#566575] transition hover:border-[#294D6B]/40 hover:text-[#111827] cursor-pointer"
+              className="absolute right-4 top-4 z-20 flex h-7 w-7 items-center justify-center rounded-full border border-[var(--glass-border)] liquid-glass-button text-[var(--orion-text-secondary)] hover:text-[var(--orion-text-primary)] transition cursor-pointer"
               title="Minimize card"
               aria-label="Minimize authentication card"
             >
@@ -330,14 +311,14 @@ export const FlowSignup: React.FC<FlowSignupProps> = ({
               transition={{ duration: 0.5, ease }}
               className="text-center"
             >
-              <div className="mx-auto mb-2 inline-flex items-center gap-1.5 rounded-full border border-[#D5E1E8] bg-[#F5F9FB] px-3 py-1 text-[10px] font-mono font-semibold uppercase tracking-widest text-[#294D6B]">
+              <div className="mx-auto mb-2 inline-flex items-center gap-1.5 rounded-full liquid-glass-badge px-3 py-1 text-[10px] font-mono font-semibold uppercase tracking-widest text-[var(--orion-accent)]">
                 <ShieldCheck size={12} />
-                <span>{(siteConfig?.activeConfig?.branding?.companyName || 'ORION-9').toUpperCase()} REGISTRATION</span>
+                <span>OPERATOR PROVISIONING</span>
               </div>
-              <h2 className="text-[26px] font-bold tracking-[-0.03em] text-[#111827]">
-                {title === 'Orion-9' ? (siteConfig?.activeConfig?.branding?.companyName || title) : title}
+              <h2 className="text-[26px] font-bold tracking-[-0.03em] text-[var(--orion-text-primary)]">
+                {title}
               </h2>
-              <p className="mt-1 text-[13px] font-medium text-[#566575]">
+              <p className="mt-1 text-[13px] font-medium text-[var(--orion-text-secondary)]">
                 {subtitle}
               </p>
             </motion.div>
@@ -388,7 +369,7 @@ export const FlowSignup: React.FC<FlowSignupProps> = ({
                 <motion.div variants={fieldVariant} initial="hidden" animate="show">
                   <label
                     htmlFor="flow-signup-name"
-                    className="mb-1 block text-[11px] font-semibold uppercase tracking-wider text-[#566575]"
+                    className="mb-1 block text-[11px] font-semibold uppercase tracking-wider text-[var(--orion-text-secondary)]"
                   >
                     Full Name
                   </label>
@@ -405,7 +386,7 @@ export const FlowSignup: React.FC<FlowSignupProps> = ({
                       placeholder="Elena Rostova"
                       autoComplete="name"
                       disabled={loading}
-                      className="h-[44px] w-full rounded-[13px] border border-[#D5E1E8] bg-[#F5F9FB] pl-10 pr-3.5 text-[13px] font-medium text-[#111827] outline-none transition placeholder:text-[#566575]/60 focus:border-[#294D6B] focus:bg-white focus:ring-2 focus:ring-[#294D6B]/12 disabled:opacity-60"
+                      className="h-[44px] w-full rounded-[13px] liquid-glass-input pl-10 pr-3.5 text-[13px] font-medium text-[var(--orion-text-primary)] outline-none transition placeholder:text-[var(--orion-text-muted)] focus:border-[var(--orion-accent)] disabled:opacity-60"
                     />
                   </div>
                 </motion.div>
@@ -420,9 +401,9 @@ export const FlowSignup: React.FC<FlowSignupProps> = ({
                   <div className="flex items-center justify-between mb-1">
                     <label
                       htmlFor="flow-signup-username"
-                      className="block text-[11px] font-semibold uppercase tracking-wider text-[#566575]"
+                      className="block text-[11px] font-semibold uppercase tracking-wider text-[var(--orion-text-secondary)]"
                     >
-                      Username
+                      Operator Username
                     </label>
                     <span className="text-[10px] text-[#566575]">a-z, 0-9, _ (3-30 chars)</span>
                   </div>
@@ -485,7 +466,7 @@ export const FlowSignup: React.FC<FlowSignupProps> = ({
                 >
                   <label
                     htmlFor="flow-signup-email"
-                    className="mb-1 block text-[11px] font-semibold uppercase tracking-wider text-[#566575]"
+                    className="mb-1 block text-[11px] font-semibold uppercase tracking-wider text-[var(--orion-text-secondary)]"
                   >
                     Work Email Address
                   </label>
@@ -502,7 +483,7 @@ export const FlowSignup: React.FC<FlowSignupProps> = ({
                       placeholder="elena@enterprise.com"
                       autoComplete="email"
                       disabled={loading}
-                      className="h-[44px] w-full rounded-[13px] border border-[#D5E1E8] bg-[#F5F9FB] pl-10 pr-3.5 text-[13px] font-medium text-[#111827] outline-none transition placeholder:text-[#566575]/60 focus:border-[#294D6B] focus:bg-white focus:ring-2 focus:ring-[#294D6B]/12 disabled:opacity-60"
+                      className="h-[44px] w-full rounded-[13px] liquid-glass-input pl-10 pr-3.5 text-[13px] font-medium text-[var(--orion-text-primary)] outline-none transition placeholder:text-[var(--orion-text-muted)] focus:border-[var(--orion-accent)] disabled:opacity-60"
                     />
                   </div>
                 </motion.div>
@@ -516,7 +497,7 @@ export const FlowSignup: React.FC<FlowSignupProps> = ({
                 >
                   <label
                     htmlFor="flow-signup-password"
-                    className="mb-1 block text-[11px] font-semibold uppercase tracking-wider text-[#566575]"
+                    className="mb-1 block text-[11px] font-semibold uppercase tracking-wider text-[var(--orion-text-secondary)]"
                   >
                     Password (min 8 chars with numbers/symbols)
                   </label>
@@ -533,7 +514,7 @@ export const FlowSignup: React.FC<FlowSignupProps> = ({
                       placeholder="At least 8 characters"
                       autoComplete="new-password"
                       disabled={loading}
-                      className="h-[44px] w-full rounded-[13px] border border-[#D5E1E8] bg-[#F5F9FB] pl-10 pr-10 text-[13px] font-medium text-[#111827] outline-none transition placeholder:text-[#566575]/60 focus:border-[#294D6B] focus:bg-white focus:ring-2 focus:ring-[#294D6B]/12 disabled:opacity-60"
+                      className="h-[44px] w-full rounded-[13px] liquid-glass-input pl-10 pr-10 text-[13px] font-medium text-[var(--orion-text-primary)] outline-none transition placeholder:text-[var(--orion-text-muted)] focus:border-[var(--orion-accent)] disabled:opacity-60"
                     />
                     <button
                       type="button"
@@ -584,7 +565,7 @@ export const FlowSignup: React.FC<FlowSignupProps> = ({
                 >
                   <label
                     htmlFor="flow-signup-confirm"
-                    className="mb-1 block text-[11px] font-semibold uppercase tracking-wider text-[#566575]"
+                    className="mb-1 block text-[11px] font-semibold uppercase tracking-wider text-[var(--orion-text-secondary)]"
                   >
                     Confirm Password
                   </label>
@@ -601,7 +582,7 @@ export const FlowSignup: React.FC<FlowSignupProps> = ({
                       placeholder="Re-enter your password"
                       autoComplete="new-password"
                       disabled={loading}
-                      className="h-[44px] w-full rounded-[13px] border border-[#D5E1E8] bg-[#F5F9FB] pl-10 pr-10 text-[13px] font-medium text-[#111827] outline-none transition placeholder:text-[#566575]/60 focus:border-[#294D6B] focus:bg-white focus:ring-2 focus:ring-[#294D6B]/12 disabled:opacity-60"
+                      className="h-[44px] w-full rounded-[13px] liquid-glass-input pl-10 pr-10 text-[13px] font-medium text-[var(--orion-text-primary)] outline-none transition placeholder:text-[var(--orion-text-muted)] focus:border-[var(--orion-accent)] disabled:opacity-60"
                     />
                     <button
                       type="button"
@@ -659,7 +640,7 @@ export const FlowSignup: React.FC<FlowSignupProps> = ({
                   {loading ? (
                     <>
                       <span className="h-4 w-4 animate-spin rounded-full border-2 border-white/30 border-t-white" />
-                      <span>Creating account...</span>
+                      <span>Provisioning operator account...</span>
                     </>
                   ) : (
                     primaryText
@@ -690,7 +671,7 @@ export const FlowSignup: React.FC<FlowSignupProps> = ({
                 )}
 
                 <p className="pt-2 text-center text-[12px] font-medium text-[#566575]">
-                  Already have an account?{' '}
+                  Already have an operator account?{' '}
                   <button
                     type="button"
                     disabled={loading}
