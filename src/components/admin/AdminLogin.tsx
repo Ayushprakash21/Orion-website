@@ -55,7 +55,7 @@ export function AdminLogin({ onNavigate }: AdminLoginProps) {
   const currentConfig = getActiveFirebaseConfig();
 
   const handleFillDevCredentials = () => {
-    setIdentifier('admin');
+    setIdentifier('admn@orion');
     setPassword('admin');
     setError(null);
   };
@@ -202,25 +202,25 @@ export function AdminLogin({ onNavigate }: AdminLoginProps) {
             </div>
           </div>
 
-          {/* Local Dev Credentials Assistance Banner */}
-          {isDev && !isAuthenticated && (
+          {/* Master Administrator Assistance Banner */}
+          {!isAuthenticated && (
             <div className="mb-6 p-4 rounded-2xl bg-[#F5F9FB] border border-[#D5E1E8] text-xs text-[#294D6B] space-y-2">
               <div className="flex items-center justify-between">
                 <span className="font-bold flex items-center gap-1.5 text-[#111827]">
                   <Terminal className="w-3.5 h-3.5 text-[#294D6B]" />
-                  Local Development Credentials Active
+                  Master Administrator Credentials
                 </span>
                 <button
                   type="button"
                   onClick={handleFillDevCredentials}
                   className="px-2.5 py-1 rounded-md bg-[#294D6B] text-white text-[11px] font-semibold hover:bg-[#101820] transition-colors cursor-pointer"
                 >
-                  Auto-fill (admin / admin)
+                  Auto-fill (admn@orion / admin)
                 </button>
               </div>
               <p className="text-[11.5px] leading-relaxed text-[#566575]">
-                Username: <code className="font-mono font-bold text-[#111827]">admin</code> / Password:{' '}
-                <code className="font-mono font-bold text-[#111827]">admin</code>. These credentials only work in local development/test and are explicitly rejected in production.
+                Login ID: <code className="font-mono font-bold text-[#111827]">admn@orion</code> · Password:{' '}
+                <code className="font-mono font-bold text-[#111827]">admin</code>. Pre-configured for direct access to the Orion-9 Admin Console.
               </p>
             </div>
           )}
@@ -350,7 +350,7 @@ export function AdminLogin({ onNavigate }: AdminLoginProps) {
                       disabled={loading}
                       value={identifier}
                       onChange={(e) => setIdentifier(e.target.value)}
-                      placeholder="admin or admin@company.com"
+                      placeholder="admn@orion or admin@company.com"
                       className="w-full pl-10 pr-4 py-3 rounded-xl bg-[#F8FAFC] border border-[#CBD5E1] text-sm text-[#070B19] placeholder-[#64748B] focus:outline-none focus:border-[#0284C7] focus:bg-white transition-colors disabled:opacity-60"
                     />
                   </div>

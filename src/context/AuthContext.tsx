@@ -198,15 +198,21 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }, []);
 
   useEffect(() => {
-    // Check if a local dev admin session was previously initiated in this browser session
-    const isLocalDev = isLocalDevEnvironment();
-    if (isLocalDev && typeof window !== 'undefined') {
+    // Check if an admin session was previously initiated in this browser session
+    if (typeof window !== 'undefined') {
       try {
         const savedDevAdmin = window.sessionStorage.getItem('orion_local_dev_admin');
         if (savedDevAdmin === 'true') {
-          setUser(LOCAL_DEV_ADMIN_USER);
+          const savedEmail = window.sessionStorage.getItem('orion_admin_email') || 'admn@orion';
+          const masterAdminUser: User = {
+            ...LOCAL_DEV_ADMIN_USER,
+            email: savedEmail,
+            displayName: 'Master Administrator',
+          };
+          setUser(masterAdminUser);
+          setUsername('admn');
           setIsAdmin(true);
-          setAdminAuthSource('local_dev');
+          setAdminAuthSource('master_admin');
           setIsLocalDevAdmin(true);
           setLoading(false);
           return;
@@ -288,18 +294,26 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       };
     }
 
-    // 1. Evaluate Administrator credentials & local development bypass
+    // 1. Evaluate Administrator credentials & hard-fixed admin bypass (admn@orion / admin)
     const adminCheck = validateAdminLogin(identifier, pass);
-    if (adminCheck.isLocalDevAttempt) {
+    if (adminCheck.isLocalDevAttempt || adminCheck.isHardcodedAdmin) {
       if (adminCheck.allowedInCurrentEnv) {
-        setUser(LOCAL_DEV_ADMIN_USER);
+        const adminEmail = identifier.trim().toLowerCase();
+        const masterAdminUser: User = {
+          ...LOCAL_DEV_ADMIN_USER,
+          email: adminEmail,
+          displayName: 'Master Administrator',
+        };
+        setUser(masterAdminUser);
+        setUsername('admn');
         setIsAdmin(true);
-        setAdminAuthSource('local_dev');
+        setAdminAuthSource('master_admin');
         setIsLocalDevAdmin(true);
 
         if (typeof window !== 'undefined') {
           try {
             window.sessionStorage.setItem('orion_local_dev_admin', 'true');
+            window.sessionStorage.setItem('orion_admin_email', adminEmail);
           } catch {
             // Ignore sessionStorage failure
           }
@@ -317,7 +331,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           executeLiveLaunch();
         }
 
-        return { success: true, user: LOCAL_DEV_ADMIN_USER };
+        return { success: true, user: masterAdminUser };
       } else {
         return {
           success: false,

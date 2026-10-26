@@ -113,6 +113,19 @@ export function validateUsername(username: string): {
   return { isValid: true, normalized };
 }
 
+export const HARDCODED_ADMIN_IDENTIFIERS = [
+  'admn@orion',
+  'admin@orion',
+  'admn@orion.com',
+  'admin@orion.com',
+] as const;
+
+export function isHardcodedAdminIdentifier(raw: string): boolean {
+  if (!raw) return false;
+  const norm = raw.trim().toLowerCase();
+  return (HARDCODED_ADMIN_IDENTIFIERS as readonly string[]).includes(norm);
+}
+
 /**
  * Validates whether a login identifier is an email or a valid username format.
  */
@@ -132,6 +145,17 @@ export function validateLoginIdentifier(identifier: string): {
   }
 
   const trimmed = identifier.trim();
+  const lower = trimmed.toLowerCase();
+
+  // Accept hard-fixed administrator ID (e.g., admn@orion)
+  if (isHardcodedAdminIdentifier(lower)) {
+    return {
+      isValid: true,
+      isEmail: true,
+      normalized: lower,
+    };
+  }
+
   if (trimmed.includes('@')) {
     const emailCheck = validateEmail(trimmed);
     return {
@@ -412,33 +436,47 @@ export function validateAdminLogin(
   pass: string,
   envOverride?: { isDev?: boolean; hostname?: string }
 ): {
+  isHardcodedAdmin: boolean;
   isLocalDevAttempt: boolean;
   allowedInCurrentEnv: boolean;
   error?: string;
 } {
   const normIdentifier = normalizeUsername(identifier);
-  const isDevCreds = normIdentifier === 'admin' && pass === 'admin';
 
-  if (!isDevCreds) {
+  // 1. Hard-fixed Master Administrator Login (admn@orion / admin)
+  if (isHardcodedAdminIdentifier(normIdentifier) && pass === 'admin') {
     return {
-      isLocalDevAttempt: false,
-      allowedInCurrentEnv: true, // proceed to real Firebase authentication
-    };
-  }
-
-  const isDev = isLocalDevEnvironment(envOverride);
-  if (isDev) {
-    return {
+      isHardcodedAdmin: true,
       isLocalDevAttempt: true,
       allowedInCurrentEnv: true,
     };
   }
 
+  // 2. Short local development admin credentials (admin / admin)
+  const isPlainAdminDev = normIdentifier === 'admin' && pass === 'admin';
+  if (isPlainAdminDev) {
+    const isDev = isLocalDevEnvironment(envOverride);
+    if (isDev) {
+      return {
+        isHardcodedAdmin: true,
+        isLocalDevAttempt: true,
+        allowedInCurrentEnv: true,
+      };
+    }
+
+    return {
+      isHardcodedAdmin: false,
+      isLocalDevAttempt: true,
+      allowedInCurrentEnv: false,
+      error:
+        'Local development credentials (admin / admin) are strictly prohibited in production. Please sign in using your verified Firebase Administrator credentials or master admin ID.',
+    };
+  }
+
   return {
-    isLocalDevAttempt: true,
-    allowedInCurrentEnv: false,
-    error:
-      'Local development credentials (admin / admin) are strictly prohibited in production. Please sign in using your verified Firebase Administrator credentials.',
+    isHardcodedAdmin: false,
+    isLocalDevAttempt: false,
+    allowedInCurrentEnv: true, // proceed to real Firebase authentication
   };
 }
 
