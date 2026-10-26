@@ -145,11 +145,24 @@ export interface AuditLogEntry {
   timestamp: string;
 }
 
+export type DesktopPlatform =
+  | 'windows-x64'
+  | 'windows-arm64'
+  | 'macos-universal'
+  | 'macos-arm64'
+  | 'macos-x64';
+
+export type DesktopPackageFormat = 'exe' | 'msi' | 'dmg' | 'pkg';
+
+export type DesktopReleaseStatus = 'draft' | 'published' | 'disabled' | 'retired';
+
 export interface DesktopReleaseRecord {
   id: string;
   version: string;
   releaseDate: string;
-  platform: 'windows-x64';
+  platform: DesktopPlatform;
+  format: DesktopPackageFormat;
+  status: DesktopReleaseStatus;
   filename: string;
   sizeBytes: number;
   sha256: string;
@@ -158,6 +171,7 @@ export interface DesktopReleaseRecord {
   isLatest: boolean;
   releaseNotes: string[];
   minimumOs: string;
+  downloadCount: number;
   preflightGates: {
     peValidated: boolean;
     shaVerified: boolean;

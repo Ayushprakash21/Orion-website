@@ -51,7 +51,8 @@ service cloud.firestore {
         'footer',
         'seo',
         'authSettings',
-        'mediaLibrary'
+        'mediaLibrary',
+        'desktopReleases'
       ];
 
       allow create, update: if isAdmin() &&
@@ -62,7 +63,8 @@ service cloud.firestore {
           'footer',
           'seo',
           'authSettings',
-          'mediaLibrary'
+          'mediaLibrary',
+          'desktopReleases'
         ] &&
         request.resource.data.keys().hasAll(['updatedAt', 'updatedBy']) &&
         isValidString(request.resource.data.updatedBy, 2, 160);
@@ -82,8 +84,27 @@ service cloud.firestore {
           'footer',
           'seo',
           'authSettings',
-          'mediaLibrary'
+          'mediaLibrary',
+          'desktopReleases'
         ];
+      allow delete: if isAdmin();
+    }
+
+    // ===============================================================
+    // 2.1 Granular Desktop Releases Registry (Authenticated Read, Admin Write)
+    // ===============================================================
+    match /releases/{releaseId} {
+      // Authenticated users may read published releases; admins may read drafts/retired
+      allow get, list: if isAuthenticated() && (
+        resource.data.status == 'published' || isAdmin()
+      );
+
+      // Only verified administrators can publish, update, or retire desktop binaries
+      allow create, update: if isAdmin() &&
+        request.resource.data.keys().hasAll(['version', 'platform', 'format', 'status', 'sha256']) &&
+        request.resource.data.status in ['published', 'draft', 'disabled', 'retired'] &&
+        isValidString(request.resource.data.sha256, 64, 64);
+
       allow delete: if isAdmin();
     }
 

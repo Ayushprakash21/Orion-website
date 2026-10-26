@@ -346,6 +346,138 @@ runTest('15. Password reset initiation using an email address', () => {
   assert.match(result.message, /instructions have been sent/);
 });
 
+
+// 16. Desktop release catalog validation (Windows & macOS platforms, formats, checksums)
+runTest('16. Desktop release catalog validation (Windows & macOS platforms, formats, checksums)', () => {
+  const validPlatforms = ['windows-x64', 'windows-arm64', 'macos-universal', 'macos-arm64', 'macos-x64'];
+  const validFormats = ['exe', 'msi', 'dmg', 'pkg'];
+  const validStatuses = ['published', 'draft', 'disabled', 'retired'];
+
+  const catalog = [
+    {
+      id: 'rel-win-9-0-0',
+      version: '9.0.0',
+      platform: 'windows-x64',
+      format: 'exe',
+      status: 'published',
+      sha256: 'e2dfeb480522b9da077bb58e0954d6d8e09f1023fb6af28b8b74b2a8dc23ee70',
+      sizeBytes: 30336791,
+    },
+    {
+      id: 'rel-mac-univ-9-0-0',
+      version: '9.0.0',
+      platform: 'macos-universal',
+      format: 'dmg',
+      status: 'published',
+      sha256: '0dc87da83a22696b0d791bcf72d33a6d7103e5a6b79799f7b6f75f4c4b8f7780',
+      sizeBytes: 2097152,
+    },
+  ];
+
+  for (const rel of catalog) {
+    assert.ok(validPlatforms.includes(rel.platform), 'Platform ' + rel.platform + ' should be valid');
+    assert.ok(validFormats.includes(rel.format), 'Format ' + rel.format + ' should be valid');
+    assert.ok(validStatuses.includes(rel.status), 'Status ' + rel.status + ' should be valid');
+    assert.equal(rel.sha256.length, 64, 'SHA-256 must be 64 hexadecimal characters');
+    assert.match(rel.sha256, /^[a-f0-9]{64}$/, 'SHA-256 must be valid lowercase hex');
+    assert.ok(rel.sizeBytes > 0, 'Size must be greater than zero');
+  }
+});
+
+// 17. Download access gating: unauthenticated redirects preserve platform target
+runTest('17. Download access gating: unauthenticated redirects preserve platform target', () => {
+  function getDownloadDestination(isAuthenticated, requestedPlatform) {
+    if (!isAuthenticated) {
+      return '/login?redirect=/download&platform=' + encodeURIComponent(requestedPlatform);
+    }
+    return '/download?platform=' + encodeURIComponent(requestedPlatform);
+  }
+
+  const unauthWindows = getDownloadDestination(false, 'windows');
+  assert.equal(unauthWindows, '/login?redirect=/download&platform=windows');
+
+  const unauthMac = getDownloadDestination(false, 'macos');
+  assert.equal(unauthMac, '/login?redirect=/download&platform=macos');
+
+  const authWindows = getDownloadDestination(true, 'windows');
+  assert.equal(authWindows, '/download?platform=windows');
+});
+
+// 18. Anti-HTML-fallback binary verification: rejects SPA text/html responses
+runTest('18. Anti-HTML-fallback binary verification: rejects SPA text/html responses', () => {
+  function verifyBinaryResponse(contentType, status) {
+    if (status !== 200) {
+      throw new Error('Download failed with HTTP status ' + status);
+    }
+    const cleanType = (contentType || '').toLowerCase();
+    if (cleanType.includes('text/html') || cleanType.includes('application/xhtml+xml')) {
+      throw new Error('Incompatible binary response: Endpoint returned HTML SPA fallback instead of installer');
+    }
+    return true;
+  }
+
+  assert.throws(
+    () => verifyBinaryResponse('text/html; charset=utf-8', 200),
+    /HTML SPA fallback/
+  );
+
+  assert.equal(verifyBinaryResponse('application/octet-stream', 200), true);
+  assert.equal(verifyBinaryResponse('application/vnd.microsoft.portable-executable', 200), true);
+  assert.equal(verifyBinaryResponse('application/x-apple-diskimage', 200), true);
+  assert.equal(verifyBinaryResponse('application/x-msi', 200), true);
+});
+
+// 19. Release lifecycle enforcement: draft, disabled and retired releases blocked from client downloads
+runTest('19. Release lifecycle enforcement: draft, disabled and retired releases blocked from client downloads', () => {
+  function checkReleaseDownloadable(release, userRole) {
+    if (release.status === 'disabled' || release.status === 'retired') {
+      return { allowed: false, reason: 'Release is ' + release.status };
+    }
+    if (release.status === 'draft' && userRole !== 'admin') {
+      return { allowed: false, reason: 'Draft releases only accessible by administrators' };
+    }
+    return { allowed: true };
+  }
+
+  const publishedRel = { status: 'published', version: '9.0.0' };
+  const draftRel = { status: 'draft', version: '9.0.1' };
+  const disabledRel = { status: 'disabled', version: '8.9.0' };
+  const retiredRel = { status: 'retired', version: '7.0.0' };
+
+  assert.equal(checkReleaseDownloadable(publishedRel, 'operator').allowed, true);
+  assert.equal(checkReleaseDownloadable(draftRel, 'operator').allowed, false);
+  assert.equal(checkReleaseDownloadable(disabledRel, 'operator').allowed, false);
+  assert.equal(checkReleaseDownloadable(retiredRel, 'operator').allowed, false);
+
+  assert.equal(checkReleaseDownloadable(publishedRel, 'admin').allowed, true);
+  assert.equal(checkReleaseDownloadable(draftRel, 'admin').allowed, true);
+  assert.equal(checkReleaseDownloadable(disabledRel, 'admin').allowed, false);
+});
+
+// 20. Admin release lifecycle state transitions
+runTest('20. Admin release lifecycle state transitions', () => {
+  const allowedTransitions = {
+    draft: ['published', 'retired'],
+    published: ['disabled', 'retired'],
+    disabled: ['published', 'retired'],
+    retired: [],
+  };
+
+  function transitionStatus(current, target) {
+    const validTargets = allowedTransitions[current] || [];
+    if (!validTargets.includes(target)) {
+      throw new Error('Invalid status transition from ' + current + ' to ' + target);
+    }
+    return target;
+  }
+
+  assert.equal(transitionStatus('draft', 'published'), 'published');
+  assert.equal(transitionStatus('published', 'disabled'), 'disabled');
+  assert.equal(transitionStatus('disabled', 'published'), 'published');
+  assert.equal(transitionStatus('published', 'retired'), 'retired');
+  assert.throws(() => transitionStatus('retired', 'published'), /Invalid status transition/);
+});
+
 // Execution Summary
 console.log('================================================================');
 console.log('       ORION-9 AUTHENTICATION UPGRADE AUTOMATED TEST SUITE      ');

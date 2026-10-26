@@ -25,24 +25,29 @@ const AppContent: React.FC = () => {
     window.location.pathname || '/'
   );
   const [downloadModalOpen, setDownloadModalOpen] = useState<boolean>(() => {
-    return window.location.pathname === '/download';
+    return window.location.pathname.startsWith('/download');
   });
 
   useEffect(() => {
     const handlePopState = () => {
-      setCurrentPath(window.location.pathname || '/');
+      const pathname = window.location.pathname || '/';
+      setCurrentPath(pathname);
+      if (pathname.startsWith('/download')) {
+        setDownloadModalOpen(true);
+      }
     };
     window.addEventListener('popstate', handlePopState);
     return () => window.removeEventListener('popstate', handlePopState);
   }, []);
 
   const navigate = (path: string) => {
-    if (path === '/download') {
+    if (path.startsWith('/download')) {
+      window.history.pushState({}, '', path);
       setDownloadModalOpen(true);
       return;
     }
     window.history.pushState({}, '', path);
-    setCurrentPath(path);
+    setCurrentPath(path.split('?')[0]);
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
@@ -95,7 +100,14 @@ const AppContent: React.FC = () => {
       <TransitionModal />
       <DesktopDownloadModal
         isOpen={downloadModalOpen}
-        onClose={() => setDownloadModalOpen(false)}
+        onClose={() => {
+          setDownloadModalOpen(false);
+          if (window.location.pathname.startsWith('/download')) {
+            window.history.replaceState({}, '', '/');
+            setCurrentPath('/');
+          }
+        }}
+        onNavigate={navigate}
       />
     </div>
   );

@@ -184,12 +184,19 @@ export const Navbar: React.FC<NavbarProps> = ({ onNavigate, onOpenDownload }) =>
 
             <button
               type="button"
-              onClick={() => onOpenDownload ? onOpenDownload() : handleRoute('/admin')}
+              onClick={() => {
+                if (user) {
+                  if (onOpenDownload) onOpenDownload();
+                  else handleRoute('/download');
+                } else {
+                  handleRoute('/login?redirect=/download&platform=windows');
+                }
+              }}
               className="hidden sm:inline-flex items-center gap-1.5 px-3 py-2 rounded-lg bg-[#F1F5F9] border border-[#CBD5E1] text-xs font-semibold text-[#070B19] hover:bg-[#E2E8F0] transition-colors cursor-pointer whitespace-nowrap shrink-0"
-              title="Download Orion-9 Windows 64-bit Desktop App (.exe)"
+              title="Download Orion-9 Desktop Workstation (Windows & macOS)"
             >
               <Download className="w-3.5 h-3.5 text-[#0284C7]" />
-              <span>Download .exe</span>
+              <span>Download Desktop</span>
             </button>
 
             <button
@@ -293,12 +300,17 @@ export const Navbar: React.FC<NavbarProps> = ({ onNavigate, onOpenDownload }) =>
               type="button"
               onClick={() => {
                 setMobileMenuOpen(false);
-                if (onOpenDownload) onOpenDownload();
+                if (user) {
+                  if (onOpenDownload) onOpenDownload();
+                  else handleRoute('/download');
+                } else {
+                  handleRoute('/login?redirect=/download&platform=windows');
+                }
               }}
               className="w-full flex items-center justify-center gap-2 py-2.5 px-4 rounded-lg border border-[#CBD5E1] bg-[#F8FAFC] text-sm font-semibold text-[#070B19] cursor-pointer"
             >
               <Download className="w-4 h-4 text-[#0284C7]" />
-              <span>Download Windows App (.exe)</span>
+              <span>Download Desktop App</span>
             </button>
 
             <button

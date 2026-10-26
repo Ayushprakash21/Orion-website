@@ -25,6 +25,25 @@ export const AuthPageView: React.FC<AuthPageViewProps> = ({ mode, onNavigate }) 
   } = useAuth();
   const { activeConfig } = useSiteConfig();
 
+  // Check URL parameters for redirect and platform
+  const searchParams =
+    typeof window !== 'undefined' ? new URLSearchParams(window.location.search) : null;
+  const redirectTarget = searchParams?.get('redirect') || null;
+  const platformTarget = searchParams?.get('platform') || null;
+
+  const handlePostAuthNavigate = () => {
+    if (redirectTarget === '/download' || redirectTarget?.startsWith('/download')) {
+      const target = platformTarget ? `/download?platform=${platformTarget}` : '/download';
+      onNavigate(target);
+      return;
+    }
+    if (redirectTarget) {
+      onNavigate(redirectTarget);
+      return;
+    }
+    onNavigate('/');
+  };
+
   return (
     <div className="min-h-screen bg-[#EAF4F8] text-[#111827] flex flex-col justify-between relative overflow-hidden font-sans">
       {/* Subtle architectural background grid */}
@@ -93,6 +112,16 @@ export const AuthPageView: React.FC<AuthPageViewProps> = ({ mode, onNavigate }) 
               <p className="text-xs text-[#566575]">{user.email}</p>
             </div>
             <div className="flex flex-col gap-2.5 pt-2">
+              {redirectTarget?.startsWith('/download') && (
+                <button
+                  type="button"
+                  onClick={() => handlePostAuthNavigate()}
+                  className="w-full h-11 rounded-full bg-[#0284C7] text-white text-xs font-semibold hover:bg-[#0369A1] transition-colors flex items-center justify-center gap-2 cursor-pointer shadow-md"
+                >
+                  <span>Proceed to Desktop Downloads</span>
+                  <ArrowRight className="w-4 h-4" />
+                </button>
+              )}
               <button
                 type="button"
                 onClick={() => launchOrion()}
@@ -113,14 +142,18 @@ export const AuthPageView: React.FC<AuthPageViewProps> = ({ mode, onNavigate }) 
         ) : mode === 'login' ? (
           <FlowLogin
             title={activeConfig.branding.companyName}
-            subtitle="Sign in to your supply chain command workspace."
+            subtitle={
+              redirectTarget?.startsWith('/download')
+                ? 'Sign in to authenticate and download Orion-9 workstation binaries.'
+                : 'Sign in to your supply chain command workspace.'
+            }
             defaultExpanded={true}
             showSocial={activeConfig.authSettings.allowGoogleAuth}
             showForgot={activeConfig.authSettings.allowPasswordReset}
             onSubmit={async ({ identifier, email, password, remember }) => {
               const res = await login(identifier || email || '', password, remember);
               if (res.success) {
-                onNavigate('/');
+                handlePostAuthNavigate();
               }
               return res;
             }}
@@ -128,33 +161,51 @@ export const AuthPageView: React.FC<AuthPageViewProps> = ({ mode, onNavigate }) 
             onGoogleSignIn={async () => {
               const res = await loginWithGoogle();
               if (res.success) {
-                onNavigate('/');
+                handlePostAuthNavigate();
               }
               return res;
             }}
-            onNavigateSignup={() => onNavigate('/signup')}
+            onNavigateSignup={() => {
+              const q = redirectTarget
+                ? `?redirect=${encodeURIComponent(redirectTarget)}${
+                    platformTarget ? `&platform=${encodeURIComponent(platformTarget)}` : ''
+                  }`
+                : '';
+              onNavigate(`/signup${q}`);
+            }}
           />
         ) : (
           <FlowSignup
             title={activeConfig.branding.companyName}
-            subtitle="Provision your operator credentials and get started."
+            subtitle={
+              redirectTarget?.startsWith('/download')
+                ? 'Register an operator profile to access verified desktop releases.'
+                : 'Provision your operator credentials and get started.'
+            }
             defaultExpanded={true}
             showSocial={activeConfig.authSettings.allowGoogleAuth}
             onSubmit={async ({ name, username, email, password, terms }) => {
               const res = await signup(name, username, email, password, terms);
               if (res.success) {
-                onNavigate('/');
+                handlePostAuthNavigate();
               }
               return res;
             }}
             onGoogleSignIn={async () => {
               const res = await loginWithGoogle();
               if (res.success) {
-                onNavigate('/');
+                handlePostAuthNavigate();
               }
               return res;
             }}
-            onNavigateLogin={() => onNavigate('/login')}
+            onNavigateLogin={() => {
+              const q = redirectTarget
+                ? `?redirect=${encodeURIComponent(redirectTarget)}${
+                    platformTarget ? `&platform=${encodeURIComponent(platformTarget)}` : ''
+                  }`
+                : '';
+              onNavigate(`/login${q}`);
+            }}
           />
         )}
 

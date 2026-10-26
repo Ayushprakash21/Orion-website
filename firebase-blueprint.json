@@ -124,6 +124,26 @@
         }
       },
       "required": ["actorUid", "actorEmail", "section", "action", "summary", "timestamp"]
+    },
+    "DesktopRelease": {
+      "title": "DesktopRelease",
+      "description": "Desktop installer release record for Windows and macOS distributions",
+      "type": "object",
+      "properties": {
+        "version": { "type": "string" },
+        "platform": { "type": "string", "enum": ["windows-x64", "windows-arm64", "macos-universal", "macos-arm64", "macos-x64"] },
+        "format": { "type": "string", "enum": ["exe", "msi", "dmg", "pkg"] },
+        "status": { "type": "string", "enum": ["published", "draft", "disabled", "retired"] },
+        "filename": { "type": "string" },
+        "sizeBytes": { "type": "integer" },
+        "sha256": { "type": "string" },
+        "downloadUrl": { "type": "string" },
+        "channel": { "type": "string", "enum": ["stable", "beta"] },
+        "isLatest": { "type": "boolean" },
+        "downloadCount": { "type": "integer" },
+        "minimumOs": { "type": "string" }
+      },
+      "required": ["version", "platform", "format", "status", "sha256"]
     }
   },
   "firestore": {
@@ -138,6 +158,12 @@
         "$ref": "#/entities/SiteConfigSection"
       },
       "description": "Admin-only draft CMS configuration sections"
+    },
+    "/releases/{releaseId}": {
+      "schema": {
+        "$ref": "#/entities/DesktopRelease"
+      },
+      "description": "Authenticated read, admin-only write desktop releases registry"
     },
     "/users/{userId}": {
       "schema": {

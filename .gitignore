@@ -6,3 +6,9 @@ coverage/
 *.log
 .env*
 !.env.example
+
+# Large binary installer artifacts (stored in object storage, never in source control)
+public/downloads/*.exe
+public/downloads/*.msi
+public/downloads/*.dmg
+public/downloads/*.pkg

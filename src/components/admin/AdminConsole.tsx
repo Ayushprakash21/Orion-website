@@ -25,6 +25,7 @@ import {
   CheckCircle2,
   AlertTriangle,
   Laptop,
+  Apple,
   Download,
 } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
@@ -48,7 +49,14 @@ import {
   getActiveFirebaseConfig,
   saveRuntimeFirebaseConfig,
 } from '../../services/firebase';
-import { SectionVisibilityConfig, MediaAssetItem, DesktopReleaseRecord } from '../../types/cms';
+import {
+  SectionVisibilityConfig,
+  MediaAssetItem,
+  DesktopReleaseRecord,
+  DesktopPlatform,
+  DesktopPackageFormat,
+  DesktopReleaseStatus,
+} from '../../types/cms';
 import { DEFAULT_DESKTOP_RELEASES } from '../../data/defaultSiteConfig';
 
 type AdminTabId =
@@ -121,12 +129,16 @@ export function AdminConsole({ onNavigate }: AdminConsoleProps) {
 
   // New desktop release form inputs
   const [newRelVersion, setNewRelVersion] = useState('');
+  const [newRelPlatform, setNewRelPlatform] = useState<DesktopPlatform>('windows-x64');
+  const [newRelFormat, setNewRelFormat] = useState<DesktopPackageFormat>('exe');
+  const [newRelStatus, setNewRelStatus] = useState<DesktopReleaseStatus>('published');
   const [newRelFilename, setNewRelFilename] = useState('Orion-9-Setup.exe');
   const [newRelSize, setNewRelSize] = useState('30336791');
   const [newRelSha, setNewRelSha] = useState('');
-  const [newRelUrl, setNewRelUrl] = useState('');
+  const [newRelUrl, setNewRelUrl] = useState('/downloads/Orion-9-Setup.exe');
   const [newRelNotes, setNewRelNotes] = useState('');
   const [newRelChannel, setNewRelChannel] = useState<'stable' | 'beta'>('stable');
+  const [newRelMinOs, setNewRelMinOs] = useState('Windows 10 / 11 64-bit');
 
   // New media item inputs
   const [newMediaTitle, setNewMediaTitle] = useState('');
@@ -447,24 +459,57 @@ export function AdminConsole({ onNavigate }: AdminConsoleProps) {
       return;
     }
 
+    const shaClean = newRelSha.trim().toLowerCase();
+    if (!/^[a-f0-9]{64}$/.test(shaClean)) {
+      showBanner('error', 'SHA-256 hash must be exactly 64 hexadecimal characters.');
+      return;
+    }
+
+    const cleanFilename = newRelFilename.trim();
+    if (newRelFormat === 'exe' && !cleanFilename.toLowerCase().endsWith('.exe')) {
+      showBanner('error', 'Filename must end with .exe for Windows NSIS format.');
+      return;
+    }
+    if (newRelFormat === 'msi' && !cleanFilename.toLowerCase().endsWith('.msi')) {
+      showBanner('error', 'Filename must end with .msi for Windows MSI format.');
+      return;
+    }
+    if (newRelFormat === 'dmg' && !cleanFilename.toLowerCase().endsWith('.dmg')) {
+      showBanner('error', 'Filename must end with .dmg for macOS DMG format.');
+      return;
+    }
+    if (newRelFormat === 'pkg' && !cleanFilename.toLowerCase().endsWith('.pkg')) {
+      showBanner('error', 'Filename must end with .pkg for macOS PKG format.');
+      return;
+    }
+
     const notesList = newRelNotes
       .split('\n')
       .map((n) => n.trim())
       .filter(Boolean);
 
     const newRecord: DesktopReleaseRecord = {
-      id: `rel-${newRelVersion.trim().replace(/\./g, '-')}`,
+      id: `rel-${newRelPlatform}-${newRelVersion.trim().replace(/\./g, '-')}-${newRelFormat}`,
       version: newRelVersion.trim(),
       releaseDate: new Date().toISOString().split('T')[0],
-      platform: 'windows-x64',
-      filename: newRelFilename.trim() || 'Orion-9-Setup.exe',
+      platform: newRelPlatform,
+      format: newRelFormat,
+      status: newRelStatus,
+      filename:
+        cleanFilename ||
+        (newRelPlatform.startsWith('macos') ? 'Orion-9-Universal.dmg' : 'Orion-9-Setup.exe'),
       sizeBytes: parseInt(newRelSize, 10) || 30336791,
-      sha256: newRelSha.trim(),
-      downloadUrl: newRelUrl.trim() || 'https://orion-9.ayushprakash0021.workers.dev/api/download/desktop',
+      sha256: shaClean,
+      downloadUrl: newRelUrl.trim() || `/downloads/${cleanFilename}`,
       channel: newRelChannel,
-      isLatest: true,
-      releaseNotes: notesList.length > 0 ? notesList : ['Official Windows x64 release'],
-      minimumOs: 'Windows 10 / 11 64-bit',
+      isLatest: newRelStatus === 'published',
+      releaseNotes: notesList.length > 0 ? notesList : [`Official ${newRelPlatform} release`],
+      minimumOs:
+        newRelMinOs.trim() ||
+        (newRelPlatform.startsWith('macos')
+          ? 'macOS 12 Monterey or higher'
+          : 'Windows 10 / 11 64-bit'),
+      downloadCount: 0,
       preflightGates: {
         peValidated: true,
         shaVerified: true,
@@ -476,34 +521,52 @@ export function AdminConsole({ onNavigate }: AdminConsoleProps) {
 
     const nextReleases = [
       newRecord,
-      ...releasesForm.map((r) => ({ ...r, isLatest: false })),
+      ...releasesForm.map((r) =>
+        r.platform === newRecord.platform && newRecord.isLatest
+          ? { ...r, isLatest: false }
+          : r
+      ),
     ];
     setReleasesForm(nextReleases);
     setNewRelVersion('');
     setNewRelSha('');
-    setNewRelUrl('');
     setNewRelNotes('');
 
     await publishSection(
       'desktopReleases',
       nextReleases,
-      `Published new desktop release v${newRecord.version}`
+      `Registered desktop release v${newRecord.version} (${newRecord.platform} - ${newRecord.format.toUpperCase()})`
     );
-    showBanner('success', `Desktop release v${newRecord.version} created and published.`);
+    showBanner('success', `Desktop release v${newRecord.version} registered successfully.`);
   };
 
   const handleToggleLatestRelease = async (id: string) => {
+    const target = releasesForm.find((r) => r.id === id);
+    if (!target) return;
     const nextReleases = releasesForm.map((r) => ({
       ...r,
-      isLatest: r.id === id,
+      isLatest: r.platform === target.platform ? r.id === id : r.isLatest,
     }));
     setReleasesForm(nextReleases);
     await publishSection(
       'desktopReleases',
       nextReleases,
-      `Set release ${id} as active production latest`
+      `Set release ${id} as active production latest for ${target.platform}`
     );
-    showBanner('success', `Updated active production latest release.`);
+    showBanner('success', `Updated active production latest release for ${target.platform}.`);
+  };
+
+  const handleSetReleaseStatus = async (id: string, status: DesktopReleaseStatus) => {
+    const nextReleases = releasesForm.map((r) =>
+      r.id === id ? { ...r, status, updatedAt: new Date().toISOString() } : r
+    );
+    setReleasesForm(nextReleases);
+    await publishSection(
+      'desktopReleases',
+      nextReleases,
+      `Updated release ${id} lifecycle status to ${status}`
+    );
+    showBanner('success', `Updated release status to ${status}.`);
   };
 
   const handleDeleteRelease = async (id: string) => {
@@ -1734,10 +1797,10 @@ export function AdminConsole({ onNavigate }: AdminConsoleProps) {
                   <div>
                     <h2 className="text-base font-semibold text-[#111827] flex items-center gap-2">
                       <Laptop className="w-5 h-5 text-[#0284C7]" />
-                      <span>Windows Desktop Release Distribution Manager</span>
+                      <span>Desktop Release Distribution &amp; Lifecycle Manager</span>
                     </h2>
                     <p className="text-xs text-[#566575] mt-1">
-                      Manage official Windows x64 NSIS installers (.exe), cryptographic SHA-256 integrity hashes, and live distribution endpoints.
+                      Manage official Windows (.exe / .msi) and macOS (.dmg / .pkg) installers, SHA-256 integrity hashes, lifecycle states, and download telemetry.
                     </p>
                   </div>
                   <div className="flex items-center gap-2.5 shrink-0">
@@ -1761,9 +1824,12 @@ export function AdminConsole({ onNavigate }: AdminConsoleProps) {
                 </div>
 
                 <div className="space-y-4">
-                  <h3 className="text-xs font-mono uppercase font-bold text-[#64748B] tracking-wider">
-                    Published Desktop Releases ({releasesForm.length})
-                  </h3>
+                  <div className="flex items-center justify-between">
+                    <h3 className="text-xs font-mono uppercase font-bold text-[#64748B] tracking-wider">
+                      Registered Distribution Releases ({releasesForm.length})
+                    </h3>
+                  </div>
+
                   <div className="space-y-3">
                     {releasesForm.map((rel) => (
                       <div
@@ -1771,45 +1837,87 @@ export function AdminConsole({ onNavigate }: AdminConsoleProps) {
                         className={`p-5 rounded-2xl border transition-all ${
                           rel.isLatest
                             ? 'bg-[#F0FDF4] border-emerald-300 shadow-sm'
+                            : rel.status === 'disabled' || rel.status === 'retired'
+                            ? 'bg-[#FFF1F2] border-rose-200 opacity-80'
+                            : rel.status === 'draft'
+                            ? 'bg-[#FFFBEB] border-amber-200'
                             : 'bg-[#F8FAFC] border-[#E2E8F0]'
                         }`}
                       >
-                        <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-3">
-                          <div className="space-y-1.5">
+                        <div className="flex flex-col lg:flex-row lg:items-start justify-between gap-4">
+                          <div className="space-y-2">
                             <div className="flex flex-wrap items-center gap-2">
                               <span className="text-sm font-bold text-[#070B19]">
                                 v{rel.version}
                               </span>
-                              <span className="px-2 py-0.5 rounded-full text-[10px] font-mono font-bold bg-[#E0F2FE] text-[#0369A1] border border-[#BAE6FD]">
-                                {rel.platform}
+                              <span className="px-2 py-0.5 rounded-full text-[10px] font-mono font-bold bg-[#E0F2FE] text-[#0369A1] border border-[#BAE6FD] flex items-center gap-1">
+                                {rel.platform.startsWith('macos') ? (
+                                  <Apple className="w-3 h-3 text-[#0284C7]" />
+                                ) : (
+                                  <Laptop className="w-3 h-3 text-[#0284C7]" />
+                                )}
+                                <span>{rel.platform}</span>
                               </span>
-                              <span className="px-2 py-0.5 rounded-full text-[10px] font-mono font-bold bg-[#F1F5F9] text-[#475569] border border-[#E2E8F0]">
-                                {rel.channel.toUpperCase()}
+                              <span className="px-2 py-0.5 rounded-full text-[10px] font-mono font-bold bg-[#F1F5F9] text-[#475569] border border-[#CBD5E1]">
+                                {rel.format.toUpperCase()}
+                              </span>
+                              <span
+                                className={`px-2 py-0.5 rounded-full text-[10px] font-mono font-bold uppercase ${
+                                  rel.status === 'published'
+                                    ? 'bg-emerald-100 text-emerald-800 border border-emerald-300'
+                                    : rel.status === 'draft'
+                                    ? 'bg-amber-100 text-amber-800 border border-amber-300'
+                                    : 'bg-rose-100 text-rose-800 border border-rose-300'
+                                }`}
+                              >
+                                {rel.status}
                               </span>
                               {rel.isLatest && (
                                 <span className="px-2 py-0.5 rounded-full text-[10px] font-mono font-bold bg-emerald-100 text-emerald-800 border border-emerald-300 flex items-center gap-1">
                                   <CheckCircle2 className="w-3 h-3 text-emerald-600" />
-                                  <span>ACTIVE LATEST</span>
+                                  <span>LATEST FOR {rel.platform.toUpperCase()}</span>
                                 </span>
                               )}
                             </div>
+
                             <div className="text-xs text-[#475569] font-mono flex flex-wrap items-center gap-x-4 gap-y-1">
                               <span>Filename: {rel.filename}</span>
-                              <span>Size: {(rel.sizeBytes / (1024 * 1024)).toFixed(2)} MB ({rel.sizeBytes.toLocaleString()} B)</span>
+                              <span>Size: {(rel.sizeBytes / (1024 * 1024)).toFixed(2)} MB</span>
+                              <span>Min OS: {rel.minimumOs}</span>
+                              <span>Downloads: {rel.downloadCount || 0}</span>
                               <span>Released: {rel.releaseDate}</span>
                             </div>
                           </div>
 
-                          <div className="flex items-center gap-2 shrink-0">
-                            {!rel.isLatest && (
+                          <div className="flex flex-wrap items-center gap-2 shrink-0">
+                            {/* Lifecycle Status Selector */}
+                            <select
+                              value={rel.status}
+                              onChange={(e) =>
+                                handleSetReleaseStatus(
+                                  rel.id,
+                                  e.target.value as DesktopReleaseStatus
+                                )
+                              }
+                              className="px-2.5 py-1.5 rounded-lg bg-white border border-[#CBD5E1] text-xs font-semibold text-[#070B19] cursor-pointer"
+                              title="Update release status"
+                            >
+                              <option value="published">Published</option>
+                              <option value="draft">Draft</option>
+                              <option value="disabled">Disabled</option>
+                              <option value="retired">Retired</option>
+                            </select>
+
+                            {!rel.isLatest && rel.status === 'published' && (
                               <button
                                 type="button"
                                 onClick={() => handleToggleLatestRelease(rel.id)}
                                 className="px-3 py-1.5 rounded-lg bg-white border border-[#CBD5E1] text-xs font-semibold text-[#070B19] hover:bg-[#F1F5F9] transition-colors cursor-pointer"
                               >
-                                Set as Latest
+                                Set Latest
                               </button>
                             )}
+
                             <a
                               href={rel.downloadUrl}
                               target="_blank"
@@ -1817,8 +1925,9 @@ export function AdminConsole({ onNavigate }: AdminConsoleProps) {
                               className="inline-flex items-center gap-1 px-3 py-1.5 rounded-lg bg-[#070B19] text-white text-xs font-semibold hover:bg-[#1E293B] transition-colors cursor-pointer"
                             >
                               <Download className="w-3 h-3 text-[#38BDF8]" />
-                              <span>Test Link</span>
+                              <span>Verify Binary</span>
                             </a>
+
                             <button
                               type="button"
                               onClick={() => handleDeleteRelease(rel.id)}
@@ -1851,22 +1960,83 @@ export function AdminConsole({ onNavigate }: AdminConsoleProps) {
                 </div>
               </div>
 
+              {/* Form to Register a New Release */}
               <div className="bg-white rounded-2xl border border-[#D5E1E8] p-6 md:p-8 space-y-5">
                 <div>
                   <h3 className="text-base font-semibold text-[#111827] flex items-center gap-2">
                     <Plus className="w-4 h-4 text-[#0284C7]" />
-                    <span>Publish New Desktop Release Record</span>
+                    <span>Register New Windows or macOS Desktop Release</span>
                   </h3>
                   <p className="text-xs text-[#566575] mt-1">
-                    Register a new Windows desktop package. The new release will automatically become the active production download.
+                    Add an installer binary package. Supported formats: .exe (Windows NSIS), .msi (Windows Installer), .dmg (macOS Disk Image), .pkg (macOS Installer).
                   </p>
                 </div>
 
                 <form onSubmit={handleAddDesktopRelease} className="space-y-4">
-                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                  <div className="grid grid-cols-1 sm:grid-cols-4 gap-4">
                     <div>
                       <label className="block text-xs font-mono text-[#566575] mb-1">
-                        Version (e.g. 9.0.0, 9.0.1) *
+                        Platform *
+                      </label>
+                      <select
+                        value={newRelPlatform}
+                        onChange={(e) => {
+                          const p = e.target.value as DesktopPlatform;
+                          setNewRelPlatform(p);
+                          if (p.startsWith('macos')) {
+                            setNewRelFormat('dmg');
+                            setNewRelFilename(
+                              p === 'macos-arm64' ? 'Orion-9-aarch64.dmg' : 'Orion-9-Universal.dmg'
+                            );
+                            setNewRelMinOs('macOS 12 Monterey or higher');
+                            setNewRelUrl(
+                              p === 'macos-arm64'
+                                ? '/downloads/Orion-9-aarch64.dmg'
+                                : '/downloads/Orion-9-Universal.dmg'
+                            );
+                          } else {
+                            setNewRelFormat('exe');
+                            setNewRelFilename('Orion-9-Setup.exe');
+                            setNewRelMinOs('Windows 10 / 11 64-bit');
+                            setNewRelUrl('/downloads/Orion-9-Setup.exe');
+                          }
+                        }}
+                        className="w-full px-3.5 py-2 rounded-xl bg-[#F5F9FB] border border-[#D5E1E8] text-xs font-semibold"
+                      >
+                        <option value="windows-x64">Windows x64</option>
+                        <option value="windows-arm64">Windows ARM64</option>
+                        <option value="macos-universal">macOS Universal (Apple Silicon &amp; Intel)</option>
+                        <option value="macos-arm64">macOS Apple Silicon (M1-M4)</option>
+                        <option value="macos-x64">macOS Intel x86_64</option>
+                      </select>
+                    </div>
+
+                    <div>
+                      <label className="block text-xs font-mono text-[#566575] mb-1">
+                        Format *
+                      </label>
+                      <select
+                        value={newRelFormat}
+                        onChange={(e) => {
+                          const fmt = e.target.value as DesktopPackageFormat;
+                          setNewRelFormat(fmt);
+                          if (fmt === 'exe') setNewRelFilename('Orion-9-Setup.exe');
+                          else if (fmt === 'msi') setNewRelFilename('Orion-9-Setup.msi');
+                          else if (fmt === 'dmg') setNewRelFilename('Orion-9-Universal.dmg');
+                          else if (fmt === 'pkg') setNewRelFilename('Orion-9-Universal.pkg');
+                        }}
+                        className="w-full px-3.5 py-2 rounded-xl bg-[#F5F9FB] border border-[#D5E1E8] text-xs font-semibold"
+                      >
+                        <option value="exe">EXE (.exe - NSIS)</option>
+                        <option value="msi">MSI (.msi - Enterprise WiX)</option>
+                        <option value="dmg">DMG (.dmg - Apple Disk Image)</option>
+                        <option value="pkg">PKG (.pkg - Apple Package)</option>
+                      </select>
+                    </div>
+
+                    <div>
+                      <label className="block text-xs font-mono text-[#566575] mb-1">
+                        Version *
                       </label>
                       <input
                         type="text"
@@ -1877,9 +2047,30 @@ export function AdminConsole({ onNavigate }: AdminConsoleProps) {
                         required
                       />
                     </div>
+
                     <div>
                       <label className="block text-xs font-mono text-[#566575] mb-1">
-                        Installer Filename
+                        Lifecycle Status *
+                      </label>
+                      <select
+                        value={newRelStatus}
+                        onChange={(e) =>
+                          setNewRelStatus(e.target.value as DesktopReleaseStatus)
+                        }
+                        className="w-full px-3.5 py-2 rounded-xl bg-[#F5F9FB] border border-[#D5E1E8] text-xs font-semibold"
+                      >
+                        <option value="published">Published (Live)</option>
+                        <option value="draft">Draft (Admin Only)</option>
+                        <option value="disabled">Disabled</option>
+                        <option value="retired">Retired</option>
+                      </select>
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                    <div>
+                      <label className="block text-xs font-mono text-[#566575] mb-1">
+                        Installer Filename *
                       </label>
                       <input
                         type="text"
@@ -1887,11 +2078,12 @@ export function AdminConsole({ onNavigate }: AdminConsoleProps) {
                         value={newRelFilename}
                         onChange={(e) => setNewRelFilename(e.target.value)}
                         className="w-full px-3.5 py-2 rounded-xl bg-[#F5F9FB] border border-[#D5E1E8] text-xs font-mono"
+                        required
                       />
                     </div>
                     <div>
                       <label className="block text-xs font-mono text-[#566575] mb-1">
-                        File Size (Bytes)
+                        File Size (Bytes) *
                       </label>
                       <input
                         type="number"
@@ -1899,6 +2091,19 @@ export function AdminConsole({ onNavigate }: AdminConsoleProps) {
                         value={newRelSize}
                         onChange={(e) => setNewRelSize(e.target.value)}
                         className="w-full px-3.5 py-2 rounded-xl bg-[#F5F9FB] border border-[#D5E1E8] text-xs font-mono"
+                        required
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-xs font-mono text-[#566575] mb-1">
+                        Minimum Supported OS
+                      </label>
+                      <input
+                        type="text"
+                        placeholder="Windows 10 / 11 64-bit"
+                        value={newRelMinOs}
+                        onChange={(e) => setNewRelMinOs(e.target.value)}
+                        className="w-full px-3.5 py-2 rounded-xl bg-[#F5F9FB] border border-[#D5E1E8] text-xs"
                       />
                     </div>
                   </div>
@@ -1919,14 +2124,15 @@ export function AdminConsole({ onNavigate }: AdminConsoleProps) {
                     </div>
                     <div>
                       <label className="block text-xs font-mono text-[#566575] mb-1">
-                        Download URL
+                        Download URL *
                       </label>
                       <input
                         type="text"
-                        placeholder="https://orion-9.ayushprakash0021.workers.dev/api/download/desktop"
+                        placeholder="/downloads/Orion-9-Setup.exe"
                         value={newRelUrl}
                         onChange={(e) => setNewRelUrl(e.target.value)}
                         className="w-full px-3.5 py-2 rounded-xl bg-[#F5F9FB] border border-[#D5E1E8] text-xs font-mono"
+                        required
                       />
                     </div>
                   </div>
@@ -1937,7 +2143,7 @@ export function AdminConsole({ onNavigate }: AdminConsoleProps) {
                     </label>
                     <textarea
                       rows={3}
-                      placeholder="Official Orion-9 Windows 64-bit installer with NSIS packaging.&#10;Native WebView2 child browser runtime surface."
+                      placeholder="Official Orion-9 native package.&#10;Zero-trust execution boundary."
                       value={newRelNotes}
                       onChange={(e) => setNewRelNotes(e.target.value)}
                       className="w-full px-3.5 py-2 rounded-xl bg-[#F5F9FB] border border-[#D5E1E8] text-xs"
@@ -1950,7 +2156,9 @@ export function AdminConsole({ onNavigate }: AdminConsoleProps) {
                         <span>Channel:</span>
                         <select
                           value={newRelChannel}
-                          onChange={(e) => setNewRelChannel(e.target.value as 'stable' | 'beta')}
+                          onChange={(e) =>
+                            setNewRelChannel(e.target.value as 'stable' | 'beta')
+                          }
                           className="px-2 py-1 rounded-lg border border-[#D5E1E8] bg-[#F8FAFC] text-xs"
                         >
                           <option value="stable">Stable (Production)</option>
@@ -1963,7 +2171,7 @@ export function AdminConsole({ onNavigate }: AdminConsoleProps) {
                       className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-[#070B19] text-white text-xs font-semibold hover:bg-[#1E293B] shadow-md transition-all cursor-pointer"
                     >
                       <UploadCloud className="w-4 h-4 text-[#38BDF8]" />
-                      <span>Register &amp; Publish Release</span>
+                      <span>Register Release Record</span>
                     </button>
                   </div>
                 </form>
