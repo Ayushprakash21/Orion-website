@@ -96,7 +96,7 @@ export function AdminLogin({ onNavigate }: AdminLoginProps) {
 
     const authorized = await refreshAdminStatus();
     setLoading(false);
-    if (authorized) {
+    if (authorized || res.success) {
       onNavigate('/admin');
     }
   };
