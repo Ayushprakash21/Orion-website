@@ -79,6 +79,7 @@ export interface WorldScrollState {
   heroTranslateY: number;
   processHudOpacity: number;
   activeStepIndex: number; // 0..3 corresponding to 01..04
+  activeStage7Index: number; // 0..6 corresponding to 7 stages
   stepLocalProgress: number;
   cameraPos: Vec3;
   lookAt: Vec3;
@@ -131,6 +132,97 @@ export const WORLD_PROCESS_STEPS: WorldProcessStep[] = [
       'Authorized interventions dispatch directly into SAP, Oracle, and carrier EDI with cryptographic auditability—arriving verified, compliant, and ready to execute from day one.',
     telemetryTag: '99.8% SLA PROTECTED · CLOSED-LOOP DISPATCH',
     scrollTarget: 0.95,
+  },
+];
+
+export interface SupplyChainProcessStage {
+  index: number;
+  number: '01' | '02' | '03' | '04' | '05' | '06' | '07';
+  id: string;
+  stageName: string;
+  title: string;
+  description: string;
+  telemetryTag: string;
+  scrollTarget: number;
+}
+
+export const SUPPLY_CHAIN_7_STAGES: SupplyChainProcessStage[] = [
+  {
+    index: 0,
+    number: '01',
+    id: 'raw-materials',
+    stageName: 'RAW MATERIALS ORIGIN',
+    title: 'Extraction & Mine Telemetry',
+    description:
+      'Autonomous telemetry ingests raw extraction lots, mine manifests, and bulk agricultural feeds into a single canonical ledger with zero data drop.',
+    telemetryTag: '42.8K EVENTS/S · ZERO-LATENCY INGESTION',
+    scrollTarget: 0.18,
+  },
+  {
+    index: 1,
+    number: '02',
+    id: 'supplier-foundry',
+    stageName: 'SUPPLIER FABRICATION',
+    title: 'Component Clearance & Flow',
+    description:
+      'Tier-1 component foundries and fabrication nodes synchronize sub-assembly feeds directly with production burn rates across connected corridors.',
+    telemetryTag: '100% INGESTION INTEGRITY · RESOLVED',
+    scrollTarget: 0.32,
+  },
+  {
+    index: 2,
+    number: '03',
+    id: 'smart-manufacturing',
+    stageName: 'SMART MANUFACTURING',
+    title: 'Autonomous Precision Assembly',
+    description:
+      'Orion-9 Command Hub orchestrates robotic assembly cells and inline optical quality control—matching manufacturing cadence to live demand.',
+    telemetryTag: '142 HUBS · CLOSED-LOOP CADENCE',
+    scrollTarget: 0.46,
+  },
+  {
+    index: 3,
+    number: '04',
+    id: 'automated-warehousing',
+    stageName: 'AUTOMATED WAREHOUSING',
+    title: 'High-Bay ASRS Buffering',
+    description:
+      'Finished inventory enters dynamic high-bay storage with predictive buffer allocation, eliminating stockouts and handling overhead.',
+    telemetryTag: 'ASRS ACTIVE · 99.98% INVENTORY FIDELITY',
+    scrollTarget: 0.60,
+  },
+  {
+    index: 4,
+    number: '05',
+    id: 'multimodal-transit',
+    stageName: 'MULTIMODAL TRANSIT',
+    title: 'Global Intermodal Freight',
+    description:
+      'Continuous telemetry synchronizes container ships along maritime waterways, highway freight fleets, and intercontinental air bridges.',
+    telemetryTag: 'INTERMODAL CORRIDOR SYNCHRONIZATION',
+    scrollTarget: 0.74,
+  },
+  {
+    index: 5,
+    number: '06',
+    id: 'regional-distribution',
+    stageName: 'REGIONAL DISTRIBUTION',
+    title: 'Optimized Cross-Docking',
+    description:
+      'Dynamic routing engines dispatch palletized consignments through regional distribution hubs and retail centers with minimal dwell.',
+    telemetryTag: 'PREDICTIVE REPLENISHMENT · ZERO DWELL',
+    scrollTarget: 0.88,
+  },
+  {
+    index: 6,
+    number: '07',
+    id: 'customer-destination',
+    stageName: 'CUSTOMER FULFILLMENT',
+    title: 'Verified Enterprise Delivery',
+    description:
+      'Cryptographic proof-of-delivery confirms verified arrival at destination, updating enterprise ERP and TMS systems automatically.',
+    telemetryTag: '99.8% SLA PROTECTED · VERIFIED ARRIVAL',
+    scrollTarget: 0.98,
   },
 ];
 
@@ -575,6 +667,24 @@ export function evaluateWorldScrollState(rawScrollProgress: number): WorldScroll
     stepLocalProgress = clamp01((p - 0.82) / 0.18);
   }
 
+  // Determine active stage out of the 7 supply chain stages (0..6)
+  let activeStage7Index = 0;
+  if (p < 0.25) {
+    activeStage7Index = 0;
+  } else if (p < 0.39) {
+    activeStage7Index = 1;
+  } else if (p < 0.53) {
+    activeStage7Index = 2;
+  } else if (p < 0.67) {
+    activeStage7Index = 3;
+  } else if (p < 0.81) {
+    activeStage7Index = 4;
+  } else if (p < 0.92) {
+    activeStage7Index = 5;
+  } else {
+    activeStage7Index = 6;
+  }
+
   // Find surrounding camera keyframes and interpolate via Catmull-Rom spline
   let kIdx = 0;
   for (let i = 0; i < WORLD_CAMERA_KEYFRAMES.length - 1; i++) {
@@ -610,6 +720,7 @@ export function evaluateWorldScrollState(rawScrollProgress: number): WorldScroll
     heroTranslateY,
     processHudOpacity,
     activeStepIndex,
+    activeStage7Index,
     stepLocalProgress,
     cameraPos,
     lookAt,

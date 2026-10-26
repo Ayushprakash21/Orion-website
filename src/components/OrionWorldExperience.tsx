@@ -2,25 +2,47 @@
  * ORION-9 MASTER ANIMATION — END-TO-END INTELLIGENT SUPPLY CHAIN OPERATING SYSTEM
  * Homepage Centerpiece Interactive Digital Twin
  * 
- * Re-architected with:
- * 1. Proportional 7-stage supply chain visible together:
- *    Raw materials → Supplier → Factory → Warehouse → Distribution centre → Retailer → End customer
- * 2. Continuous path-based motion (NO JUMPING):
- *    Trucks, cargo ships, aircraft, forklifts, and conveyors move along closed trajectories.
- * 3. Stable camera framing with responsive desktop/tablet/mobile composition.
- * 4. Only ONE short heading per scenario:
- *    SCENE 01: "Global Supply Chain Flow"
- *    SCENE 02: "Disruption Detected"
- *    SCENE 03: "Autonomous Recovery"
- * 5. Smooth transitions between all 3 scenarios.
+ * Re-architected from visual references (Reference Screenshots 3 & 4):
+ * 1. Scroll = 0: High-angle panoramic hero composition matching Reference Screenshot 3
+ *    (Centered OrionHeroBrandLockup, "The New Standard in Supply Chain Control", "Scroll to Discover Our Process").
+ * 2. Scroll > 0.16: Smooth camera glide along the glowing pipeline through all 7 stages matching Reference Screenshot 4.
+ * 3. Bottom-left floating liquid-glass card displaying the 7 supply chain stages:
+ *    - 01 Raw Materials Origin
+ *    - 02 Supplier & Component Fabrication
+ *    - 03 Smart Manufacturing Hub
+ *    - 04 Automated High-Bay Warehousing & ASRS
+ *    - 05 Multimodal Logistics (Canal Port, Elevated Highway, Air-Cargo Hub)
+ *    - 06 Regional Retail Distribution
+ *    - 07 Customer Destination & SLA Verification
+ * 4. Continuous path-based motion (NO JUMPING or coordinate resets):
+ *    - Cargo ships along deepwater canal
+ *    - Freight trucks along elevated highway
+ *    - Hub trucks docking at warehouse bays
+ *    - Intermodal shuttle between port quay and air terminal
+ *    - Airborne cargo aircraft along flight corridor
+ *    - Articulated robotic assembly arms with spark effects
+ *    - High-bay ASRS vertical elevator carriage
+ *    - Optical QC laser scanner
+ *    - Gantry crane container hoists
+ *    - Rotating wind turbines on ridge
+ * 5. Orion-9 Intelligence Demonstration (Simulated Demonstration):
+ *    - Interactive control widget allowing user to toggle:
+ *      [Nominal Flow], [Simulate Supplier Delay], [Autonomous Bypass Recovery]
+ *    - Amber warning beacon & alert conduit pulse at supplier node
+ *    - Emerald-green bypass corridor lights up with express air-cargo flight
+ *    - Downstream SLA protected & verified recovery
  */
 
 import React, { useEffect, useRef, useState, useCallback } from 'react';
 import * as THREE from 'three';
 import {
+  SUPPLY_CHAIN_7_STAGES,
+  WORLD_PROCESS_STEPS,
+  evaluateWorldScrollState,
   evaluateHeroIntroSequence,
   clamp01,
   lerpScalar,
+  type SupplyChainProcessStage,
 } from '../utils/cinematic-choreography';
 import {
   detectSoftwareWebGL,
@@ -34,74 +56,38 @@ import {
 import { useSiteConfig } from '../context/SiteConfigContext';
 import { OrionHeroBrandLockup } from './OrionLogo';
 import {
-  ChevronLeft,
+  AlertTriangle,
+  CheckCircle2,
+  RefreshCw,
+  ShieldCheck,
+  ArrowRight,
   ChevronRight,
   Play,
   Pause,
-  ArrowRight,
 } from 'lucide-react';
 
-export interface SupplyChainScenario {
-  id: 'global-flow' | 'disruption' | 'recovery';
-  sceneNumber: '01' | '02' | '03';
-  code: string;
-  title: string;
-  statusBadge: string;
-  accent: string;
-  accentBg: string;
-  accentBorder: string;
-}
-
-export const SUPPLY_CHAIN_SCENARIOS: SupplyChainScenario[] = [
-  {
-    id: 'global-flow',
-    sceneNumber: '01',
-    code: 'SCENE 01',
-    title: 'Global Supply Chain Flow',
-    statusBadge: 'ALL CORRIDORS NOMINAL',
-    accent: '#0284c7',
-    accentBg: 'rgba(2, 132, 199, 0.08)',
-    accentBorder: 'rgba(2, 132, 199, 0.25)',
-  },
-  {
-    id: 'disruption',
-    sceneNumber: '02',
-    code: 'SCENE 02',
-    title: 'Disruption Detected',
-    statusBadge: 'MARITIME CHOKEPOINT BOTTLENECK',
-    accent: '#d97706',
-    accentBg: 'rgba(217, 119, 6, 0.08)',
-    accentBorder: 'rgba(217, 119, 6, 0.3)',
-  },
-  {
-    id: 'recovery',
-    sceneNumber: '03',
-    code: 'SCENE 03',
-    title: 'Autonomous Recovery',
-    statusBadge: 'EXPRESS AIR-BYPASS ACTIVE',
-    accent: '#059669',
-    accentBg: 'rgba(5, 150, 105, 0.08)',
-    accentBorder: 'rgba(5, 150, 105, 0.3)',
-  },
-];
+export type IntelligenceDemoMode = 'nominal' | 'delay' | 'recovery';
 
 export const OrionWorldExperience: React.FC = () => {
   const { activeConfig } = useSiteConfig();
   const containerRef = useRef<HTMLDivElement | null>(null);
   const canvasMountRef = useRef<HTMLDivElement | null>(null);
 
-  // Scenario state (0 = Global Flow, 1 = Disruption, 2 = Recovery)
-  const [activeScenarioIdx, setActiveScenarioIdx] = useState<number>(0);
-  const scenarioIdxRef = useRef<number>(0);
-  scenarioIdxRef.current = activeScenarioIdx;
-
-  const [autoPlay, setAutoPlay] = useState<boolean>(true);
-  const [isHovered, setIsHovered] = useState<boolean>(false);
-  const timerRef = useRef<number | null>(null);
-
-  // Scroll tracking for gentle hero transition
-  const [scrollProgress, setScrollProgress] = useState<number>(0);
+  // Scroll tracking & smoothed camera interpolation
   const scrollProgressRef = useRef<number>(0);
+  const smoothedScrollRef = useRef<number>(0);
+  const [hudState, setHudState] = useState(() => evaluateWorldScrollState(0));
+  const lastHudUpdateRef = useRef<number>(0);
+
+  // Orion-9 Intelligence Simulation State
+  const [demoMode, setDemoMode] = useState<IntelligenceDemoMode>('nominal');
+  const demoModeRef = useRef<IntelligenceDemoMode>('nominal');
+  demoModeRef.current = demoMode;
+
+  // Auto-tour or manual autoplay through 7 stages
+  const [autoTour, setAutoTour] = useState<boolean>(false);
+  const autoTourRef = useRef<boolean>(false);
+  autoTourRef.current = autoTour;
 
   // 5-Stage Hero Logo Intro State (Preserves initial 3.8s reveal & ambient loop)
   const [introState, setIntroState] = useState(() => {
@@ -137,7 +123,8 @@ export const OrionWorldExperience: React.FC = () => {
 
       if (elapsed <= 3850) {
         setIntroState(evaluateHeroIntroSequence(elapsed, false));
-      } else if (scrollProgressRef.current < 0.25 && now - lastAmbientUpdate >= 64) {
+      } else if (scrollProgressRef.current < 0.22 && now - lastAmbientUpdate >= 64) {
+        // Throttled ambient loop while hero is visible
         lastAmbientUpdate = now;
         setIntroState(evaluateHeroIntroSequence(elapsed, false));
       }
@@ -161,7 +148,18 @@ export const OrionWorldExperience: React.FC = () => {
     };
   }, []);
 
-  // Track scroll position to fade the hero copy smoothly into the simulation
+  const scrollToNormalizedProgress = useCallback((targetP: number) => {
+    const container = containerRef.current;
+    if (!container) return;
+    const rect = container.getBoundingClientRect();
+    const containerTop = window.scrollY + rect.top;
+    const scrollableHeight = Math.max(1, container.offsetHeight - window.innerHeight);
+    window.scrollTo({
+      top: containerTop + clamp01(targetP) * scrollableHeight,
+      behavior: 'smooth',
+    });
+  }, []);
+
   useEffect(() => {
     const handleScroll = () => {
       const container = containerRef.current;
@@ -170,7 +168,6 @@ export const OrionWorldExperience: React.FC = () => {
       const scrollable = Math.max(1, container.offsetHeight - window.innerHeight);
       const raw = clamp01(-rect.top / scrollable);
       scrollProgressRef.current = raw;
-      setScrollProgress(raw);
     };
 
     handleScroll();
@@ -182,43 +179,7 @@ export const OrionWorldExperience: React.FC = () => {
     };
   }, []);
 
-  // Autoplay loop: gently cycles scenarios every 12 seconds
-  useEffect(() => {
-    if (!autoPlay || isHovered) {
-      if (timerRef.current) {
-        clearTimeout(timerRef.current);
-        timerRef.current = null;
-      }
-      return;
-    }
-
-    timerRef.current = window.setTimeout(() => {
-      setActiveScenarioIdx((curr) => (curr + 1) % SUPPLY_CHAIN_SCENARIOS.length);
-    }, 12000);
-
-    return () => {
-      if (timerRef.current) {
-        clearTimeout(timerRef.current);
-        timerRef.current = null;
-      }
-    };
-  }, [autoPlay, isHovered, activeScenarioIdx]);
-
-  const selectScenario = useCallback((idx: number) => {
-    setActiveScenarioIdx(idx);
-  }, []);
-
-  const nextScenario = useCallback(() => {
-    setActiveScenarioIdx((curr) => (curr + 1) % SUPPLY_CHAIN_SCENARIOS.length);
-  }, []);
-
-  const prevScenario = useCallback(() => {
-    setActiveScenarioIdx(
-      (curr) => (curr - 1 + SUPPLY_CHAIN_SCENARIOS.length) % SUPPLY_CHAIN_SCENARIOS.length
-    );
-  }, []);
-
-  // Three.js World Construction
+  // Three.js 3D World Construction
   useEffect(() => {
     const mount = canvasMountRef.current;
     if (!mount) return;
@@ -228,15 +189,23 @@ export const OrionWorldExperience: React.FC = () => {
     const height = mount.clientHeight || window.innerHeight;
 
     const scene = new THREE.Scene();
-    const skyColor = new THREE.Color(0xe8f4fc);
+    const skyColor = new THREE.Color(0xe6f3fb);
     scene.background = skyColor;
-    scene.fog = new THREE.Fog(0xe8f4fc, 70, 160);
+    scene.fog = new THREE.Fog(0xe6f3fb, 65, 185);
 
-    // Balanced stable camera framing: entire width from X: -32 to +32 visible at once
     const isMobile = width < 768;
-    const camera = new THREE.PerspectiveCamera(isMobile ? 38 : 32, width / height, 0.5, 260);
-    camera.position.set(0, isMobile ? 54 : 38, isMobile ? 74 : 52);
-    camera.lookAt(0, 0, 0);
+    const initialChoreo = evaluateWorldScrollState(0);
+    const camera = new THREE.PerspectiveCamera(isMobile ? 36 : 31, width / height, 0.5, 260);
+    camera.position.set(
+      initialChoreo.cameraPos.x,
+      initialChoreo.cameraPos.y,
+      initialChoreo.cameraPos.z
+    );
+    camera.lookAt(
+      initialChoreo.lookAt.x,
+      initialChoreo.lookAt.y,
+      initialChoreo.lookAt.z
+    );
 
     let renderer: THREE.WebGLRenderer;
     try {
@@ -252,7 +221,7 @@ export const OrionWorldExperience: React.FC = () => {
     renderer.setSize(width, height);
     renderer.setPixelRatio(isSoftwareGl ? 1 : Math.min(window.devicePixelRatio, 2));
     renderer.toneMapping = THREE.ACESFilmicToneMapping;
-    renderer.toneMappingExposure = 1.08;
+    renderer.toneMappingExposure = 1.04;
     renderer.outputColorSpace = THREE.SRGBColorSpace;
     renderer.shadowMap.enabled = !isSoftwareGl;
     renderer.shadowMap.type = THREE.PCFSoftShadowMap;
@@ -262,51 +231,50 @@ export const OrionWorldExperience: React.FC = () => {
 
     const envTexture = setupStudioEnvironment(renderer, scene);
 
-    // Studio Lighting for Digital Twin Atmosphere
-    const hemiLight = new THREE.HemisphereLight(0xffffff, 0xa0c4e0, 0.95);
-    hemiLight.position.set(0, 50, 0);
+    // Calibrated studio lighting: directional key + cool ice-blue shadow fill
+    const hemiLight = new THREE.HemisphereLight(0xffffff, 0x99bdd8, 0.92);
+    hemiLight.position.set(0, 60, 0);
     scene.add(hemiLight);
 
-    const dirLight = new THREE.DirectionalLight(0xfffdf6, 1.85);
-    dirLight.position.set(-25, 45, 30);
+    const dirLight = new THREE.DirectionalLight(0xfffdf8, 1.75);
+    dirLight.position.set(-28, 52, 34);
     if (!isSoftwareGl) {
       dirLight.castShadow = true;
       dirLight.shadow.mapSize.width = 1024;
       dirLight.shadow.mapSize.height = 1024;
       dirLight.shadow.camera.near = 10;
-      dirLight.shadow.camera.far = 160;
-      dirLight.shadow.camera.left = -50;
-      dirLight.shadow.camera.right = 50;
-      dirLight.shadow.camera.top = 30;
-      dirLight.shadow.camera.bottom = -30;
-      dirLight.shadow.bias = -0.0003;
+      dirLight.shadow.camera.far = 195;
+      dirLight.shadow.camera.left = -55;
+      dirLight.shadow.camera.right = 105;
+      dirLight.shadow.camera.top = 50;
+      dirLight.shadow.camera.bottom = -50;
+      dirLight.shadow.bias = -0.0005;
     }
     scene.add(dirLight);
 
-    const rimLight = new THREE.DirectionalLight(0xaed7f4, 0.65);
-    rimLight.position.set(35, 25, -30);
+    const rimLight = new THREE.DirectionalLight(0xa4d4f4, 0.6);
+    rimLight.position.set(45, 28, -36);
     scene.add(rimLight);
 
-    // Build the Procedural 7-Stage World Rig
-    const worldRig = buildEndToEndSupplyChainWorld(isSoftwareGl);
-    scene.add(worldRig.rootGroup);
-
-    // Continuous Ground Plane
-    const groundGeo = new THREE.PlaneGeometry(160, 90);
+    // Continuous Architectural Ground Plane & Subtle Grid Lines
+    const groundGeo = new THREE.PlaneGeometry(360, 240);
     groundGeo.rotateX(-Math.PI / 2);
     const groundMat = new THREE.MeshStandardMaterial({
-      color: 0xe2f0fa,
-      roughness: 0.88,
-      metalness: 0.03,
+      color: 0xdfeff9,
+      roughness: 0.85,
+      metalness: 0.04,
     });
     const groundMesh = new THREE.Mesh(groundGeo, groundMat);
     groundMesh.receiveShadow = !isSoftwareGl;
     scene.add(groundMesh);
 
-    // Precision Architectural Grid
-    const gridHelper = new THREE.GridHelper(140, 70, 0xb8d7ed, 0xd4e9f7);
-    gridHelper.position.set(0, 0.02, 0);
+    const gridHelper = new THREE.GridHelper(300, 75, 0xbfd8ea, 0xcfe4f2);
+    gridHelper.position.set(28, 0.025, 0);
     scene.add(gridHelper);
+
+    // Build the Procedural 7-Stage World Rig
+    const worldRig: Scene3DRig = buildEndToEndSupplyChainWorld(isSoftwareGl);
+    scene.add(worldRig.rootGroup);
 
     if (!isSoftwareGl) {
       renderer.compile(scene, camera);
@@ -321,8 +289,7 @@ export const OrionWorldExperience: React.FC = () => {
       const h = mount.clientHeight || window.innerHeight;
       const mob = w < 768;
       camera.aspect = w / h;
-      camera.fov = mob ? 38 : 32;
-      camera.position.set(0, mob ? 54 : 38, mob ? 74 : 52);
+      camera.fov = mob ? 36 : 31;
       camera.updateProjectionMatrix();
       renderer.setSize(w, h);
     };
@@ -333,148 +300,174 @@ export const OrionWorldExperience: React.FC = () => {
       const dt = Math.min(clock.getDelta(), 0.1);
       const elapsed = clock.getElapsedTime();
 
-      const currentScenario = scenarioIdxRef.current; // 0 = flow, 1 = disruption, 2 = recovery
+      // Smooth scroll lerp for stable, cinematic camera gliding
+      const rawScroll = scrollProgressRef.current;
+      smoothedScrollRef.current += (rawScroll - smoothedScrollRef.current) * 0.085;
+      const currentScroll = smoothedScrollRef.current;
 
-      // =====================================================================
-      // 1. CONTINUOUS VEHICLE KINEMATICS (Closed-loop Catmull-Rom Trajectories)
-      // =====================================================================
-      const updateVehicle = (
-        v: { group: THREE.Group; curve: THREE.CatmullRomCurve3; speed: number; currentT: number },
-        speedMultiplier = 1.0
-      ) => {
-        v.currentT = (v.currentT + dt * v.speed * speedMultiplier) % 1.0;
-        const pos = v.curve.getPointAt(v.currentT);
-        const tangent = v.curve.getTangentAt(v.currentT);
-        v.group.position.copy(pos);
-        const headingY = Math.atan2(tangent.x, tangent.z);
-        v.group.rotation.y = headingY;
-      };
+      const state = evaluateWorldScrollState(currentScroll);
 
-      // Truck 1: Raw Materials <-> Supplier <-> Factory
-      updateVehicle(worldRig.truck1);
+      // Camera interpolation along Catmull-Rom keyframes
+      camera.position.set(state.cameraPos.x, state.cameraPos.y, state.cameraPos.z);
+      camera.lookAt(state.lookAt.x, state.lookAt.y, state.lookAt.z);
 
-      // Truck 2: Factory <-> Warehouse <-> Distribution
-      updateVehicle(worldRig.truck2);
-
-      // Delivery Van: Distribution <-> Retailer <-> Customer
-      updateVehicle(worldRig.deliveryVan);
-
-      // Forklift: Indoor warehouse pallet transit
-      updateVehicle(worldRig.forklift);
-
-      // High-Altitude Aircraft Circuit
-      updateVehicle(worldRig.cargoJet);
-
-      // Container Ship kinematics under scenario modulation
-      let shipSpeedMul = 1.0;
-      if (currentScenario === 1) {
-        // Disruption scenario: Maritime ship slows down at chokepoint zone
-        const isNearChokepoint = worldRig.containerShip.currentT > 0.15 && worldRig.containerShip.currentT < 0.65;
-        shipSpeedMul = isNearChokepoint ? 0.22 : 0.65;
-      }
-      updateVehicle(worldRig.containerShip, shipSpeedMul);
-
-      // Bypass Aircraft: Active in Scenario 3
-      if (currentScenario === 2) {
-        worldRig.bypassAircraft.group.visible = true;
-        updateVehicle(worldRig.bypassAircraft, 1.25);
-      } else {
-        worldRig.bypassAircraft.group.visible = false;
+      // Update Route Pulse Shader for the Continuous Cyan Pipeline
+      if (worldRig.cyanPipelineMat.uniforms) {
+        worldRig.cyanPipelineMat.uniforms.uTime.value = elapsed;
+        worldRig.cyanPipelineMat.uniforms.uDrawProgress.value = Math.max(0.2, state.cyanBeamProgress);
       }
 
-      // =====================================================================
-      // 2. INTERNAL MACHINERY & WORKER PROCEDURAL DYNAMICS
-      // =====================================================================
-      // Robotic Arms inside Smart Factory
+      // =======================================================================
+      // 1. CONTINUOUS VEHICLE KINEMATICS (NO JUMPING OR RESET COORD TELEPORTATION)
+      // =======================================================================
+      const currentMode = demoModeRef.current;
+
+      // Maritime Vessel 1: Continuous canal transit with smooth wrapping
+      const ship1Speed = currentMode === 'delay' ? 0.35 : 1.15;
+      worldRig.ship1.position.x = -42 + ((elapsed * ship1Speed) % 48);
+
+      // Maritime Vessel 2: Continuous canal transit eastbound
+      worldRig.ship2.position.x = 52 + ((elapsed * 1.0) % 46);
+
+      // Highway Freight Truck 1 (Westbound on elevated deck)
+      worldRig.truck1.position.x = -38 + ((elapsed * 4.6) % 120);
+
+      // Highway Freight Truck 2 (Eastbound on elevated deck)
+      worldRig.truck2.position.x = 86 - ((elapsed * 4.1) % 120);
+
+      // Warehouse Hub Trucks: Docking & departure harmonic cycle (Trucks 1 & 2)
+      const bayCycle1 = (elapsed * 0.32) % 1.0;
+      const bayZ1 = bayCycle1 < 0.45 ? lerpScalar(5.8, 7.6, bayCycle1 / 0.45) : lerpScalar(7.6, 5.8, (bayCycle1 - 0.45) / 0.55);
+      worldRig.hubTruck1.position.set(-4.65, 0.22, bayZ1);
+
+      const bayCycle2 = (elapsed * 0.32 + 0.5) % 1.0;
+      const bayZ2 = bayCycle2 < 0.45 ? lerpScalar(5.8, 7.6, bayCycle2 / 0.45) : lerpScalar(7.6, 5.8, (bayCycle2 - 0.45) / 0.55);
+      worldRig.hubTruck2.position.set(4.65, 0.22, bayZ2);
+
+      // Intermodal Shuttle Truck: Continuous transit between Port Quay (+9) & Air Terminal (-10)
+      const shuttlePhase = (Math.sin(elapsed * 0.52) + 1) * 0.5;
+      worldRig.hubTruck3.position.set(13.5, 0.22, lerpScalar(-9.5, 8.5, shuttlePhase));
+      worldRig.hubTruck3.rotation.y = Math.cos(elapsed * 0.52) >= 0 ? 0 : Math.PI;
+
+      // Airborne Cargo Jet: Continuous high-altitude glide
+      worldRig.cargoJet.position.x = 12 + ((elapsed * 3.4) % 80);
+      worldRig.cargoJet.position.y = 11.2 + Math.sin(elapsed * 1.3) * 0.35;
+
+      // =======================================================================
+      // 2. ORION-9 INTELLIGENCE SIMULATION DYNAMICS (DELAY & AUTONOMOUS RECOVERY)
+      // =======================================================================
+      const dRig = worldRig.disruptionRig;
+
+      if (currentMode === 'nominal') {
+        dRig.warningBeacon.visible = false;
+        dRig.warningLight.intensity = 0;
+        dRig.bypassConduit.visible = false;
+        dRig.bypassGlowLight.intensity = 0;
+        worldRig.bypassAircraft.visible = false;
+        worldRig.redTube1Mat.color.setHex(0xff3b30);
+        worldRig.redTube1Mat.emissive.setHex(0xff3b30);
+        worldRig.redTube1Mat.emissiveIntensity = 1.35;
+      } else if (currentMode === 'delay') {
+        // Supplier bottleneck alert: pulsating amber beacon and warning conduit
+        dRig.warningBeacon.visible = true;
+        const pulse = 0.5 + 0.5 * Math.sin(elapsed * 6.5);
+        dRig.warningLight.intensity = 1.8 + pulse * 1.5;
+        dRig.bypassConduit.visible = false;
+        dRig.bypassGlowLight.intensity = 0;
+        worldRig.bypassAircraft.visible = false;
+        worldRig.redTube1Mat.color.setHex(0xf59e0b);
+        worldRig.redTube1Mat.emissive.setHex(0xf59e0b);
+        worldRig.redTube1Mat.emissiveIntensity = 1.6 + pulse * 1.2;
+      } else if (currentMode === 'recovery') {
+        // Autonomous bypass active: emerald conduit illuminated & bypass aircraft airborne
+        dRig.warningBeacon.visible = false;
+        dRig.warningLight.intensity = 0;
+        dRig.bypassConduit.visible = true;
+        const recoveryPulse = 0.6 + 0.4 * Math.sin(elapsed * 4.8);
+        dRig.bypassGlowLight.intensity = 2.2 + recoveryPulse * 0.8;
+        worldRig.bypassConduitMat.emissiveIntensity = 1.4 + recoveryPulse * 0.6;
+
+        worldRig.bypassAircraft.visible = true;
+        const bypassT = (elapsed * 0.18) % 1.0;
+        worldRig.bypassAircraft.position.set(
+          lerpScalar(-14, 68, bypassT),
+          9.5 + Math.sin(bypassT * Math.PI) * 1.8,
+          -12
+        );
+        worldRig.bypassAircraft.rotation.y = Math.PI / 2;
+
+        worldRig.redTube1Mat.color.setHex(0x10b981);
+        worldRig.redTube1Mat.emissive.setHex(0x10b981);
+        worldRig.redTube1Mat.emissiveIntensity = 1.2;
+      }
+
+      // =======================================================================
+      // 3. FACILITY MACHINERY, ROBOTICS & WORKER PROCEDURAL DYNAMICS
+      // =======================================================================
+      // Wind Turbines Rotation
+      for (let i = 0; i < worldRig.turbineRotors.length; i++) {
+        worldRig.turbineRotors[i].rotation.z += dt * (1.2 + i * 0.15);
+      }
+
+      // Smart Factory Articulated Robotic Arms
       worldRig.roboticArms.forEach((arm) => {
-        const cycle = elapsed * 1.6 + arm.phase;
-        arm.upperArm.rotation.z = Math.sin(cycle) * 0.4;
-        arm.forearm.rotation.z = Math.cos(cycle * 1.3) * 0.45;
-        arm.base.rotation.y = Math.sin(cycle * 0.8) * 0.55;
-        arm.sparkLight.intensity = Math.sin(cycle * 7) > 0.4 ? 1.4 : 0.15;
+        const cycle = elapsed * 1.8 + arm.phase;
+        arm.upperArm.rotation.z = Math.sin(cycle) * 0.38;
+        arm.forearm.rotation.z = Math.cos(cycle * 1.2) * 0.42;
+        arm.base.rotation.y = Math.sin(cycle * 0.7) * 0.52;
+        arm.sparkLight.intensity = Math.sin(cycle * 6.5) > 0.4 ? 1.6 : 0.15;
       });
 
-      // Holographic Optical QC Scanner Laser
+      // Inline Optical QC Laser Vertical Sweep
       if (worldRig.qcScannerMesh) {
-        worldRig.qcScannerMesh.scale.y = 0.9 + Math.sin(elapsed * 4.5) * 0.12;
+        worldRig.qcScannerMesh.scale.y = 0.9 + Math.sin(elapsed * 4.8) * 0.14;
       }
 
-      // Conveyor items flow through factory
+      // Factory Conveyor Belt Items Transit
       worldRig.conveyorItems.forEach((ci) => {
-        ci.mesh.position.x += dt * 1.4;
+        ci.mesh.position.x += dt * 1.6;
         if (ci.mesh.position.x > ci.endX) {
           ci.mesh.position.x = ci.startX;
         }
       });
 
-      // ASRS Vertical Elevator Carriage
-      worldRig.asrsCarriers.forEach((ac) => {
-        const phase = (Math.sin(elapsed * ac.speed) + 1) * 0.5;
-        ac.mesh.position.y = lerpScalar(ac.startY, ac.targetY, phase);
-      });
-
-      // Gantry Crane Trolley Hoist
-      worldRig.craneTrolleys.forEach((ct) => {
-        ct.group.position.z = ct.baseZ + Math.sin(elapsed * 0.75 + ct.phase) * 1.2;
-      });
-
-      // Stylized Worker Idle Breathing & Posture
-      worldRig.workers.forEach((w) => {
-        const breath = Math.sin(elapsed * 2.2 + w.phase) * 0.02;
-        w.group.position.y = w.baseY + breath;
-      });
-
-      // =====================================================================
-      // 3. SCENARIO DISRUPTION & RECOVERY VISUAL STATES
-      // =====================================================================
-      const dRig = worldRig.disruptionRig;
-      const sBeacons = worldRig.statusBeacons;
-
-      if (currentScenario === 0) {
-        // SCENE 01: Global Supply Chain Flow (Nominal)
-        dRig.chokepointBeacon.visible = false;
-        dRig.chokepointCorridor.visible = false;
-        dRig.bypassCorridor.visible = false;
-        dRig.bypassGlowLight.intensity = 0;
-
-        (sBeacons.supplier.material as THREE.MeshStandardMaterial).emissive.setHex(0x0284c7);
-        (sBeacons.factory.material as THREE.MeshStandardMaterial).emissive.setHex(0x10b981);
-        (sBeacons.warehouse.material as THREE.MeshStandardMaterial).emissive.setHex(0x10b981);
-        (sBeacons.port.material as THREE.MeshStandardMaterial).emissive.setHex(0x0284c7);
-      } else if (currentScenario === 1) {
-        // SCENE 02: Disruption Detected (Restrained Amber Chokepoint Pulse)
-        dRig.chokepointBeacon.visible = true;
-        dRig.chokepointCorridor.visible = true;
-        dRig.bypassCorridor.visible = false;
-        dRig.bypassGlowLight.intensity = 0;
-
-        const pulse = 0.6 + 0.4 * Math.sin(elapsed * 6.0);
-        const chokeMat = dRig.chokepointCorridor.material as THREE.MeshStandardMaterial;
-        chokeMat.emissive.setHex(0xf59e0b);
-        chokeMat.emissiveIntensity = 1.0 + pulse * 1.2;
-
-        (sBeacons.supplier.material as THREE.MeshStandardMaterial).emissive.setHex(0xf59e0b);
-        (sBeacons.factory.material as THREE.MeshStandardMaterial).emissive.setHex(0xf59e0b);
-        (sBeacons.warehouse.material as THREE.MeshStandardMaterial).emissive.setHex(0x10b981); // Downstream continues
-        (sBeacons.port.material as THREE.MeshStandardMaterial).emissive.setHex(0xf59e0b);
-      } else if (currentScenario === 2) {
-        // SCENE 03: Autonomous Recovery (Air Bypass Active & Recovered Equilibrium)
-        dRig.chokepointBeacon.visible = false;
-        dRig.chokepointCorridor.visible = false;
-        dRig.bypassCorridor.visible = true;
-        dRig.bypassGlowLight.intensity = 2.0;
-
-        const bypassMat = dRig.bypassCorridor.material as THREE.MeshStandardMaterial;
-        bypassMat.emissive.setHex(0x10b981);
-        bypassMat.emissiveIntensity = 1.4 + 0.4 * Math.sin(elapsed * 4.5);
-
-        (sBeacons.supplier.material as THREE.MeshStandardMaterial).emissive.setHex(0x10b981);
-        (sBeacons.factory.material as THREE.MeshStandardMaterial).emissive.setHex(0x10b981);
-        (sBeacons.warehouse.material as THREE.MeshStandardMaterial).emissive.setHex(0x10b981);
-        (sBeacons.port.material as THREE.MeshStandardMaterial).emissive.setHex(0x10b981);
+      // High-Bay Warehouse ASRS Vertical Elevator Lift
+      if (worldRig.asrsCarrier) {
+        worldRig.asrsCarrier.position.y = 1.2 + ((Math.sin(elapsed * 1.1) + 1) * 0.5) * 4.2;
       }
 
+      // Port Gantry Crane Trolley Hoist Transits
+      worldRig.craneTrolleys.forEach((ct) => {
+        ct.group.position.z = ct.baseZ + Math.sin(elapsed * 0.82 + ct.phase) * 2.2;
+      });
+
+      // Inspection Gates Scan Lighting
+      for (let i = 0; i < worldRig.checkpointGates.length; i++) {
+        const gMat = worldRig.checkpointGates[i].material as THREE.MeshStandardMaterial;
+        gMat.emissiveIntensity = 0.6 + state.checkpointScanWeight * (1.2 + 0.6 * Math.sin(elapsed * 4.2 + i));
+      }
+
+      // Warehouse Skylights & Dock Beacons Activation
+      const hubActivation = Math.max(state.matrixWaveWeight, state.emblemLockWeight);
+      for (let i = 0; i < worldRig.skylightMats.length; i++) {
+        const pulse = 0.5 + 0.5 * Math.sin(elapsed * 2.6 - i * 0.4);
+        worldRig.skylightMats[i].emissiveIntensity = 0.18 + hubActivation * (0.55 + 0.45 * pulse);
+      }
+      for (let i = 0; i < worldRig.bayBeaconMats.length; i++) {
+        const dockPulse = 0.5 + 0.5 * Math.sin(elapsed * 3.2 + i * 0.85);
+        worldRig.bayBeaconMats[i].emissiveIntensity = 0.5 + hubActivation * (0.8 + 0.6 * dockPulse);
+      }
+
+      worldRig.roofEmblemMat.emissiveIntensity = 0.65 + state.emblemLockWeight * 1.15;
+
       renderer.render(scene, camera);
+
+      const now = performance.now();
+      if (now - lastHudUpdateRef.current > 50) {
+        lastHudUpdateRef.current = now;
+        setHudState(state);
+      }
+
       framePacer.scheduleNext(tick);
     };
 
@@ -493,21 +486,16 @@ export const OrionWorldExperience: React.FC = () => {
   const heroLine2 =
     activeConfig.homepage.heroHeadlineLine2 || 'Supply Chain Control';
 
-  const currentScenario = SUPPLY_CHAIN_SCENARIOS[activeScenarioIdx];
-
-  // Hero fade: when scrolling down, hero copy smoothly yields focus to the simulation
-  const heroOpacity = clamp01(1 - scrollProgress * 2.8);
-  const heroTranslateY = -scrollProgress * 60;
-  const isSimulationFocused = scrollProgress > 0.16;
+  // Active Stage Resolution out of the 7 stages
+  const activeStage: SupplyChainProcessStage =
+    SUPPLY_CHAIN_7_STAGES[hudState.activeStage7Index] || SUPPLY_CHAIN_7_STAGES[0];
 
   return (
     <section
       id="process"
       ref={containerRef}
-      onPointerEnter={() => setIsHovered(true)}
-      onPointerLeave={() => setIsHovered(false)}
-      className="relative w-full h-[145vh] bg-[#E8F4FC] select-none overflow-visible"
-      aria-label="Orion-9 End-to-End Intelligent Supply Chain Digital Twin"
+      className="relative w-full h-[480vh] bg-[#E6F3FB] select-none overflow-visible"
+      aria-label="Orion-9 3D Supply Chain Operating World and Process"
     >
       {/* Sticky Full-Viewport 3D Stage */}
       <div className="sticky top-0 left-0 w-full h-screen overflow-hidden">
@@ -519,13 +507,13 @@ export const OrionWorldExperience: React.FC = () => {
         />
 
         {/* ==========================================================================
-            1. HERO OVERLAY (ORION-9 INITIAL BRAND REVEAL — SCROLLS SMOOTHLY AWAY)
+            1. HERO OVERLAY (ORION-9 INITIAL BRAND REVEAL — MATCHES SCREENSHOT 3)
            ========================================================================== */}
         <div
           style={{
-            opacity: heroOpacity,
-            transform: `translate3d(0, ${heroTranslateY}px, 0)`,
-            pointerEvents: heroOpacity > 0.3 ? 'auto' : 'none',
+            opacity: hudState.heroOpacity,
+            transform: `translate3d(0, ${hudState.heroTranslateY}px, 0)`,
+            pointerEvents: hudState.heroOpacity > 0.25 ? 'auto' : 'none',
           }}
           className="absolute inset-0 z-10 flex flex-col items-center justify-between pt-16 sm:pt-20 pb-0 px-4 sm:px-6 text-center transition-opacity duration-75"
         >
@@ -537,121 +525,170 @@ export const OrionWorldExperience: React.FC = () => {
             />
           </div>
 
-          {/* Bottom-Center Scroll Cue */}
+          {/* Bottom-Center Scroll Prompt */}
           <div
             style={{ opacity: introState.supportingTextOpacity }}
-            className="flex flex-col items-center shrink-0 mb-4"
+            className="flex flex-col items-center shrink-0 mb-4 sm:mb-6"
           >
-            <div className="px-4 py-2 rounded-full liquid-glass-button text-xs font-semibold text-[var(--orion-text-primary)] shadow-sm flex items-center gap-2">
-              <span>Scroll to explore the complete supply chain</span>
+            <button
+              type="button"
+              onClick={() => scrollToNormalizedProgress(0.18)}
+              className="px-5 py-2.5 rounded-lg bg-white border border-[#BDD6E8] text-xs font-semibold text-[#070B19] hover:border-[#070B19] transition-colors cursor-pointer shadow-xs flex items-center gap-2"
+            >
+              <span>Scroll to Discover Our Process</span>
               <ArrowRight className="w-3.5 h-3.5 text-[#0284C7]" />
+            </button>
+            <div className="w-px h-6 sm:h-8 bg-[#070B19]/40 mt-1" />
+          </div>
+        </div>
+
+        {/* ==========================================================================
+            2. ORION-9 INTELLIGENCE DEMONSTRATION WIDGET (TOP-RIGHT SIMULATED CONTROLS)
+           ========================================================================== */}
+        <div
+          style={{
+            opacity: hudState.processHudOpacity,
+            pointerEvents: hudState.processHudOpacity > 0.2 ? 'auto' : 'none',
+          }}
+          className="absolute top-20 sm:top-24 right-4 sm:right-8 z-20 transition-all duration-300 max-w-[340px]"
+        >
+          <div className="p-3 sm:p-3.5 rounded-2xl bg-white/92 border border-[#B8D7ED]/80 backdrop-blur-xl shadow-lg">
+            <div className="flex items-center justify-between gap-2 mb-2">
+              <div className="flex items-center gap-1.5 text-[11px] font-mono font-bold tracking-wider text-[#0284C7]">
+                <ShieldCheck className="w-3.5 h-3.5" />
+                <span>ORION-9 INTELLIGENCE ENGINE</span>
+              </div>
+              <span className="text-[10px] font-mono text-slate-500 bg-slate-100 px-1.5 py-0.5 rounded">
+                SIMULATION
+              </span>
             </div>
-            <div className="w-px h-6 bg-[var(--orion-text-primary)]/40 mt-1" />
+
+            {/* Mode Trigger Buttons */}
+            <div className="grid grid-cols-3 gap-1.5 mb-2.5">
+              <button
+                type="button"
+                data-mode="nominal"
+                onClick={() => setDemoMode('nominal')}
+                className={`py-1.5 px-2 rounded-lg text-[10px] font-mono font-semibold transition cursor-pointer flex flex-col items-center justify-center gap-0.5 ${
+                  demoMode === 'nominal'
+                    ? 'bg-[#081326] text-white shadow-xs'
+                    : 'bg-slate-100 text-slate-600 hover:bg-slate-200/80'
+                }`}
+              >
+                <span>Nominal</span>
+                <span className="text-[9px] opacity-75">Corridors OK</span>
+              </button>
+
+              <button
+                type="button"
+                data-mode="delay"
+                onClick={() => setDemoMode('delay')}
+                className={`py-1.5 px-2 rounded-lg text-[10px] font-mono font-semibold transition cursor-pointer flex flex-col items-center justify-center gap-0.5 ${
+                  demoMode === 'delay'
+                    ? 'bg-amber-600 text-white shadow-xs'
+                    : 'bg-amber-50 text-amber-800 border border-amber-200/60 hover:bg-amber-100/70'
+                }`}
+              >
+                <span>Simulate Delay</span>
+                <span className="text-[9px] opacity-75">Amber Beacon</span>
+              </button>
+
+              <button
+                type="button"
+                data-mode="recovery"
+                onClick={() => setDemoMode('recovery')}
+                className={`py-1.5 px-2 rounded-lg text-[10px] font-mono font-semibold transition cursor-pointer flex flex-col items-center justify-center gap-0.5 ${
+                  demoMode === 'recovery'
+                    ? 'bg-emerald-600 text-white shadow-xs'
+                    : 'bg-emerald-50 text-emerald-800 border border-emerald-200/60 hover:bg-emerald-100/70'
+                }`}
+              >
+                <span>Autonomous</span>
+                <span className="text-[9px] opacity-75">Air Bypass</span>
+              </button>
+            </div>
+
+            {/* Live Operational Status Line */}
+            <div className="text-[10px] font-mono flex items-center gap-1.5 pt-1.5 border-t border-slate-200/70 text-slate-600">
+              <span
+                className={`w-1.5 h-1.5 rounded-full shrink-0 ${
+                  demoMode === 'nominal'
+                    ? 'bg-[#0284C7]'
+                    : demoMode === 'delay'
+                    ? 'bg-amber-500 animate-pulse'
+                    : 'bg-emerald-500'
+                }`}
+              />
+              <span className="truncate">
+                {demoMode === 'nominal' && 'Corridors nominal · 42.8K sig/s'}
+                {demoMode === 'delay' && 'Alert: Ingestion buffer delay flagged'}
+                {demoMode === 'recovery' && 'Bypass active · 99.8% SLA protected'}
+              </span>
+            </div>
           </div>
         </div>
 
         {/* ==========================================================================
-            2. MINIMAL SCENARIO HEADER (Strictly ONE SHORT HEADING per requirement)
+            3. BOTTOM-LEFT 7-STAGE PROCESS HUD (MATCHES REFERENCE SCREENSHOT 4)
            ========================================================================== */}
         <div
           style={{
-            opacity: isSimulationFocused || heroOpacity < 0.4 ? 1 : 0,
-            transform: `translate3d(0, ${isSimulationFocused || heroOpacity < 0.4 ? 0 : -16}px, 0)`,
-            pointerEvents: isSimulationFocused || heroOpacity < 0.4 ? 'auto' : 'none',
+            opacity: hudState.processHudOpacity,
+            pointerEvents: hudState.processHudOpacity > 0.2 ? 'auto' : 'none',
           }}
-          className="absolute top-20 sm:top-24 left-0 right-0 z-20 flex flex-col items-center text-center px-4 transition-all duration-300"
+          className="absolute bottom-6 sm:bottom-10 left-4 sm:left-10 z-20 w-[calc(100%-2rem)] max-w-[480px] transition-all duration-300"
         >
-          {/* Subtle Status Pill above heading */}
-          <div
-            style={{
-              backgroundColor: currentScenario.accentBg,
-              borderColor: currentScenario.accentBorder,
-              color: currentScenario.accent,
-            }}
-            className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[11px] font-mono font-bold tracking-wider border mb-2 shadow-xs backdrop-blur-md"
-          >
-            <span
-              style={{ backgroundColor: currentScenario.accent }}
-              className="w-1.5 h-1.5 rounded-full animate-pulse"
-            />
-            <span>{currentScenario.statusBadge}</span>
+          {/* Main Liquid-Glass Stage Card */}
+          <div className="bg-white/96 border border-[#C8DFEE] rounded-2xl p-4 sm:p-5 shadow-[0_12px_36px_rgba(7,11,25,0.08)] mb-3 backdrop-blur-md">
+            <div className="flex items-start gap-3 sm:gap-3.5">
+              <span className="w-7 h-7 sm:w-8 sm:h-8 rounded-lg bg-[#070B19] text-white font-mono text-xs sm:text-sm font-semibold flex items-center justify-center shrink-0 mt-0.5 shadow-xs">
+                {activeStage.number}
+              </span>
+              <div className="space-y-1.5 sm:space-y-2 flex-1 min-w-0">
+                <div className="flex items-center gap-2">
+                  <span className="text-[10px] sm:text-[11px] font-mono font-bold tracking-wider text-[#0284C7] uppercase">
+                    STAGE {activeStage.number} / 07 · {activeStage.stageName}
+                  </span>
+                </div>
+                <h2 className="font-editorial text-lg sm:text-2xl font-bold tracking-[-0.015em] text-[#070B19] leading-tight">
+                  {activeStage.title}
+                </h2>
+                <p className="text-xs sm:text-sm text-[#334155] leading-relaxed">
+                  {activeStage.description}
+                </p>
+                <div className="pt-1 flex items-center gap-2 text-[11px] font-mono text-[#0284C7] font-semibold">
+                  <span className="w-1.5 h-1.5 rounded-full bg-[#0284C7] animate-pulse" />
+                  <span>{activeStage.telemetryTag}</span>
+                </div>
+              </div>
+            </div>
           </div>
 
-          {/* ONLY ONE SHORT HEADING (Strict Requirement: No paragraphs, no extra cards) */}
-          <h2 className="text-xl sm:text-3xl md:text-4xl font-extrabold tracking-tight text-[#081326] drop-shadow-xs px-2">
-            {currentScenario.title}
-          </h2>
-        </div>
-
-        {/* ==========================================================================
-            3. SCENARIO SWITCHER CONTROLS (Smooth Navigation between 3 Scenes)
-           ========================================================================== */}
-        <div
-          style={{
-            opacity: isSimulationFocused || heroOpacity < 0.4 ? 1 : 0,
-            transform: `translate3d(0, ${isSimulationFocused || heroOpacity < 0.4 ? 0 : 16}px, 0)`,
-            pointerEvents: isSimulationFocused || heroOpacity < 0.4 ? 'auto' : 'none',
-          }}
-          className="absolute bottom-6 sm:bottom-10 left-0 right-0 z-20 flex justify-center px-3 transition-all duration-300"
-        >
-          <div className="flex items-center gap-1.5 sm:gap-2 p-1.5 rounded-2xl bg-white/90 border border-[#B8D7ED]/80 backdrop-blur-xl shadow-xl max-w-[calc(100vw-1.5rem)] overflow-x-auto scrollbar-none">
-            {/* Scenario Pills */}
-            {SUPPLY_CHAIN_SCENARIOS.map((scenario, idx) => {
-              const isActive = idx === activeScenarioIdx;
+          {/* 7-Stage Interactive Pill Navigation (01 to 07) */}
+          <div className="flex items-center gap-1.5 p-1.5 rounded-xl bg-white/90 border border-[#B8D7ED]/80 backdrop-blur-md shadow-md overflow-x-auto scrollbar-none">
+            {SUPPLY_CHAIN_7_STAGES.map((st, idx) => {
+              const isCurrent = idx === hudState.activeStage7Index;
               return (
                 <button
-                  key={scenario.id}
+                  key={st.id}
                   type="button"
-                  onClick={() => selectScenario(idx)}
-                  className={`px-3 sm:px-3.5 py-1.5 rounded-xl text-[11px] sm:text-xs font-mono font-semibold transition-all cursor-pointer flex items-center gap-1.5 sm:gap-2 ${
-                    isActive
-                      ? 'bg-[#081326] text-white shadow-md scale-[1.02]'
-                      : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100/70'
+                  onClick={() => scrollToNormalizedProgress(st.scrollTarget)}
+                  aria-label={`Jump to stage ${st.number}: ${st.title}`}
+                  className={`px-2.5 py-1 rounded-lg text-[11px] font-mono font-semibold transition cursor-pointer flex items-center gap-1 shrink-0 ${
+                    isCurrent
+                      ? 'bg-[#070B19] text-white shadow-xs scale-[1.03]'
+                      : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100'
                   }`}
                 >
                   <span
-                    style={{
-                      backgroundColor: isActive ? scenario.accent : '#94A3B8',
-                    }}
-                    className="w-1.5 h-1.5 rounded-full shrink-0"
+                    className={`w-1.5 h-1.5 rounded-full shrink-0 ${
+                      isCurrent ? 'bg-[#38BDF8]' : 'bg-slate-400'
+                    }`}
                   />
-                  <span className="whitespace-nowrap">
-                    <span className="hidden sm:inline">{scenario.code}: </span>
-                    <span>{scenario.title}</span>
-                  </span>
+                  <span>{st.number}</span>
                 </button>
               );
             })}
-
-            <div className="h-4 w-px bg-slate-300 mx-1" />
-
-            {/* Prev / Play-Pause / Next Controls */}
-            <div className="flex items-center gap-1">
-              <button
-                type="button"
-                onClick={prevScenario}
-                className="w-7 h-7 rounded-lg flex items-center justify-center text-slate-600 hover:text-slate-900 hover:bg-slate-100 transition cursor-pointer"
-                aria-label="Previous scenario"
-              >
-                <ChevronLeft className="w-4 h-4" />
-              </button>
-              <button
-                type="button"
-                onClick={() => setAutoPlay(!autoPlay)}
-                className="w-7 h-7 rounded-lg flex items-center justify-center text-slate-600 hover:text-slate-900 hover:bg-slate-100 transition cursor-pointer"
-                aria-label={autoPlay ? 'Pause auto-play' : 'Resume auto-play'}
-              >
-                {autoPlay ? <Pause className="w-3.5 h-3.5" /> : <Play className="w-3.5 h-3.5" />}
-              </button>
-              <button
-                type="button"
-                onClick={nextScenario}
-                className="w-7 h-7 rounded-lg flex items-center justify-center text-slate-600 hover:text-slate-900 hover:bg-slate-100 transition cursor-pointer"
-                aria-label="Next scenario"
-              >
-                <ChevronRight className="w-4 h-4" />
-              </button>
-            </div>
           </div>
         </div>
       </div>
