@@ -211,9 +211,15 @@ export const EditorialCapabilities: React.FC = () => {
 
         {/* 4-Column Isometric Feature Row */}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-12 lg:gap-10">
-          {capabilities.map((item) => (
+          {capabilities.map((item, index) => (
             <div key={item.id} className="flex flex-col items-start">
-              <div className="mb-8">{item.illustration}</div>
+              <div
+                data-testid={`capability-icon-${item.id}`}
+                style={{ animationDelay: `${index * 0.65}s` }}
+                className="mb-8 orion-capability-icon-float"
+              >
+                {item.illustration}
+              </div>
               <h3 className="font-editorial text-xl sm:text-[22px] font-bold tracking-[-0.015em] text-[#070B19] mb-3">
                 {item.title}
               </h3>

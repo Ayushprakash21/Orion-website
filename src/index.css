@@ -103,6 +103,20 @@
   animation: orionLogoFloat 5.6s ease-in-out infinite;
 }
 
+@keyframes orionCapabilityFloat {
+  0%, 100% {
+    transform: translate3d(0, 0px, 0);
+  }
+  50% {
+    transform: translate3d(0, -6px, 0);
+  }
+}
+
+.orion-capability-icon-float {
+  animation: orionCapabilityFloat 4.8s ease-in-out infinite;
+  will-change: transform;
+}
+
 .orion-hex-light-beam {
   stroke-dasharray: 16 52;
   animation: orionHexLightTravel 4.8s linear infinite;
@@ -121,6 +135,7 @@
   }
 
   .orion-hero-logo-float,
+  .orion-capability-icon-float,
   .orion-hex-light-beam,
   .orion-badge-sheen {
     animation: none !important;

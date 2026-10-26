@@ -142,29 +142,29 @@ export const OrionHeroBrandLockup: React.FC<OrionHeroBrandLockupProps> = ({
   return (
     <div
       data-testid="orion-hero-brand-lockup"
-      className="relative flex flex-col items-center justify-center text-center w-full max-w-4xl mx-auto px-4 -translate-y-[22px] sm:-translate-y-[34px] lg:-translate-y-[42px]"
+      className="relative flex flex-col items-center justify-center text-center w-full max-w-4xl mx-auto px-4 pb-11 sm:pb-[68px] lg:pb-[84px]"
     >
-      {/* Stage 1 — Atmosphere: Subtle blue ambient glow behind logo */}
-      <div
-        aria-hidden="true"
-        data-testid="orion-hero-ambient-glow"
-        className="pointer-events-none absolute w-[140px] h-[120px] sm:w-[220px] sm:h-[170px] lg:w-[260px] lg:h-[200px] top-0 rounded-full blur-2xl -z-10"
-        style={{
-          opacity: introState.ambientGlowOpacity,
-          background:
-            'radial-gradient(circle at 54% 42%, rgba(0, 180, 255, 0.34) 0%, rgba(2, 132, 199, 0.14) 48%, rgba(2, 132, 199, 0) 76%)',
-        }}
-      />
-
       {/* ==========================================================================
           MASTER UPLOADED ORION-9 LOGO (TRANSPARENT LAYERED SVG + GEOMETRY LIGHT)
-          Preserves exact 245px desktop / 145px mobile size, shifted ~40px upward on desktop
-          with a subtle 10%-opacity diffused black contrast shadow behind the logo group
+          Preserves exact 245px desktop / 145px mobile size, moved upward by 80px
+          directly on the logo container with a subtle 10%-opacity black contrast shadow
          ========================================================================== */}
       <div
         data-testid="orion-hero-animated-logo"
-        className="relative w-[145px] sm:w-[205px] md:w-[227.5px] lg:w-[245px] aspect-[1000/930] flex items-center justify-center select-none"
+        className="relative w-[145px] sm:w-[205px] md:w-[227.5px] lg:w-[245px] aspect-[1000/930] flex items-center justify-center select-none -translate-y-[80px]"
       >
+        {/* Stage 1 — Atmosphere: Subtle blue ambient glow behind logo */}
+        <div
+          aria-hidden="true"
+          data-testid="orion-hero-ambient-glow"
+          className="pointer-events-none absolute w-[140px] h-[120px] sm:w-[220px] sm:h-[170px] lg:w-[260px] lg:h-[200px] top-0 rounded-full blur-2xl -z-10"
+          style={{
+            opacity: introState.ambientGlowOpacity,
+            background:
+              'radial-gradient(circle at 54% 42%, rgba(0, 180, 255, 0.34) 0%, rgba(2, 132, 199, 0.14) 48%, rgba(2, 132, 199, 0) 76%)',
+          }}
+        />
+
         {/* Subtle 10%-opacity diffused black ambient shadow limited strictly to the logo area */}
         <div
           aria-hidden="true"
