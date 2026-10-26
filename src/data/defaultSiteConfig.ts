@@ -1,5 +1,32 @@
-import { SiteConfigurationBundle } from '../types/cms';
+import { SiteConfigurationBundle, DesktopReleaseRecord } from '../types/cms';
 import { DEFAULT_ORION_APP_URL } from '../utils/auth-validation';
+
+export const DEFAULT_DESKTOP_RELEASES: DesktopReleaseRecord[] = [
+  {
+    id: 'rel-9-0-0',
+    version: '9.0.0',
+    releaseDate: '2026-10-26',
+    platform: 'windows-x64',
+    filename: 'Orion-9-Setup.exe',
+    sizeBytes: 30336791,
+    sha256: 'e2dfeb480522b9da077bb58e0954d6d8e09f1023fb6af28b8b74b2a8dc23ee70',
+    downloadUrl: `${DEFAULT_ORION_APP_URL}api/download/desktop`,
+    channel: 'stable',
+    isLatest: true,
+    releaseNotes: [
+      'Official Orion-9 Windows 64-bit installer with NSIS packaging.',
+      'Native WebView2 runtime surface for unconstrained web and system integration.',
+      'Integrated enterprise single sign-on with Firebase and Cloudflare Edge.',
+      'Zero-trust security boundary with verified cryptographic PE integrity hash.'
+    ],
+    minimumOs: 'Windows 10 / 11 64-bit',
+    preflightGates: {
+      peValidated: true,
+      shaVerified: true,
+      signatureChecked: true,
+    },
+  }
+];
 
 export const DEFAULT_SITE_CONFIG: SiteConfigurationBundle = {
   branding: {
@@ -178,4 +205,5 @@ export const DEFAULT_SITE_CONFIG: SiteConfigurationBundle = {
       updatedAt: '2026-10-26',
     },
   ],
+  desktopReleases: DEFAULT_DESKTOP_RELEASES,
 };

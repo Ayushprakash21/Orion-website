@@ -10,13 +10,15 @@ import {
   ShieldCheck,
   Sliders,
   Eye,
+  Download,
 } from 'lucide-react';
 
 interface NavbarProps {
   onNavigate?: (path: string) => void;
+  onOpenDownload?: () => void;
 }
 
-export const Navbar: React.FC<NavbarProps> = ({ onNavigate }) => {
+export const Navbar: React.FC<NavbarProps> = ({ onNavigate, onOpenDownload }) => {
   const { user, isAdmin, launchOrion, logout, isFirebaseConfigured, destinationUrl } =
     useAuth();
   const { activeConfig, isPreviewMode, setIsPreviewMode } = useSiteConfig();
@@ -182,6 +184,16 @@ export const Navbar: React.FC<NavbarProps> = ({ onNavigate }) => {
 
             <button
               type="button"
+              onClick={() => onOpenDownload ? onOpenDownload() : handleRoute('/admin')}
+              className="hidden sm:inline-flex items-center gap-1.5 px-3 py-2 rounded-lg bg-[#F1F5F9] border border-[#CBD5E1] text-xs font-semibold text-[#070B19] hover:bg-[#E2E8F0] transition-colors cursor-pointer whitespace-nowrap shrink-0"
+              title="Download Orion-9 Windows 64-bit Desktop App (.exe)"
+            >
+              <Download className="w-3.5 h-3.5 text-[#0284C7]" />
+              <span>Download .exe</span>
+            </button>
+
+            <button
+              type="button"
               onClick={() => launchOrion(destinationUrl)}
               className="px-4 py-2 rounded-lg bg-[#070B19] text-white text-sm font-semibold hover:bg-[#1E293B] transition-colors cursor-pointer whitespace-nowrap shrink-0"
             >
@@ -281,9 +293,21 @@ export const Navbar: React.FC<NavbarProps> = ({ onNavigate }) => {
               type="button"
               onClick={() => {
                 setMobileMenuOpen(false);
+                if (onOpenDownload) onOpenDownload();
+              }}
+              className="w-full flex items-center justify-center gap-2 py-2.5 px-4 rounded-lg border border-[#CBD5E1] bg-[#F8FAFC] text-sm font-semibold text-[#070B19] cursor-pointer"
+            >
+              <Download className="w-4 h-4 text-[#0284C7]" />
+              <span>Download Windows App (.exe)</span>
+            </button>
+
+            <button
+              type="button"
+              onClick={() => {
+                setMobileMenuOpen(false);
                 launchOrion(destinationUrl);
               }}
-              className="w-full py-2.5 px-4 rounded-lg bg-[#070B19] text-white text-sm font-semibold"
+              className="w-full py-2.5 px-4 rounded-lg bg-[#070B19] text-white text-sm font-semibold cursor-pointer"
             >
               Launch Control Tower
             </button>

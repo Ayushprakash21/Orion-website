@@ -75,6 +75,7 @@ function loadStoredBundle(key: string, fallback: SiteConfigurationBundle): SiteC
       seo: { ...fallback.seo, ...(parsed.seo || {}) },
       authSettings: { ...fallback.authSettings, ...(parsed.authSettings || {}) },
       mediaLibrary: parsed.mediaLibrary || fallback.mediaLibrary,
+      desktopReleases: parsed.desktopReleases || fallback.desktopReleases || [],
     };
   } catch {
     return fallback;
@@ -149,6 +150,7 @@ export function SiteConfigProvider({ children }: { children: React.ReactNode }) 
         'footer',
         'seo',
         'authSettings',
+        'desktopReleases',
       ];
 
       const nextPublished: SiteConfigurationBundle = { ...publishedConfig };

@@ -2,13 +2,14 @@ import React from 'react';
 import { useAuth } from '../context/AuthContext';
 import { useSiteConfig } from '../context/SiteConfigContext';
 import { OrionLogo } from './OrionLogo';
-import { ArrowRight } from 'lucide-react';
+import { ArrowRight, Download } from 'lucide-react';
 
 interface FooterProps {
   onNavigate?: (path: string) => void;
+  onOpenDownload?: () => void;
 }
 
-export const Footer: React.FC<FooterProps> = ({ onNavigate }) => {
+export const Footer: React.FC<FooterProps> = ({ onNavigate, onOpenDownload }) => {
   const { launchOrion, destinationUrl } = useAuth();
   const { activeConfig } = useSiteConfig();
   const { branding, footer } = activeConfig;
@@ -62,6 +63,14 @@ export const Footer: React.FC<FooterProps> = ({ onNavigate }) => {
           </div>
 
           <div className="flex flex-wrap items-center gap-3 shrink-0">
+            <button
+              type="button"
+              onClick={() => onOpenDownload ? onOpenDownload() : handleRoute('/admin')}
+              className="inline-flex items-center gap-2 px-5 py-3 rounded-lg bg-white border border-[#CBD5E1] text-sm font-semibold text-[#070B19] hover:border-[#070B19] transition-colors cursor-pointer"
+            >
+              <Download className="w-4 h-4 text-[#0284C7]" />
+              <span>Download Desktop (.exe)</span>
+            </button>
             <button
               type="button"
               onClick={() => handleRoute('/signup')}
@@ -147,6 +156,16 @@ export const Footer: React.FC<FooterProps> = ({ onNavigate }) => {
                     className="hover:text-[#0284C7] transition-colors cursor-pointer text-left"
                   >
                     Decision Intelligence
+                  </button>
+                </li>
+                <li>
+                  <button
+                    type="button"
+                    onClick={() => onOpenDownload ? onOpenDownload() : handleRoute('/admin')}
+                    className="hover:text-[#0284C7] transition-colors cursor-pointer text-left flex items-center gap-1.5 font-semibold text-[#0284C7]"
+                  >
+                    <Download className="w-3.5 h-3.5" />
+                    <span>Windows App (.exe)</span>
                   </button>
                 </li>
               </ul>

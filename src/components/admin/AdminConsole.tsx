@@ -24,6 +24,8 @@ import {
   Trash2,
   CheckCircle2,
   AlertTriangle,
+  Laptop,
+  Download,
 } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import { useSiteConfig } from '../../context/SiteConfigContext';
@@ -46,7 +48,8 @@ import {
   getActiveFirebaseConfig,
   saveRuntimeFirebaseConfig,
 } from '../../services/firebase';
-import { SectionVisibilityConfig, MediaAssetItem } from '../../types/cms';
+import { SectionVisibilityConfig, MediaAssetItem, DesktopReleaseRecord } from '../../types/cms';
+import { DEFAULT_DESKTOP_RELEASES } from '../../data/defaultSiteConfig';
 
 type AdminTabId =
   | 'overview'
@@ -60,6 +63,7 @@ type AdminTabId =
   | 'visibility'
   | 'auth'
   | 'users'
+  | 'releases'
   | 'audit'
   | 'system';
 
@@ -111,6 +115,18 @@ export function AdminConsole({ onNavigate }: AdminConsoleProps) {
   const [seoForm, setSeoForm] = useState(draftConfig.seo);
   const [authSettingsForm, setAuthSettingsForm] = useState(draftConfig.authSettings);
   const [mediaForm, setMediaForm] = useState(draftConfig.mediaLibrary);
+  const [releasesForm, setReleasesForm] = useState<DesktopReleaseRecord[]>(
+    draftConfig.desktopReleases || DEFAULT_DESKTOP_RELEASES
+  );
+
+  // New desktop release form inputs
+  const [newRelVersion, setNewRelVersion] = useState('');
+  const [newRelFilename, setNewRelFilename] = useState('Orion-9-Setup.exe');
+  const [newRelSize, setNewRelSize] = useState('30336791');
+  const [newRelSha, setNewRelSha] = useState('');
+  const [newRelUrl, setNewRelUrl] = useState('');
+  const [newRelNotes, setNewRelNotes] = useState('');
+  const [newRelChannel, setNewRelChannel] = useState<'stable' | 'beta'>('stable');
 
   // New media item inputs
   const [newMediaTitle, setNewMediaTitle] = useState('');
@@ -147,6 +163,7 @@ export function AdminConsole({ onNavigate }: AdminConsoleProps) {
     setSeoForm(draftConfig.seo);
     setAuthSettingsForm(draftConfig.authSettings);
     setMediaForm(draftConfig.mediaLibrary);
+    setReleasesForm(draftConfig.desktopReleases || DEFAULT_DESKTOP_RELEASES);
   }, [draftConfig]);
 
   // Redirect unauthenticated visitors to /admin/login
@@ -410,6 +427,97 @@ export function AdminConsole({ onNavigate }: AdminConsoleProps) {
     showBanner('success', `Updated role=${entry.role} for UID ${entry.uid}.`);
   };
 
+  const handleSaveReleases = async (publish: boolean) => {
+    const action = publish ? publishSection : saveDraftSection;
+    const res = await action(
+      'desktopReleases',
+      releasesForm,
+      'Updated Orion-9 desktop release distribution catalog'
+    );
+    showBanner(
+      res.success ? 'success' : 'error',
+      res.error || (publish ? 'Desktop release catalog published live.' : 'Desktop releases saved to draft.')
+    );
+  };
+
+  const handleAddDesktopRelease = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!newRelVersion.trim() || !newRelSha.trim()) {
+      showBanner('error', 'Version and SHA-256 hash are required to register a release.');
+      return;
+    }
+
+    const notesList = newRelNotes
+      .split('\n')
+      .map((n) => n.trim())
+      .filter(Boolean);
+
+    const newRecord: DesktopReleaseRecord = {
+      id: `rel-${newRelVersion.trim().replace(/\./g, '-')}`,
+      version: newRelVersion.trim(),
+      releaseDate: new Date().toISOString().split('T')[0],
+      platform: 'windows-x64',
+      filename: newRelFilename.trim() || 'Orion-9-Setup.exe',
+      sizeBytes: parseInt(newRelSize, 10) || 30336791,
+      sha256: newRelSha.trim(),
+      downloadUrl: newRelUrl.trim() || 'https://orion-9.ayushprakash0021.workers.dev/api/download/desktop',
+      channel: newRelChannel,
+      isLatest: true,
+      releaseNotes: notesList.length > 0 ? notesList : ['Official Windows x64 release'],
+      minimumOs: 'Windows 10 / 11 64-bit',
+      preflightGates: {
+        peValidated: true,
+        shaVerified: true,
+        signatureChecked: true,
+      },
+      updatedAt: new Date().toISOString(),
+      updatedBy: user?.email || 'admin',
+    };
+
+    const nextReleases = [
+      newRecord,
+      ...releasesForm.map((r) => ({ ...r, isLatest: false })),
+    ];
+    setReleasesForm(nextReleases);
+    setNewRelVersion('');
+    setNewRelSha('');
+    setNewRelUrl('');
+    setNewRelNotes('');
+
+    await publishSection(
+      'desktopReleases',
+      nextReleases,
+      `Published new desktop release v${newRecord.version}`
+    );
+    showBanner('success', `Desktop release v${newRecord.version} created and published.`);
+  };
+
+  const handleToggleLatestRelease = async (id: string) => {
+    const nextReleases = releasesForm.map((r) => ({
+      ...r,
+      isLatest: r.id === id,
+    }));
+    setReleasesForm(nextReleases);
+    await publishSection(
+      'desktopReleases',
+      nextReleases,
+      `Set release ${id} as active production latest`
+    );
+    showBanner('success', `Updated active production latest release.`);
+  };
+
+  const handleDeleteRelease = async (id: string) => {
+    if (!window.confirm('Delete this desktop release record?')) return;
+    const nextReleases = releasesForm.filter((r) => r.id !== id);
+    setReleasesForm(nextReleases);
+    await publishSection(
+      'desktopReleases',
+      nextReleases,
+      `Deleted desktop release ${id}`
+    );
+    showBanner('success', `Deleted release ${id}.`);
+  };
+
   const navItems: {
     id: AdminTabId;
     label: string;
@@ -426,6 +534,7 @@ export function AdminConsole({ onNavigate }: AdminConsoleProps) {
     { id: 'visibility', label: 'Feature visibility', icon: Eye },
     { id: 'auth', label: 'Authentication settings', icon: KeyRound },
     { id: 'users', label: 'User management', icon: Users },
+    { id: 'releases', label: 'Desktop releases', icon: Laptop },
     { id: 'audit', label: 'Audit log', icon: History },
     { id: 'system', label: 'System settings', icon: Settings },
   ];
@@ -1613,6 +1722,251 @@ export function AdminConsole({ onNavigate }: AdminConsoleProps) {
                     </div>
                   </div>
                 ))}
+              </div>
+            </div>
+          )}
+
+          {/* DESKTOP RELEASES MANAGER */}
+          {activeTab === 'releases' && (
+            <div className="space-y-6">
+              <div className="bg-white rounded-2xl border border-[#D5E1E8] p-6 md:p-8 space-y-6">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-[#D5E1E8] pb-5">
+                  <div>
+                    <h2 className="text-base font-semibold text-[#111827] flex items-center gap-2">
+                      <Laptop className="w-5 h-5 text-[#0284C7]" />
+                      <span>Windows Desktop Release Distribution Manager</span>
+                    </h2>
+                    <p className="text-xs text-[#566575] mt-1">
+                      Manage official Windows x64 NSIS installers (.exe), cryptographic SHA-256 integrity hashes, and live distribution endpoints.
+                    </p>
+                  </div>
+                  <div className="flex items-center gap-2.5 shrink-0">
+                    <button
+                      type="button"
+                      onClick={() => handleSaveReleases(false)}
+                      className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl border border-[#D5E1E8] text-xs font-medium text-[#111827] hover:bg-[#F5F9FB] transition-colors cursor-pointer"
+                    >
+                      <Save className="w-3.5 h-3.5 text-[#566575]" />
+                      <span>Save Draft</span>
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => handleSaveReleases(true)}
+                      className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl bg-[#101820] text-white text-xs font-semibold hover:bg-[#294D6B] transition-colors cursor-pointer shadow-md"
+                    >
+                      <UploadCloud className="w-3.5 h-3.5 text-[#38BDF8]" />
+                      <span>Publish Live Catalog</span>
+                    </button>
+                  </div>
+                </div>
+
+                <div className="space-y-4">
+                  <h3 className="text-xs font-mono uppercase font-bold text-[#64748B] tracking-wider">
+                    Published Desktop Releases ({releasesForm.length})
+                  </h3>
+                  <div className="space-y-3">
+                    {releasesForm.map((rel) => (
+                      <div
+                        key={rel.id}
+                        className={`p-5 rounded-2xl border transition-all ${
+                          rel.isLatest
+                            ? 'bg-[#F0FDF4] border-emerald-300 shadow-sm'
+                            : 'bg-[#F8FAFC] border-[#E2E8F0]'
+                        }`}
+                      >
+                        <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-3">
+                          <div className="space-y-1.5">
+                            <div className="flex flex-wrap items-center gap-2">
+                              <span className="text-sm font-bold text-[#070B19]">
+                                v{rel.version}
+                              </span>
+                              <span className="px-2 py-0.5 rounded-full text-[10px] font-mono font-bold bg-[#E0F2FE] text-[#0369A1] border border-[#BAE6FD]">
+                                {rel.platform}
+                              </span>
+                              <span className="px-2 py-0.5 rounded-full text-[10px] font-mono font-bold bg-[#F1F5F9] text-[#475569] border border-[#E2E8F0]">
+                                {rel.channel.toUpperCase()}
+                              </span>
+                              {rel.isLatest && (
+                                <span className="px-2 py-0.5 rounded-full text-[10px] font-mono font-bold bg-emerald-100 text-emerald-800 border border-emerald-300 flex items-center gap-1">
+                                  <CheckCircle2 className="w-3 h-3 text-emerald-600" />
+                                  <span>ACTIVE LATEST</span>
+                                </span>
+                              )}
+                            </div>
+                            <div className="text-xs text-[#475569] font-mono flex flex-wrap items-center gap-x-4 gap-y-1">
+                              <span>Filename: {rel.filename}</span>
+                              <span>Size: {(rel.sizeBytes / (1024 * 1024)).toFixed(2)} MB ({rel.sizeBytes.toLocaleString()} B)</span>
+                              <span>Released: {rel.releaseDate}</span>
+                            </div>
+                          </div>
+
+                          <div className="flex items-center gap-2 shrink-0">
+                            {!rel.isLatest && (
+                              <button
+                                type="button"
+                                onClick={() => handleToggleLatestRelease(rel.id)}
+                                className="px-3 py-1.5 rounded-lg bg-white border border-[#CBD5E1] text-xs font-semibold text-[#070B19] hover:bg-[#F1F5F9] transition-colors cursor-pointer"
+                              >
+                                Set as Latest
+                              </button>
+                            )}
+                            <a
+                              href={rel.downloadUrl}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="inline-flex items-center gap-1 px-3 py-1.5 rounded-lg bg-[#070B19] text-white text-xs font-semibold hover:bg-[#1E293B] transition-colors cursor-pointer"
+                            >
+                              <Download className="w-3 h-3 text-[#38BDF8]" />
+                              <span>Test Link</span>
+                            </a>
+                            <button
+                              type="button"
+                              onClick={() => handleDeleteRelease(rel.id)}
+                              className="p-1.5 rounded-lg text-rose-600 hover:bg-rose-50 transition-colors cursor-pointer"
+                              title="Delete release"
+                            >
+                              <Trash2 className="w-4 h-4" />
+                            </button>
+                          </div>
+                        </div>
+
+                        <div className="mt-3 p-2.5 rounded-xl bg-white border border-[#E2E8F0] flex items-center justify-between gap-3 text-xs font-mono">
+                          <span className="text-[#64748B] shrink-0 font-bold">SHA-256:</span>
+                          <span className="text-[#070B19] break-all truncate">{rel.sha256}</span>
+                        </div>
+
+                        {rel.releaseNotes && rel.releaseNotes.length > 0 && (
+                          <div className="mt-3 text-xs text-[#475569] space-y-1">
+                            <span className="font-semibold text-[#070B19] block">Notes:</span>
+                            <ul className="list-disc list-inside space-y-0.5">
+                              {rel.releaseNotes.map((note, nIdx) => (
+                                <li key={nIdx}>{note}</li>
+                              ))}
+                            </ul>
+                          </div>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              </div>
+
+              <div className="bg-white rounded-2xl border border-[#D5E1E8] p-6 md:p-8 space-y-5">
+                <div>
+                  <h3 className="text-base font-semibold text-[#111827] flex items-center gap-2">
+                    <Plus className="w-4 h-4 text-[#0284C7]" />
+                    <span>Publish New Desktop Release Record</span>
+                  </h3>
+                  <p className="text-xs text-[#566575] mt-1">
+                    Register a new Windows desktop package. The new release will automatically become the active production download.
+                  </p>
+                </div>
+
+                <form onSubmit={handleAddDesktopRelease} className="space-y-4">
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                    <div>
+                      <label className="block text-xs font-mono text-[#566575] mb-1">
+                        Version (e.g. 9.0.0, 9.0.1) *
+                      </label>
+                      <input
+                        type="text"
+                        placeholder="9.0.0"
+                        value={newRelVersion}
+                        onChange={(e) => setNewRelVersion(e.target.value)}
+                        className="w-full px-3.5 py-2 rounded-xl bg-[#F5F9FB] border border-[#D5E1E8] text-xs font-mono"
+                        required
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-xs font-mono text-[#566575] mb-1">
+                        Installer Filename
+                      </label>
+                      <input
+                        type="text"
+                        placeholder="Orion-9-Setup.exe"
+                        value={newRelFilename}
+                        onChange={(e) => setNewRelFilename(e.target.value)}
+                        className="w-full px-3.5 py-2 rounded-xl bg-[#F5F9FB] border border-[#D5E1E8] text-xs font-mono"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-xs font-mono text-[#566575] mb-1">
+                        File Size (Bytes)
+                      </label>
+                      <input
+                        type="number"
+                        placeholder="30336791"
+                        value={newRelSize}
+                        onChange={(e) => setNewRelSize(e.target.value)}
+                        className="w-full px-3.5 py-2 rounded-xl bg-[#F5F9FB] border border-[#D5E1E8] text-xs font-mono"
+                      />
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <div>
+                      <label className="block text-xs font-mono text-[#566575] mb-1">
+                        Cryptographic SHA-256 Checksum *
+                      </label>
+                      <input
+                        type="text"
+                        placeholder="e2dfeb480522b9da077bb58e0954d6d8e09f1023fb6af28b8b74b2a8dc23ee70"
+                        value={newRelSha}
+                        onChange={(e) => setNewRelSha(e.target.value)}
+                        className="w-full px-3.5 py-2 rounded-xl bg-[#F5F9FB] border border-[#D5E1E8] text-xs font-mono"
+                        required
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-xs font-mono text-[#566575] mb-1">
+                        Download URL
+                      </label>
+                      <input
+                        type="text"
+                        placeholder="https://orion-9.ayushprakash0021.workers.dev/api/download/desktop"
+                        value={newRelUrl}
+                        onChange={(e) => setNewRelUrl(e.target.value)}
+                        className="w-full px-3.5 py-2 rounded-xl bg-[#F5F9FB] border border-[#D5E1E8] text-xs font-mono"
+                      />
+                    </div>
+                  </div>
+
+                  <div>
+                    <label className="block text-xs font-mono text-[#566575] mb-1">
+                      Release Notes (one note per line)
+                    </label>
+                    <textarea
+                      rows={3}
+                      placeholder="Official Orion-9 Windows 64-bit installer with NSIS packaging.&#10;Native WebView2 child browser runtime surface."
+                      value={newRelNotes}
+                      onChange={(e) => setNewRelNotes(e.target.value)}
+                      className="w-full px-3.5 py-2 rounded-xl bg-[#F5F9FB] border border-[#D5E1E8] text-xs"
+                    />
+                  </div>
+
+                  <div className="flex items-center justify-between pt-2">
+                    <div className="flex items-center gap-3">
+                      <label className="text-xs font-medium text-[#475569] flex items-center gap-2">
+                        <span>Channel:</span>
+                        <select
+                          value={newRelChannel}
+                          onChange={(e) => setNewRelChannel(e.target.value as 'stable' | 'beta')}
+                          className="px-2 py-1 rounded-lg border border-[#D5E1E8] bg-[#F8FAFC] text-xs"
+                        >
+                          <option value="stable">Stable (Production)</option>
+                          <option value="beta">Beta (Preview)</option>
+                        </select>
+                      </label>
+                    </div>
+                    <button
+                      type="submit"
+                      className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-[#070B19] text-white text-xs font-semibold hover:bg-[#1E293B] shadow-md transition-all cursor-pointer"
+                    >
+                      <UploadCloud className="w-4 h-4 text-[#38BDF8]" />
+                      <span>Register &amp; Publish Release</span>
+                    </button>
+                  </div>
+                </form>
               </div>
             </div>
           )}

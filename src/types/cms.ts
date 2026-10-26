@@ -145,6 +145,28 @@ export interface AuditLogEntry {
   timestamp: string;
 }
 
+export interface DesktopReleaseRecord {
+  id: string;
+  version: string;
+  releaseDate: string;
+  platform: 'windows-x64';
+  filename: string;
+  sizeBytes: number;
+  sha256: string;
+  downloadUrl: string;
+  channel: 'stable' | 'beta';
+  isLatest: boolean;
+  releaseNotes: string[];
+  minimumOs: string;
+  preflightGates: {
+    peValidated: boolean;
+    shaVerified: boolean;
+    signatureChecked: boolean;
+  };
+  updatedAt?: string;
+  updatedBy?: string;
+}
+
 export interface SiteConfigurationBundle {
   branding: BrandingConfig;
   navigation: NavigationConfig;
@@ -153,4 +175,5 @@ export interface SiteConfigurationBundle {
   seo: SeoConfig;
   authSettings: AuthSettingsConfig;
   mediaLibrary: MediaAssetItem[];
+  desktopReleases?: DesktopReleaseRecord[];
 }

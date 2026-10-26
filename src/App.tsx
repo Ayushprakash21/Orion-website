@@ -13,6 +13,7 @@ import { ControlTowerAndFaq } from './components/ControlTowerAndFaq';
 import { Footer } from './components/Footer';
 import { AuthModal } from './components/AuthModal';
 import { TransitionModal } from './components/TransitionModal';
+import { DesktopDownloadModal } from './components/DesktopDownloadModal';
 import { AuthPageView } from './components/auth/AuthPageView';
 import { AdminLogin } from './components/admin/AdminLogin';
 import { AdminConsole } from './components/admin/AdminConsole';
@@ -23,6 +24,9 @@ const AppContent: React.FC = () => {
   const [currentPath, setCurrentPath] = useState<string>(
     window.location.pathname || '/'
   );
+  const [downloadModalOpen, setDownloadModalOpen] = useState<boolean>(() => {
+    return window.location.pathname === '/download';
+  });
 
   useEffect(() => {
     const handlePopState = () => {
@@ -33,6 +37,10 @@ const AppContent: React.FC = () => {
   }, []);
 
   const navigate = (path: string) => {
+    if (path === '/download') {
+      setDownloadModalOpen(true);
+      return;
+    }
     window.history.pushState({}, '', path);
     setCurrentPath(path);
     window.scrollTo({ top: 0, behavior: 'smooth' });
@@ -66,7 +74,7 @@ const AppContent: React.FC = () => {
 
   return (
     <div className="min-h-screen bg-[#F2F9FD] text-[#070B19] selection:bg-[#070B19] selection:text-white flex flex-col font-sans">
-      <Navbar onNavigate={navigate} />
+      <Navbar onNavigate={navigate} onOpenDownload={() => setDownloadModalOpen(true)} />
 
       <main className="flex-1">
         {/* 1. Full-Viewport Scroll-Choreographed 3D Miniature World (Hero + 01-04 Process Narrative) */}
@@ -80,11 +88,15 @@ const AppContent: React.FC = () => {
       </main>
 
       {/* 4. Deep Midnight Navy Footer with 3-Column Hover-Invert Bar & Monumental Wordmark */}
-      <Footer onNavigate={navigate} />
+      <Footer onNavigate={navigate} onOpenDownload={() => setDownloadModalOpen(true)} />
 
-      {/* Modals for Quick Auth & Launch */}
+      {/* Modals for Quick Auth, Launch & Desktop Download */}
       <AuthModal />
       <TransitionModal />
+      <DesktopDownloadModal
+        isOpen={downloadModalOpen}
+        onClose={() => setDownloadModalOpen(false)}
+      />
     </div>
   );
 };
