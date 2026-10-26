@@ -3,19 +3,13 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import React, { useEffect, useRef, useState } from 'react';
-import gsap from 'gsap';
-import { ScrollTrigger } from 'gsap/ScrollTrigger';
-import { AuthProvider, useAuth } from './context/AuthContext';
+import React, { useEffect, useState } from 'react';
+import { AuthProvider } from './context/AuthContext';
 import { SiteConfigProvider, useSiteConfig } from './context/SiteConfigContext';
 import { Navbar } from './components/Navbar';
-import { Hero } from './components/Hero';
-import { OperationalProblem } from './components/OperationalProblem';
-import { OneConnectedNetwork } from './components/OneConnectedNetwork';
-import { DecisionIntelligenceFlow } from './components/DecisionIntelligenceFlow';
-import { ControlTowerPreview } from './components/ControlTowerPreview';
-import { ArchitectureConnectivity } from './components/ArchitectureConnectivity';
-import { FinalCTA } from './components/FinalCTA';
+import { OrionWorldExperience } from './components/OrionWorldExperience';
+import { EditorialCapabilities } from './components/EditorialCapabilities';
+import { ControlTowerAndFaq } from './components/ControlTowerAndFaq';
 import { Footer } from './components/Footer';
 import { AuthModal } from './components/AuthModal';
 import { TransitionModal } from './components/TransitionModal';
@@ -23,12 +17,8 @@ import { AuthPageView } from './components/auth/AuthPageView';
 import { AdminLogin } from './components/admin/AdminLogin';
 import { AdminConsole } from './components/admin/AdminConsole';
 
-gsap.registerPlugin(ScrollTrigger);
-
 const AppContent: React.FC = () => {
-  const { openAuthModal, launchOrion, isAuthenticated } = useAuth();
   const { activeConfig } = useSiteConfig();
-  const mainRef = useRef<HTMLElement | null>(null);
 
   const [currentPath, setCurrentPath] = useState<string>(
     window.location.pathname || '/'
@@ -58,34 +48,6 @@ const AppContent: React.FC = () => {
     }
   }, [activeConfig.seo.metaTitle, activeConfig.seo.metaDescription]);
 
-  // Smooth section reveals without clipping
-  useEffect(() => {
-    if (currentPath !== '/') return;
-    const prefersReducedMotion = window.matchMedia(
-      '(prefers-reduced-motion: reduce)'
-    ).matches;
-    if (prefersReducedMotion || !mainRef.current) return;
-
-    const ctx = gsap.context(() => {
-      const stages = gsap.utils.toArray<HTMLElement>('.cinematic-stage');
-      stages.forEach((stage) => {
-        gsap.from(stage, {
-          y: 20,
-          opacity: 0.9,
-          duration: 0.7,
-          ease: 'power2.out',
-          scrollTrigger: {
-            trigger: stage,
-            start: 'top 90%',
-            toggleActions: 'play none none none',
-          },
-        });
-      });
-    }, mainRef);
-
-    return () => ctx.revert();
-  }, [currentPath]);
-
   if (currentPath === '/login') {
     return <AuthPageView mode="login" onNavigate={navigate} />;
   }
@@ -102,65 +64,22 @@ const AppContent: React.FC = () => {
     return <AdminConsole onNavigate={navigate} />;
   }
 
-  const vis = activeConfig.homepage.sectionVisibility;
-
   return (
-    <div className="min-h-screen bg-[#EAF4F8] text-[#111827] selection:bg-[#294D6B] selection:text-white flex flex-col font-sans">
+    <div className="min-h-screen bg-[#F2F9FD] text-[#070B19] selection:bg-[#070B19] selection:text-white flex flex-col font-sans">
       <Navbar onNavigate={navigate} />
 
-      <main ref={mainRef} className="flex-1">
-        {/* 1. Hero */}
-        <Hero />
+      <main className="flex-1">
+        {/* 1. Full-Viewport Scroll-Choreographed 3D Miniature World (Hero + 01-04 Process Narrative) */}
+        <OrionWorldExperience />
 
-        {/* 2. Disruption Propagation Cascade */}
-        {vis.operationalProblem !== false && (
-          <div className="cinematic-stage">
-            <OperationalProblem />
-          </div>
-        )}
+        {/* 2. White Editorial Headline + 4-Column Isometric Capabilities Grid */}
+        <EditorialCapabilities />
 
-        {/* 3. Expansive Topology & Continuous Route */}
-        {vis.supplyChainNetwork !== false && (
-          <div className="cinematic-stage">
-            <OneConnectedNetwork />
-          </div>
-        )}
-
-        {/* 4. Decision Intelligence Narrative Story */}
-        {vis.operationalIntelligence !== false && (
-          <div className="cinematic-stage">
-            <DecisionIntelligenceFlow />
-          </div>
-        )}
-
-        {/* 5. Composed Control Tower Product Demonstration */}
-        {vis.controlTowerPreview !== false && (
-          <div className="cinematic-stage">
-            <ControlTowerPreview />
-          </div>
-        )}
-
-        {/* 6. Dimensional 4-Tier Architecture */}
-        {vis.integrationsAndReadiness !== false && (
-          <div className="cinematic-stage">
-            <ArchitectureConnectivity />
-          </div>
-        )}
-
-        {/* 7. Closing Invitation */}
-        {vis.finalCta !== false && (
-          <div className="cinematic-stage">
-            <FinalCTA
-              onLaunchApp={() => launchOrion()}
-              onOpenAuth={(mode) => openAuthModal(mode || 'signup')}
-              onNavigate={navigate}
-              isAuthenticated={isAuthenticated}
-            />
-          </div>
-        )}
+        {/* 3. Live Control Tower Telemetry Inspection & Split FAQ Accordion */}
+        <ControlTowerAndFaq />
       </main>
 
-      {/* 8. Refined Enterprise Footer */}
+      {/* 4. Deep Midnight Navy Footer with 3-Column Hover-Invert Bar & Monumental Wordmark */}
       <Footer onNavigate={navigate} />
 
       {/* Modals for Quick Auth & Launch */}

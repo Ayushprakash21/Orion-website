@@ -1,10 +1,10 @@
 import React, { useState } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { useSiteConfig } from '../context/SiteConfigContext';
+import { OrionLogo } from './OrionLogo';
 import {
   Menu,
   X,
-  ArrowRight,
   UserCircle2,
   LogOut,
   ShieldCheck,
@@ -34,34 +34,35 @@ export const Navbar: React.FC<NavbarProps> = ({ onNavigate }) => {
   };
 
   const navLinks = [
-    { label: 'Platform', href: '#problem' },
-    { label: 'Network', href: '#network' },
-    { label: 'Intelligence', href: '#decision-story' },
+    { label: 'Process', href: '#process' },
+    { label: 'Capabilities', href: '#capabilities' },
     { label: 'Control Tower', href: '#control-tower' },
-    { label: 'Architecture', href: '#architecture' },
+    { label: 'Readiness', href: '#faq' },
   ];
 
+  const companyName = activeConfig.branding.companyName || 'Orion-9';
+
   return (
-    <header className="sticky top-0 z-50 w-full backdrop-blur-xl bg-[#EAF4F8]/80 border-b border-[#D5E1E8]/70 transition-all duration-300">
+    <header className="fixed top-0 left-0 right-0 z-50 w-full pointer-events-none">
       {/* Draft Preview Mode Banner (Admin) */}
       {isPreviewMode && (
-        <div className="bg-[#0B131F] text-white px-4 py-2 text-xs flex flex-wrap items-center justify-between gap-3">
+        <div className="pointer-events-auto bg-[#070B19] text-white px-4 py-2 text-xs flex flex-wrap items-center justify-between gap-3">
           <div className="flex items-center gap-2">
-            <Eye className="w-3.5 h-3.5 text-[#7DD3FC]" />
+            <Eye className="w-3.5 h-3.5 text-[#38BDF8]" />
             <span>Viewing Unpublished CMS Draft</span>
           </div>
           <div className="flex items-center gap-3">
             <button
               type="button"
               onClick={() => setIsPreviewMode(false)}
-              className="text-[#A8C2D2] hover:text-white underline cursor-pointer"
+              className="text-[#94B8D0] hover:text-white underline cursor-pointer"
             >
               Exit Preview
             </button>
             <button
               type="button"
               onClick={() => handleRoute('/admin')}
-              className="px-3 py-1 rounded-full bg-[#294D6B] text-white font-medium text-[11px] cursor-pointer"
+              className="px-3 py-1 rounded-lg bg-white text-[#070B19] font-semibold text-xs cursor-pointer"
             >
               Admin Console
             </button>
@@ -69,180 +70,180 @@ export const Navbar: React.FC<NavbarProps> = ({ onNavigate }) => {
         </div>
       )}
 
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-20 flex items-center justify-between gap-6">
-        {/* Brand Identity */}
-        <a
-          href="#"
-          onClick={(e) => {
-            if (window.location.pathname !== '/') {
+      <div className="pointer-events-auto bg-white border-b border-[#DCE7F0]">
+        <div className="max-w-[1440px] mx-auto px-5 sm:px-10 h-18 flex items-center justify-between gap-8">
+          {/* Zone 1: Left Orion-9 Logo */}
+          <a
+            href="/"
+            onClick={(e) => {
               e.preventDefault();
-              handleRoute('/');
-            }
-          }}
-          className="flex items-center gap-3 group focus:outline-hidden"
-          aria-label={`${activeConfig.branding.companyName} Home`}
-        >
-          <div className="w-8 h-8 rounded-lg bg-[#111827] text-white flex items-center justify-center font-mono text-xs font-bold tracking-tight shadow-xs group-hover:bg-[#294D6B] transition-colors">
-            {activeConfig.branding.shortMark || 'Ω9'}
-          </div>
-          <div className="flex flex-col">
-            <span className="text-base font-bold tracking-tight text-[#111827] leading-none">
-              {activeConfig.branding.companyName || 'Orion-9'}
-            </span>
-            <span className="text-[10px] tracking-wider text-[#566575] uppercase mt-0.5 hidden sm:inline font-medium">
-              Supply Chain Operating System
-            </span>
-          </div>
-        </a>
-
-        {/* Floating Center Navigation Pill */}
-        <nav
-          className="hidden lg:flex items-center gap-1 rounded-full border border-[#D5E1E8] bg-white/90 backdrop-blur-md px-2.5 py-1.5 shadow-[0_2px_8px_rgba(20,40,65,0.04)]"
-          aria-label="Main Navigation"
-        >
-          {navLinks.map((item) => (
-            <a
-              key={item.label}
-              href={item.href}
-              className="px-3.5 py-1.5 rounded-full text-xs font-medium text-[#4A5568] hover:text-[#111827] hover:bg-[#EAF4F8]/80 transition-colors whitespace-nowrap"
-            >
-              {item.label}
-            </a>
-          ))}
-        </nav>
-
-        {/* Right Action Cluster */}
-        <div className="hidden lg:flex items-center gap-3 shrink-0">
-          {user ? (
-            <div className="relative">
-              <button
-                type="button"
-                onClick={() => setUserDropdownOpen(!userDropdownOpen)}
-                className="flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-white border border-[#D5E1E8] text-xs font-medium text-[#111827] hover:border-[#294D6B] transition-all cursor-pointer shadow-2xs"
-              >
-                <UserCircle2 className="w-4 h-4 text-[#294D6B]" />
-                <span className="truncate max-w-[120px]">
-                  {user.displayName || user.email?.split('@')[0] || 'Operator'}
-                </span>
-              </button>
-
-              {userDropdownOpen && (
-                <div className="absolute right-0 mt-2 w-60 rounded-2xl bg-white border border-[#D5E1E8] shadow-xl p-2 text-xs z-50">
-                  <div className="px-3 py-2.5 border-b border-[#D5E1E8] mb-1">
-                    <p className="text-[10px] uppercase text-[#566575] font-semibold">Active Operator</p>
-                    <p className="font-medium text-[#111827] truncate mt-0.5">{user.email}</p>
-                    <div className="flex items-center gap-1.5 mt-1 text-[10px] text-[#294D6B]">
-                      <ShieldCheck className="w-3.5 h-3.5" />
-                      <span>{isFirebaseConfigured ? 'Firebase Verified' : 'Authenticated'}</span>
-                    </div>
-                  </div>
-
-                  {isAdmin && (
-                    <button
-                      type="button"
-                      onClick={() => {
-                        setUserDropdownOpen(false);
-                        handleRoute('/admin');
-                      }}
-                      className="w-full flex items-center gap-2 px-3 py-2 rounded-xl text-[#111827] hover:bg-[#EAF4F8] transition-colors text-left font-medium cursor-pointer"
-                    >
-                      <Sliders className="w-3.5 h-3.5 text-[#294D6B]" />
-                      <span>Admin Console</span>
-                    </button>
-                  )}
-
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setUserDropdownOpen(false);
-                      logout();
-                    }}
-                    className="w-full flex items-center gap-2 px-3 py-2 rounded-xl text-rose-600 hover:bg-rose-50 transition-colors text-left font-medium cursor-pointer"
-                  >
-                    <LogOut className="w-3.5 h-3.5" />
-                    <span>Sign Out</span>
-                  </button>
-                </div>
-              )}
-            </div>
-          ) : (
-            <div className="flex items-center gap-1.5">
-              <button
-                type="button"
-                onClick={() => handleRoute('/login')}
-                className="px-3.5 py-1.5 rounded-full text-xs font-medium text-[#4A5568] hover:text-[#111827] transition-colors cursor-pointer"
-              >
-                Log in
-              </button>
-              <button
-                type="button"
-                onClick={() => handleRoute('/signup')}
-                className="px-3.5 py-1.5 rounded-full text-xs font-medium text-[#111827] bg-white border border-[#D5E1E8] hover:border-[#294D6B]/50 transition-colors cursor-pointer shadow-2xs"
-              >
-                Sign up
-              </button>
-            </div>
-          )}
-
-          {/* Primary CTA */}
-          <button
-            type="button"
-            onClick={() => launchOrion(destinationUrl)}
-            className="group inline-flex items-center gap-2 px-4.5 py-2 rounded-full bg-[#111827] text-white text-xs font-semibold hover:bg-[#294D6B] transition-all shadow-[0_4px_14px_rgba(17,24,39,0.12)] active:scale-[0.98] cursor-pointer"
+              if (window.location.pathname !== '/') {
+                handleRoute('/');
+              } else {
+                window.scrollTo({ top: 0, behavior: 'smooth' });
+              }
+            }}
+            className="inline-flex items-center shrink-0 focus:outline-hidden"
+            aria-label={`${companyName} Home`}
           >
-            <span>Launch Control Tower</span>
-            <ArrowRight className="w-3.5 h-3.5 text-[#A8C2D2] transition-transform group-hover:translate-x-0.5" />
-          </button>
-        </div>
+            <OrionLogo companyName={companyName} size="md" tone="dark" />
+          </a>
 
-        {/* Mobile Toggle */}
-        <div className="flex lg:hidden items-center gap-2">
-          <button
-            type="button"
-            onClick={() => launchOrion(destinationUrl)}
-            className="px-3 py-1.5 rounded-full bg-[#111827] text-white text-xs font-semibold"
+          {/* Zone 2: Center Navigation Links */}
+          <nav
+            className="hidden lg:flex items-center gap-8"
+            aria-label="Primary Navigation"
           >
-            Launch
-          </button>
-          <button
-            type="button"
-            onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-            className="p-2 rounded-xl text-[#111827] hover:bg-white/80 transition-colors"
-            aria-label="Toggle navigation menu"
-          >
-            {mobileMenuOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
-          </button>
-        </div>
-      </div>
-
-      {/* Mobile Drawer */}
-      {mobileMenuOpen && (
-        <div className="lg:hidden border-t border-[#D5E1E8] bg-white/98 backdrop-blur-xl px-5 py-6 space-y-4 shadow-xl">
-          <nav className="flex flex-col space-y-2">
             {navLinks.map((item) => (
               <a
                 key={item.label}
                 href={item.href}
-                onClick={() => setMobileMenuOpen(false)}
-                className="px-3 py-2 rounded-xl text-sm font-medium text-[#4A5568] hover:text-[#111827] hover:bg-[#EAF4F8]"
+                className="text-sm font-medium text-[#334155] hover:text-[#070B19] transition-colors whitespace-nowrap shrink-0"
               >
                 {item.label}
               </a>
             ))}
           </nav>
 
-          <div className="pt-4 border-t border-[#D5E1E8] space-y-2">
+          {/* Zone 3: Right Authentication & Launch Actions */}
+          <div className="hidden lg:flex items-center gap-3 shrink-0">
             {user ? (
+              <div className="relative">
+                <button
+                  type="button"
+                  onClick={() => setUserDropdownOpen(!userDropdownOpen)}
+                  className="flex items-center gap-2 px-4 py-2 rounded-lg bg-white border border-[#CBD5E1] text-sm font-medium text-[#070B19] hover:border-[#070B19] transition-colors cursor-pointer whitespace-nowrap"
+                >
+                  <UserCircle2 className="w-4 h-4 text-[#0284C7]" />
+                  <span className="truncate max-w-[130px]">
+                    {user.displayName || user.email?.split('@')[0] || 'Operator'}
+                  </span>
+                </button>
+
+                {userDropdownOpen && (
+                  <div className="absolute right-0 mt-2 w-60 rounded-xl bg-white border border-[#DCE7F0] shadow-lg p-2 text-xs z-50">
+                    <div className="px-3 py-2.5 border-b border-[#E2E8F0] mb-1">
+                      <p className="text-[11px] font-semibold text-[#64748B]">
+                        Active Operator
+                      </p>
+                      <p className="font-medium text-[#070B19] truncate mt-0.5">{user.email}</p>
+                      <div className="flex items-center gap-1.5 mt-1 text-[11px] text-[#0284C7]">
+                        <ShieldCheck className="w-3.5 h-3.5" />
+                        <span>{isFirebaseConfigured ? 'Firebase Verified' : 'Authenticated'}</span>
+                      </div>
+                    </div>
+
+                    {isAdmin && (
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setUserDropdownOpen(false);
+                          handleRoute('/admin');
+                        }}
+                        className="w-full flex items-center gap-2 px-3 py-2 rounded-lg text-[#070B19] hover:bg-[#F2F9FD] transition-colors text-left font-medium cursor-pointer"
+                      >
+                        <Sliders className="w-3.5 h-3.5 text-[#0284C7]" />
+                        <span>Admin Console</span>
+                      </button>
+                    )}
+
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setUserDropdownOpen(false);
+                        logout();
+                      }}
+                      className="w-full flex items-center gap-2 px-3 py-2 rounded-lg text-rose-600 hover:bg-rose-50 transition-colors text-left font-medium cursor-pointer"
+                    >
+                      <LogOut className="w-3.5 h-3.5" />
+                      <span>Sign out</span>
+                    </button>
+                  </div>
+                )}
+              </div>
+            ) : (
               <>
-                <div className="px-3 py-2 bg-[#F5F9FB] rounded-xl text-xs">
-                  <span className="text-[#566575] block text-[10px] uppercase font-medium">Signed In</span>
-                  <span className="font-semibold text-[#111827] truncate block">{user.email}</span>
-                </div>
+                <button
+                  type="button"
+                  onClick={() => handleRoute('/login')}
+                  className="px-4 py-2 rounded-lg text-sm font-medium text-[#070B19] hover:bg-[#EAF4FB] transition-colors cursor-pointer whitespace-nowrap shrink-0"
+                >
+                  Sign in
+                </button>
+                <button
+                  type="button"
+                  onClick={() => handleRoute('/signup')}
+                  className="px-4 py-2 rounded-lg bg-white border border-[#CBD5E1] text-sm font-medium text-[#070B19] hover:border-[#070B19] transition-colors cursor-pointer whitespace-nowrap shrink-0"
+                >
+                  Sign up
+                </button>
+              </>
+            )}
+
+            <button
+              type="button"
+              onClick={() => launchOrion(destinationUrl)}
+              className="px-4 py-2 rounded-lg bg-[#070B19] text-white text-sm font-semibold hover:bg-[#1E293B] transition-colors cursor-pointer whitespace-nowrap shrink-0"
+            >
+              Launch Control Tower
+            </button>
+          </div>
+
+          {/* Mobile Controls */}
+          <div className="flex lg:hidden items-center gap-2 shrink-0">
+            {!user && (
+              <button
+                type="button"
+                onClick={() => handleRoute('/login')}
+                className="hidden sm:inline-flex px-3 py-1.5 rounded-lg border border-[#CBD5E1] bg-white text-xs font-medium text-[#070B19] whitespace-nowrap"
+              >
+                Sign in
+              </button>
+            )}
+            <button
+              type="button"
+              onClick={() => launchOrion(destinationUrl)}
+              className="px-3 py-1.5 rounded-lg bg-[#070B19] text-white text-xs font-semibold whitespace-nowrap"
+            >
+              <span className="sm:hidden">Control Tower</span>
+              <span className="hidden sm:inline">Launch Control Tower</span>
+            </button>
+            <button
+              type="button"
+              onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+              className="p-2 rounded-lg bg-white border border-[#CBD5E1] text-[#070B19] shrink-0"
+              aria-label="Toggle navigation menu"
+            >
+              {mobileMenuOpen ? <X className="w-4 h-4" /> : <Menu className="w-4 h-4" />}
+            </button>
+          </div>
+        </div>
+      </div>
+
+      {/* Mobile Drawer */}
+      {mobileMenuOpen && (
+        <div className="lg:hidden pointer-events-auto border-b border-[#DCE7F0] bg-white px-6 py-5 space-y-4 shadow-lg">
+          <nav className="flex flex-col space-y-1.5" aria-label="Mobile Navigation">
+            {navLinks.map((item) => (
+              <a
+                key={item.label}
+                href={item.href}
+                onClick={() => setMobileMenuOpen(false)}
+                className="px-3 py-2 rounded-lg text-sm font-medium text-[#070B19] hover:bg-[#F2F9FD]"
+              >
+                {item.label}
+              </a>
+            ))}
+          </nav>
+
+          <div className="pt-3 border-t border-[#E2E8F0] flex flex-col gap-2.5">
+            {user ? (
+              <div className="grid grid-cols-2 gap-2.5">
                 {isAdmin && (
                   <button
                     type="button"
                     onClick={() => handleRoute('/admin')}
-                    className="w-full py-2.5 px-4 rounded-xl border border-[#D5E1E8] text-xs font-semibold text-[#111827] text-center block"
+                    className="py-2.5 px-4 rounded-lg border border-[#CBD5E1] text-sm font-medium text-[#070B19]"
                   >
                     Admin Console
                   </button>
@@ -253,29 +254,39 @@ export const Navbar: React.FC<NavbarProps> = ({ onNavigate }) => {
                     setMobileMenuOpen(false);
                     logout();
                   }}
-                  className="w-full py-2.5 px-4 rounded-xl bg-rose-50 text-rose-600 text-xs font-semibold text-center block cursor-pointer"
+                  className="py-2.5 px-4 rounded-lg bg-rose-50 text-rose-600 text-sm font-medium"
                 >
-                  Sign Out
+                  Sign out
                 </button>
-              </>
+              </div>
             ) : (
-              <div className="grid grid-cols-2 gap-2">
+              <div className="grid grid-cols-2 gap-2.5">
                 <button
                   type="button"
                   onClick={() => handleRoute('/login')}
-                  className="w-full py-2.5 rounded-full border border-[#D5E1E8] text-xs font-semibold text-[#111827] text-center"
+                  className="py-2.5 px-4 rounded-lg border border-[#CBD5E1] bg-white text-sm font-medium text-[#070B19]"
                 >
-                  Log in
+                  Sign in
                 </button>
                 <button
                   type="button"
                   onClick={() => handleRoute('/signup')}
-                  className="w-full py-2.5 rounded-full bg-[#111827] text-white text-xs font-semibold text-center"
+                  className="py-2.5 px-4 rounded-lg border border-[#070B19] bg-[#F2F9FD] text-sm font-semibold text-[#070B19]"
                 >
                   Sign up
                 </button>
               </div>
             )}
+            <button
+              type="button"
+              onClick={() => {
+                setMobileMenuOpen(false);
+                launchOrion(destinationUrl);
+              }}
+              className="w-full py-2.5 px-4 rounded-lg bg-[#070B19] text-white text-sm font-semibold"
+            >
+              Launch Control Tower
+            </button>
           </div>
         </div>
       )}

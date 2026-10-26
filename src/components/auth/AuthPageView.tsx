@@ -3,6 +3,7 @@ import { useAuth } from '../../context/AuthContext';
 import { useSiteConfig } from '../../context/SiteConfigContext';
 import { FlowLogin } from './FlowLogin';
 import { FlowSignup } from './FlowSignup';
+import { OrionLogo } from '../OrionLogo';
 import { ArrowLeft, ArrowRight, ShieldCheck, Globe2, Lock } from 'lucide-react';
 
 interface AuthPageViewProps {
@@ -38,22 +39,27 @@ export const AuthPageView: React.FC<AuthPageViewProps> = ({ mode, onNavigate }) 
 
       {/* Top Navigation Bar */}
       <header className="relative z-20 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 h-20 flex items-center justify-between">
-        <button
-          type="button"
-          onClick={() => onNavigate('/')}
-          className="inline-flex items-center gap-2.5 text-sm font-medium text-[#566575] hover:text-[#111827] transition-colors cursor-pointer"
-        >
-          <ArrowLeft className="w-4 h-4" />
-          <span>Return to {activeConfig.branding.companyName}</span>
-        </button>
+        <div className="flex items-center gap-5">
+          <a
+            href="/"
+            onClick={(e) => {
+              e.preventDefault();
+              onNavigate('/');
+            }}
+            className="inline-flex items-center"
+            aria-label={`${activeConfig.branding.companyName} Home`}
+          >
+            <OrionLogo companyName={activeConfig.branding.companyName} size="md" tone="dark" />
+          </a>
 
-        <div className="flex items-center gap-2.5">
-          <div className="w-8 h-8 rounded-xl bg-[#101820] text-white flex items-center justify-center font-mono text-xs font-bold">
-            {activeConfig.branding.shortMark}
-          </div>
-          <span className="font-bold tracking-tight text-[#111827]">
-            {activeConfig.branding.companyName}
-          </span>
+          <button
+            type="button"
+            onClick={() => onNavigate('/')}
+            className="hidden sm:inline-flex items-center gap-2 text-sm font-medium text-[#566575] hover:text-[#111827] transition-colors cursor-pointer"
+          >
+            <ArrowLeft className="w-4 h-4" />
+            <span>Back to Home</span>
+          </button>
         </div>
 
         <button
