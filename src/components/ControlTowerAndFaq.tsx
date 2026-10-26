@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { ChevronDown, ShieldCheck } from 'lucide-react';
-import { OrionProjectMorphTelemetry } from './OrionProjectMorphTelemetry';
+import { OrionCircular3DTelemetry } from './OrionCircular3DTelemetry';
 
 const FAQ_ITEMS = [
   {
@@ -31,9 +31,9 @@ export const ControlTowerAndFaq: React.FC = () => {
   return (
     <div className="w-full bg-[var(--orion-canvas)] text-[var(--orion-text-primary)] transition-colors duration-300">
       {/* ==========================================================================
-          PART A: PREMIUM ORION-9 PROJECT MORPH TELEMETRY EXPERIENCE (#control-tower)
+          PART A: REBUILT ORION-9 CIRCULAR 3D TELEMETRY EXPERIENCE (#control-tower)
          ========================================================================== */}
-      <OrionProjectMorphTelemetry />
+      <OrionCircular3DTelemetry />
 
       {/* ==========================================================================
           PART B: SPLIT FAQ ACCORDION SECTION (#faq)
