@@ -3,6 +3,7 @@ import { useAuth } from '../context/AuthContext';
 import { useSiteConfig } from '../context/SiteConfigContext';
 import { DEFAULT_DESKTOP_RELEASES } from '../data/defaultSiteConfig';
 import { DesktopPlatform, DesktopReleaseRecord } from '../types/cms';
+import { OrionNovaDownloadButton } from './OrionNovaDownloadButton';
 import {
   Download,
   ShieldCheck,
@@ -173,6 +174,7 @@ export const DesktopDownloadModal: React.FC<DesktopDownloadModalProps> = ({
     } catch (err: unknown) {
       const message = err instanceof Error ? err.message : 'Unknown download failure';
       setDownloadError(message);
+      throw err;
     } finally {
       setIsDownloading(false);
     }
@@ -418,37 +420,19 @@ export const DesktopDownloadModal: React.FC<DesktopDownloadModalProps> = ({
             </div>
           )}
 
-          {/* Download Action Controls */}
+          {/* NovaDownload Integrated Action Controls */}
           <div className="pt-2 flex flex-col sm:flex-row items-center gap-3">
-            {isAuthenticated ? (
-              <button
-                type="button"
-                onClick={handleAuthenticatedDownload}
-                disabled={isDownloading}
-                className="w-full sm:flex-1 inline-flex items-center justify-center gap-2.5 px-6 py-3.5 rounded-xl bg-gradient-to-r from-[#0284C7] to-[#0369A1] hover:from-[#0369A1] hover:to-[#075985] text-white font-semibold text-xs shadow-lg transition-all cursor-pointer disabled:opacity-60"
-              >
-                {isDownloading ? (
-                  <>
-                    <Loader2 className="w-4 h-4 text-sky-300 animate-spin" />
-                    <span>Streaming Verified Binary...</span>
-                  </>
-                ) : (
-                  <>
-                    <Download className="w-4 h-4 text-sky-200" />
-                    <span>Download {activeRelease.filename}</span>
-                  </>
-                )}
-              </button>
-            ) : (
-              <button
-                type="button"
-                onClick={() => handleNavigateAuth('login')}
-                className="w-full sm:flex-1 inline-flex items-center justify-center gap-2.5 px-6 py-3.5 rounded-xl bg-gradient-to-r from-[#0284C7] to-[#0369A1] text-white font-semibold text-xs shadow-lg transition-all cursor-pointer"
-              >
-                <Lock className="w-4 h-4 text-sky-300" />
-                <span>Authenticate to Download {activeRelease.filename}</span>
-              </button>
-            )}
+            <div className="w-full sm:flex-1">
+              <OrionNovaDownloadButton
+                filename={activeRelease.filename}
+                version={activeRelease.version}
+                platform={selectedPlatform}
+                isAuthenticated={isAuthenticated}
+                onDownload={handleAuthenticatedDownload}
+                onNavigateAuth={handleNavigateAuth}
+                disabled={activeRelease.status === 'disabled' || activeRelease.status === 'retired'}
+              />
+            </div>
 
             <button
               type="button"
