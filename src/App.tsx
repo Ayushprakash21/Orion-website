@@ -10,13 +10,11 @@ import { AuthProvider, useAuth } from './context/AuthContext';
 import { SiteConfigProvider, useSiteConfig } from './context/SiteConfigContext';
 import { Navbar } from './components/Navbar';
 import { Hero } from './components/Hero';
-import { PlatformOverview } from './components/PlatformOverview';
-import { ConnectedOperatingSystem } from './components/ConnectedOperatingSystem';
-import { ScrollStorytelling } from './components/ScrollStorytelling';
-import { InteractiveControlTower } from './components/InteractiveControlTower';
+import { OperationalProblem } from './components/OperationalProblem';
+import { OneConnectedNetwork } from './components/OneConnectedNetwork';
 import { DecisionIntelligenceFlow } from './components/DecisionIntelligenceFlow';
-import { ArchitectureConnectivity } from './components/ArchitectureConnectivity';
 import { ControlTowerPreview } from './components/ControlTowerPreview';
+import { ArchitectureConnectivity } from './components/ArchitectureConnectivity';
 import { FinalCTA } from './components/FinalCTA';
 import { Footer } from './components/Footer';
 import { AuthModal } from './components/AuthModal';
@@ -61,7 +59,7 @@ const AppContent: React.FC = () => {
     }
   }, [activeConfig.seo.metaTitle, activeConfig.seo.metaDescription]);
 
-  // Synchronized Masked Section Headline Choreography (No generic card fade-in slop)
+  // Synchronized section entrance reveals
   useEffect(() => {
     if (currentPath !== '/') return;
     const prefersReducedMotion = window.matchMedia(
@@ -118,66 +116,56 @@ const AppContent: React.FC = () => {
   const vis = activeConfig.homepage.sectionVisibility;
 
   return (
-    <div className="min-h-screen bg-[#EAF4F8] text-[#111827] selection:bg-[#294D6B] selection:text-white flex flex-col">
-      {/* Persistent Navigation Bar */}
+    <div className="min-h-screen bg-[#EAF4F8] text-[#111827] selection:bg-[#294D6B] selection:text-white flex flex-col font-sans">
+      {/* Persistent Refined Navigation Bar */}
       <Navbar onNavigate={navigate} />
 
-      {/* Main Coordinated 3D & Editorial Experience */}
+      {/* Main Coherent Story Sequence */}
       <main ref={mainRef} className="flex-1">
-        {/* 1. Opening 3D Logistics Digital Twin Hero */}
+        {/* Section 1 — Hero */}
         <Hero />
 
-        {/* 2. Pinned 6-Chapter Scroll-Synchronized 3D Narrative Journey */}
-        {vis.scrollStorytelling && <ScrollStorytelling />}
-
-        {/* 3. Interactive 3D Control Tower Sandbox & Scenario Solver */}
-        {vis.supplyChainNetwork && (
+        {/* Section 2 — The Problem */}
+        {vis.operationalProblem !== false && (
           <div className="cinematic-stage">
-            <InteractiveControlTower />
+            <OperationalProblem />
           </div>
         )}
 
-        {/* 4. Platform Architecture Overview */}
-        {vis.platformOverview && (
+        {/* Section 3 — One Connected Network */}
+        {vis.supplyChainNetwork !== false && (
           <div className="cinematic-stage">
-            <PlatformOverview />
+            <OneConnectedNetwork />
           </div>
         )}
 
-        {/* 5. 8-Module Connected Operating System Matrix */}
-        {vis.connectedOsModules && (
-          <div className="cinematic-stage">
-            <ConnectedOperatingSystem />
-          </div>
-        )}
-
-        {/* 6. 7-Stage Decision Intelligence Pipeline */}
-        {vis.operationalIntelligence && (
+        {/* Section 4 — From Signal to Decision */}
+        {vis.operationalIntelligence !== false && (
           <div className="cinematic-stage">
             <DecisionIntelligenceFlow />
           </div>
         )}
 
-        {/* 7. 7-Layer Stack & Enterprise Ingestion Ecosystem */}
-        {vis.integrationsAndReadiness && (
-          <div className="cinematic-stage">
-            <ArchitectureConnectivity />
-          </div>
-        )}
-
-        {/* 8. Live Control Tower Cockpit Preview */}
-        {vis.controlTowerPreview && (
+        {/* Section 5 — Interactive Product Preview */}
+        {vis.controlTowerPreview !== false && (
           <div className="cinematic-stage">
             <ControlTowerPreview />
           </div>
         )}
 
-        {/* 9. Final Call to Action */}
-        {vis.finalCta && (
+        {/* Section 6 — Architecture */}
+        {vis.integrationsAndReadiness !== false && (
+          <div className="cinematic-stage">
+            <ArchitectureConnectivity />
+          </div>
+        )}
+
+        {/* Section 7 — Closing Call to Action */}
+        {vis.finalCta !== false && (
           <div className="cinematic-stage">
             <FinalCTA
               onLaunchApp={() => launchOrion()}
-              onOpenAuth={() => openAuthModal('signin')}
+              onOpenAuth={(mode) => openAuthModal(mode || 'login')}
               onNavigate={navigate}
               isAuthenticated={isAuthenticated}
             />
@@ -185,7 +173,7 @@ const AppContent: React.FC = () => {
         )}
       </main>
 
-      {/* Enterprise Footer */}
+      {/* Section 8 — Enterprise Footer */}
       <Footer onNavigate={navigate} />
 
       {/* Modals for Quick Auth & Secure Control Tower Launch Handoff */}

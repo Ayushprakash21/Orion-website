@@ -6,11 +6,18 @@
     --orion-alt-bg: #F5F9FB;
     --orion-surface: #FFFFFF;
     --orion-text-primary: #111827;
-    --orion-text-secondary: #566575;
+    --orion-text-secondary: #4A5568;
     --orion-border: #D5E1E8;
     --orion-deep-blue: #294D6B;
     --orion-steel-blue: #A8C2D2;
-    --orion-dark-surface: #101820;
+    --orion-dark-surface: #0B131F;
+  }
+
+  html {
+    scroll-behavior: smooth;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    text-rendering: optimizeLegibility;
   }
 
   body {
@@ -23,18 +30,23 @@
   code, pre, .font-mono {
     font-family: 'JetBrains Mono', monospace;
   }
+
+  ::selection {
+    background-color: #294D6B;
+    color: #FFFFFF;
+  }
 }
 
 /* Custom subtle ice-blue scrollbar */
 ::-webkit-scrollbar {
-  width: 7px;
-  height: 7px;
+  width: 6px;
+  height: 6px;
 }
 ::-webkit-scrollbar-track {
   background: #EAF4F8;
 }
 ::-webkit-scrollbar-thumb {
-  background: #A8C2D2;
+  background: #C2D6E3;
   border-radius: 9999px;
 }
 ::-webkit-scrollbar-thumb:hover {

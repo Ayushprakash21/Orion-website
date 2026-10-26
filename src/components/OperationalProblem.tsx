@@ -1,118 +1,123 @@
 import React from 'react';
-import { AlertTriangle, CheckCircle2 } from 'lucide-react';
+import { AlertCircle, CheckCircle2, ArrowRight } from 'lucide-react';
 
 interface ProblemItem {
-  id: string;
   number: string;
   title: string;
   symptom: string;
   consequence: string;
-  reconciliation: string;
+  resolution: string;
 }
 
-const operationalProblems: ProblemItem[] = [
+const problems: ProblemItem[] = [
   {
-    id: 'p-1',
     number: '01',
     title: 'Fragmented Transactional Silos',
     symptom:
-      'Core ERPs, warehouse management (WMS), and transportation platforms (TMS) maintain isolated data schemas.',
+      'ERPs, warehouse systems (WMS), and carrier platforms maintain conflicting data schemas and delayed batch updates.',
     consequence:
-      'Discrepancies between purchase order states, physical warehouse inventory, and carrier manifests create ghost stock.',
-    reconciliation:
-      'Orion-9 canonical ontology binds disparate schemas into a synchronized real-time operational graph.',
+      'Inventory records disagree across facilities, creating ghost stock and misleading allocation commitments.',
+    resolution:
+      'Orion-9 canonical graph unifies multi-system data into one continuously synchronized operational topology.',
   },
   {
-    id: 'p-2',
     number: '02',
     title: 'Blind Intermodal Handoffs',
     symptom:
-      'Freight transfers between ocean container berths, rail ramps, and drayage trucks rely on batch EDI messages.',
+      'Transfers between ocean container berths, rail ramps, and drayage trucks depend on asynchronous EDI messages.',
     consequence:
-      'Port dwell spikes and missed container pickups compound into severe detention fees and delayed assembly lines.',
-    reconciliation:
-      'Automated milestone telemetry triggers proactive gate appointments before vessel berthing.',
+      'Vessel dwell spikes and missed container pickups compound into severe detention fees and delayed assembly lines.',
+    resolution:
+      'Continuous milestone telemetry dynamically books terminal gate slots before vessels berth.',
   },
   {
-    id: 'p-3',
     number: '03',
     title: 'Latent Upstream Risk Signals',
     symptom:
-      'Tier-2 factory delays, raw material shortages, and weather events surface only after shipments fail to depart.',
+      'Tier-2 component delays, material shortages, and labor actions surface days after shipments fail to depart.',
     consequence:
-      'Operations teams are forced into expensive emergency air freight expeditions with zero preparation lead time.',
-    reconciliation:
-      'Continuous multi-tier supplier monitoring detects anomalies 5–7 business days prior to impact.',
+      'Operations teams are forced into expensive emergency air freight with zero lead time to optimize costs.',
+    resolution:
+      'Predictive multi-tier monitoring detects supplier variances 5 to 7 days before physical impact.',
   },
   {
-    id: 'p-4',
     number: '04',
     title: 'Uncoordinated Local Firefighting',
     symptom:
-      'Logistics, procurement, and manufacturing teams execute contradictory manual workarounds via email and spreadsheets.',
+      'Logistics, procurement, and manufacturing teams execute contradictory workarounds via email and spreadsheets.',
     consequence:
-      'Expediting one shipment steals components from another critical order, triggering cascading SLA failures.',
-    reconciliation:
-      'Systemic multi-objective solvers model global trade-offs to protect overarching enterprise commitments.',
+      'Expediting one order cannibalizes critical subcomponents from another, triggering cascading SLA failures.',
+    resolution:
+      'Multi-objective solvers model enterprise trade-offs to protect overarching delivery commitments.',
   },
 ];
 
 export const OperationalProblem: React.FC = () => {
   return (
-    <section id="problem" className="py-24 bg-[#EAF4F8] border-b border-[#D5E1E8] relative">
+    <section id="problem" className="py-24 sm:py-32 bg-[#EAF4F8] border-b border-[#D5E1E8] relative">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="max-w-3xl mb-16 space-y-3">
-          <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-white border border-[#D5E1E8] text-[11px] font-mono uppercase tracking-widest text-[#294D6B] font-semibold">
-            <AlertTriangle className="w-3.5 h-3.5" />
-            <span>THE SYSTEMIC OPERATIONAL CHALLENGE</span>
+        {/* Editorial Section Header */}
+        <div className="max-w-3xl mb-16 space-y-4">
+          <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-white border border-[#D5E1E8] text-xs font-mono text-[#294D6B]">
+            <span className="w-1.5 h-1.5 rounded-full bg-[#294D6B]" />
+            <span className="font-semibold text-[#111827]">01 / THE SYSTEMIC PROBLEM</span>
           </div>
-          <h2 className="text-3xl sm:text-5xl font-extrabold tracking-[-0.03em] text-[#111827] leading-tight">
-            The Cost of Fragmented Operations.
+
+          <h2 className="text-3xl sm:text-4xl lg:text-5xl font-bold tracking-[-0.03em] text-[#111827] leading-[1.08]">
+            The Cost of Fragmented Decisions.
           </h2>
-          <p className="text-sm sm:text-base text-[#566575] leading-relaxed">
-            Modern supply chains span thousands of suppliers, transit routes, and systems. When these layers operate in isolation, routine variances spiral into systemic gridlock.
+
+          <p className="text-base sm:text-lg text-[#4A5568] leading-relaxed">
+            Modern enterprise supply chains span thousands of suppliers, transit corridors,
+            and software platforms. When these layers operate in isolation, small variances
+            rapidly escalate into network-wide gridlock.
           </p>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          {operationalProblems.map((prob) => (
+        {/* 4 Editorial Cards Grid */}
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 sm:gap-8">
+          {problems.map((prob) => (
             <div
-              key={prob.id}
-              className="p-7 sm:p-8 rounded-3xl bg-white border border-[#D5E1E8] hover:border-[#294D6B]/45 transition-all shadow-[0_12px_32px_rgba(16,24,32,0.04)] flex flex-col justify-between"
+              key={prob.number}
+              className="p-8 sm:p-10 rounded-3xl bg-white border border-[#D5E1E8] shadow-[0_10px_30px_rgba(20,40,65,0.04)] hover:shadow-[0_16px_40px_rgba(20,40,65,0.08)] hover:border-[#294D6B]/30 transition-all flex flex-col justify-between"
             >
               <div>
-                <div className="flex items-center justify-between pb-3 border-b border-[#D5E1E8] mb-5 text-[11px] font-mono text-[#566575]">
-                  <span>PROBLEM ARCHITECTURE // {prob.number}</span>
-                  <span className="text-[#294D6B] font-bold">LEGACY BOTTLENECK</span>
+                <div className="flex items-center justify-between pb-4 border-b border-[#D5E1E8]/70 mb-6 text-xs font-mono text-[#566575]">
+                  <span className="font-semibold text-[#111827]">PROBLEM // {prob.number}</span>
+                  <span className="text-[#294D6B] font-medium">LEGACY BOTTLENECK</span>
                 </div>
 
-                <h3 className="text-xl font-bold text-[#111827] tracking-tight mb-4">
+                <h3 className="text-xl sm:text-2xl font-bold text-[#111827] tracking-tight mb-4">
                   {prob.title}
                 </h3>
 
-                <div className="space-y-3.5 text-xs leading-relaxed">
+                <div className="space-y-4 text-sm leading-relaxed text-[#4A5568]">
                   <div>
-                    <span className="text-[#566575] font-mono block text-[10px] uppercase mb-0.5">
-                      Operational Symptom:
+                    <span className="text-[11px] font-mono uppercase tracking-wider text-[#566575] block mb-1">
+                      Systemic Variance
                     </span>
-                    <p className="text-[#111827]">{prob.symptom}</p>
+                    <p>{prob.symptom}</p>
                   </div>
 
-                  <div>
-                    <span className="text-red-700 font-mono block text-[10px] uppercase font-bold mb-0.5">
-                      Compounded Consequence:
+                  <div className="p-3.5 rounded-2xl bg-[#F5F9FB] border border-[#D5E1E8]/80 text-[#111827]">
+                    <span className="text-[11px] font-mono uppercase tracking-wider text-amber-700 block mb-1 flex items-center gap-1.5">
+                      <AlertCircle className="w-3.5 h-3.5" />
+                      Operational Consequence
                     </span>
-                    <p className="text-[#566575]">{prob.consequence}</p>
+                    <p className="text-xs text-[#334155]">{prob.consequence}</p>
                   </div>
                 </div>
               </div>
 
-              <div className="mt-6 pt-4 border-t border-[#D5E1E8] text-xs bg-[#F5F9FB] -mx-7 -mb-7 sm:-mx-8 sm:-nb-8 p-6 rounded-b-3xl">
-                <div className="flex items-center gap-1.5 text-[#294D6B] font-mono text-[10px] uppercase font-bold">
-                  <CheckCircle2 className="w-3.5 h-3.5" />
-                  <span>Orion-9 Architectural Resolution:</span>
+              {/* Orion-9 Resolution */}
+              <div className="mt-8 pt-5 border-t border-[#D5E1E8]/70 flex items-start gap-3 text-xs text-[#294D6B]">
+                <CheckCircle2 className="w-4 h-4 text-[#294D6B] shrink-0 mt-0.5" />
+                <div>
+                  <span className="font-semibold text-[#111827] block font-mono text-[11px] uppercase tracking-wider mb-0.5">
+                    Orion-9 Orchestration:
+                  </span>
+                  <p className="text-[#4A5568]">{prob.resolution}</p>
                 </div>
-                <p className="text-[#111827] font-medium mt-1">{prob.reconciliation}</p>
               </div>
             </div>
           ))}

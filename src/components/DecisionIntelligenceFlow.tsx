@@ -1,209 +1,199 @@
 import React, { useState } from 'react';
-import { useSiteConfig } from '../context/SiteConfigContext';
-import { Radio, ShieldCheck, ArrowRight } from 'lucide-react';
+import {
+  Radio,
+  GitBranch,
+  AlertTriangle,
+  Scale,
+  ShieldCheck,
+  Send,
+  ArrowRight,
+  ChevronRight,
+  CheckCircle2,
+} from 'lucide-react';
 
-interface PipelineStep {
-  step: string;
+interface Stage {
+  number: string;
   name: string;
-  category: string;
+  tagline: string;
   detail: string;
-  systemAction: string;
-  invariant: string;
+  telemetryMetric: string;
+  guarantee: string;
 }
 
-// 7-Stage Operational Intelligence Pipeline required by specification:
-// Detection -> Context -> Risk assessment -> Recommendation -> Decision -> Execution -> Verification
-const pipelineSteps: PipelineStep[] = [
+const stages: Stage[] = [
   {
-    step: '01',
-    name: 'Detection',
-    category: 'TELEMETRY INGESTION',
+    number: '01',
+    name: 'Signal Detection',
+    tagline: 'Sub-second anomaly ingestion from satellite AIS',
     detail:
-      'Carrier AIS feed reports a 48-hour unplanned anchorage delay at Singapore gateway port affecting 4 container vessels.',
-    systemAction:
-      'Automated stream ingestion triggers threshold anomaly filter and correlates bills of lading in sub-second latency.',
-    invariant: 'Idempotent event queue prevents duplicate alert storms.',
+      'Carrier satellite AIS stream alerts to a 48-hour unplanned anchorage delay outside Singapore gateway port affecting 4 container vessels.',
+    telemetryMetric: 'Ingestion Latency: 120ms · Deduplicated',
+    guarantee: 'Idempotent streaming pipeline eliminates alert fatigue.',
   },
   {
-    step: '02',
-    name: 'Context',
-    category: 'CANONICAL GRAPH CORRELATION',
+    number: '02',
+    name: 'Contextualization',
+    tagline: 'Canonical graph correlation with enterprise ERP',
     detail:
-      'Orion-9 resolves vessel manifests against purchase orders, supplier batch IDs, and downstream assembly schedules.',
-    systemAction:
-      'Maps delayed containers to 18,400 critical lithography & sensor sub-assemblies destined for Frankfurt manufacturing.',
-    invariant: '100% entity resolution across ERP, WMS, and TMS records.',
+      'Orion-9 resolves container manifests against active purchase orders, identifying 18,400 critical lithography sub-assemblies destined for Frankfurt Plant DE-02.',
+    telemetryMetric: '100% Entity Resolution across SAP & Manhattan WMS',
+    guarantee: 'Unambiguous bill-of-lading to component mapping.',
   },
   {
-    step: '03',
-    name: 'Risk Assessment',
-    category: 'IMPACT & BUFFER MODELING',
+    number: '03',
+    name: 'Risk Modeling',
+    tagline: 'Multi-echelon buffer burn-rate simulation',
     detail:
-      'Multi-echelon safety stock simulation calculates exact line-stoppage exposure across European production facilities.',
-    systemAction:
-      'Identifies a 5-day buffer exhaustion window in Plant DE-02 with $1.4M projected SLA penalty if unmitigated.',
-    invariant: 'Lead-time variance accounts for customs and drayage handoffs.',
+      'Plant inventory buffer models project a stockout in 5 business days, triggering a projected $1.4M downtime penalty if unmitigated.',
+    telemetryMetric: 'Stockout Window: Day 5 · $1.4M SLA Exposure',
+    guarantee: 'Considers drayage delays and customs clearance variance.',
   },
   {
-    step: '04',
-    name: 'Recommendation',
-    category: 'MULTI-OBJECTIVE OPTIMIZATION',
+    number: '04',
+    name: 'Optimization',
+    tagline: 'Stochastic multi-objective Pareto solver',
     detail:
-      'Stochastic solver evaluates 3 candidate pathways balancing expedited freight cost, transit speed, and carbon impact.',
-    systemAction:
-      'Recommends priority split: air-freight top 15% critical components via Dubai sea-air bridge while re-slotting bulk ocean.',
-    invariant: '100% SLA protection achieved with bounded +$42k expedite trade-off.',
+      'The solver evaluates 3 candidate pathways balancing expedite cost, transit speed, and emissions, recommending an air-freight split for the top 15% critical parts via Dubai.',
+    telemetryMetric: '100% SLA Protection · Bounded +$42k Expedite Cost',
+    guarantee: 'Zero assembly line stoppages; lowest landed landed cost curve.',
   },
   {
-    step: '05',
-    name: 'Decision',
-    category: 'GOVERNED AUTHORIZATION',
+    number: '05',
+    name: 'Governed Sign-off',
+    tagline: 'Policy-enforced operator authorization',
     detail:
-      'Recommended intervention routes to the Supply Chain Director with full financial, SLA, and upstream lineage context.',
-    systemAction:
-      'Enforces policy-bounded two-person sign-off threshold prior to committing external carrier capacity.',
-    invariant: 'Zero unauthorized financial commitments or shadow overrides.',
+      'The proposed split routes to the Supply Chain Director with full financial, SLA, and lineage context, enforcing the corporate sign-off policy.',
+    telemetryMetric: 'Two-Person Authorization Policy Enforced',
+    guarantee: 'Zero unauthorized freight commitments or shadow overrides.',
   },
   {
-    step: '06',
-    name: 'Execution',
-    category: 'AUTONOMOUS NETWORK DISPATCH',
+    number: '06',
+    name: 'Autonomous Execution',
+    tagline: 'Closed-loop carrier API booking & ERP update',
     detail:
-      'Upon cryptographic approval, Orion-9 dispatches EDI 304 booking updates to air carrier and updates SAP purchase orders.',
-    systemAction:
-      'Simultaneously re-allocates Frankfurt warehouse receiving dock appointments and drayage dispatch.',
-    invariant: 'Transactional rollback guard if partner API rejects booking.',
-  },
-  {
-    step: '07',
-    name: 'Verification',
-    category: 'CLOSED-LOOP AUDIT & LINEAGE',
-    detail:
-      'ADS-B flight departure and customs clearance telemetry confirm recovery of assembly buffer above 99.4% threshold.',
-    systemAction:
-      'Commits immutable audit record linking anomaly detection, human decision signature, and verified outcome.',
-    invariant: 'Append-only cryptographic operational ledger.',
+      'Orion-9 dispatches booking requests to Emirates SkyCargo APIs, updates SAP PO delivery dates, and reschedules customs appointments automatically.',
+    telemetryMetric: 'Closed-loop API confirmation received in 4.2 seconds',
+    guarantee: 'Cryptographic non-repudiation audit log entry created.',
   },
 ];
 
 export const DecisionIntelligenceFlow: React.FC = () => {
-  const { activeConfig } = useSiteConfig();
-  const hp = activeConfig.homepage;
-  const [activeStepIndex, setActiveStepIndex] = useState(0);
-  const activeStep = pipelineSteps[activeStepIndex];
+  const [activeStep, setActiveStep] = useState<number>(0);
+  const current = stages[activeStep];
 
   return (
-    <section
-      id="intelligence-pipeline"
-      className="py-24 bg-[#EAF4F8] border-b border-[#D5E1E8] relative text-xs"
-    >
+    <section id="intelligence" className="py-24 sm:py-32 bg-[#EAF4F8] border-b border-[#D5E1E8] relative">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        {/* Section Header */}
-        <div className="max-w-3xl mb-14 space-y-3">
-          <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-white border border-[#D5E1E8] text-[11px] font-mono uppercase tracking-widest text-[#294D6B] font-semibold">
-            <Radio className="w-3.5 h-3.5" />
-            <span>{hp.intelligenceEyebrow}</span>
+        {/* Editorial Section Header */}
+        <div className="max-w-3xl mb-16 space-y-4">
+          <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-white border border-[#D5E1E8] text-xs font-mono text-[#294D6B]">
+            <span className="w-1.5 h-1.5 rounded-full bg-[#294D6B]" />
+            <span className="font-semibold text-[#111827]">03 / DECISION INTELLIGENCE</span>
           </div>
-          <h2 className="text-3xl sm:text-5xl font-extrabold tracking-[-0.03em] text-[#111827] leading-tight">
-            {hp.intelligenceTitle}
+
+          <h2 className="text-3xl sm:text-4xl lg:text-5xl font-bold tracking-[-0.03em] text-[#111827] leading-[1.08]">
+            From Signal to Governed Decision.
           </h2>
-          <p className="text-sm sm:text-base text-[#566575] leading-relaxed">
-            {hp.intelligenceSubtitle}
+
+          <p className="text-base sm:text-lg text-[#4A5568] leading-relaxed">
+            Witness how Orion-9 transforms a raw maritime anomaly into an auditable,
+            multi-objective intervention in minutes rather than days.
           </p>
         </div>
 
-        {/* 7-Stage Pipeline Stepper */}
-        <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-7 gap-2.5 mb-8 font-mono">
-          {pipelineSteps.map((s, idx) => {
-            const isCurrent = idx === activeStepIndex;
-            return (
-              <button
-                key={s.step}
-                type="button"
-                onClick={() => setActiveStepIndex(idx)}
-                className={`p-4 rounded-2xl border text-left transition-all cursor-pointer ${
-                  isCurrent
-                    ? 'bg-[#101820] text-white border-[#101820] shadow-[0_14px_32px_rgba(16,24,32,0.16)]'
-                    : 'bg-white text-[#111827] border-[#D5E1E8] hover:border-[#294D6B]/50'
-                }`}
-              >
-                <div className="flex items-center justify-between mb-1.5 text-[10px]">
-                  <span className={isCurrent ? 'text-[#A8C2D2]' : 'text-[#566575]'}>
-                    STAGE {s.step}
-                  </span>
-                  {isCurrent && <div className="w-1.5 h-1.5 rounded-full bg-[#A8C2D2]" />}
-                </div>
-                <h4 className="text-xs font-bold tracking-tight font-sans">{s.name}</h4>
-                <span
-                  className={`text-[9px] mt-1 block uppercase truncate ${
-                    isCurrent ? 'text-[#A8C2D2]/80' : 'text-[#566575]'
+        {/* Horizontal Visual Sequence Stepper */}
+        <div className="mb-10">
+          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-2.5">
+            {stages.map((stage, idx) => {
+              const isSelected = activeStep === idx;
+              const isPast = activeStep > idx;
+              return (
+                <button
+                  key={stage.number}
+                  type="button"
+                  onClick={() => setActiveStep(idx)}
+                  className={`p-3.5 rounded-2xl border text-left transition-all cursor-pointer flex flex-col justify-between ${
+                    isSelected
+                      ? 'bg-white border-[#294D6B] shadow-[0_8px_20px_rgba(41,77,107,0.12)] scale-[1.02]'
+                      : 'bg-white/70 border-[#D5E1E8] hover:bg-white hover:border-[#294D6B]/30'
                   }`}
                 >
-                  {s.category}
-                </span>
-              </button>
-            );
-          })}
+                  <div className="flex items-center justify-between text-xs font-mono mb-2">
+                    <span
+                      className={`font-bold ${
+                        isSelected
+                          ? 'text-[#294D6B]'
+                          : isPast
+                          ? 'text-slate-600'
+                          : 'text-slate-400'
+                      }`}
+                    >
+                      {stage.number}
+                    </span>
+                    {isPast && <CheckCircle2 className="w-3.5 h-3.5 text-[#294D6B]" />}
+                  </div>
+                  <span className="text-xs font-bold text-[#111827] leading-snug">
+                    {stage.name}
+                  </span>
+                </button>
+              );
+            })}
+          </div>
         </div>
 
-        {/* Active Stage Detail Card */}
-        <div className="p-7 sm:p-10 rounded-3xl bg-white border border-[#D5E1E8] shadow-[0_20px_50px_rgba(16,24,32,0.06)] space-y-6">
-          <div className="flex flex-wrap items-center justify-between gap-4 pb-4 border-b border-[#D5E1E8] font-mono text-xs text-[#566575]">
-            <div className="flex items-center gap-2">
-              <span className="text-[#294D6B] font-bold">
-                PIPELINE STAGE {activeStep.step} OF 07
-              </span>
-              <span className="text-[#D5E1E8]" aria-hidden="true">
-                /
-              </span>
-              <span className="uppercase text-[#111827] font-semibold">{activeStep.category}</span>
+        {/* Active Stage Detailed Progression Card */}
+        <div className="p-8 sm:p-12 rounded-3xl bg-white border border-[#D5E1E8] shadow-[0_16px_40px_rgba(20,40,65,0.06)] grid grid-cols-1 lg:grid-cols-12 gap-8 items-center">
+          <div className="lg:col-span-7 space-y-5">
+            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-[#EAF4F8] text-xs font-mono text-[#294D6B]">
+              <span className="font-semibold">STAGE {current.number}</span>
+              <span>/</span>
+              <span>{current.name.toUpperCase()}</span>
             </div>
-            <div className="flex items-center gap-1.5 text-[#294D6B] text-[11px] font-semibold">
-              <ShieldCheck className="w-4 h-4" />
-              <span>DETERMINISTIC GOVERNANCE</span>
-            </div>
-          </div>
 
-          <div className="space-y-3">
-            <h3 className="text-xl sm:text-2xl font-bold text-[#111827] tracking-tight">
-              {activeStep.name}: {activeStep.detail}
+            <h3 className="text-2xl sm:text-3xl font-bold text-[#111827] tracking-tight">
+              {current.tagline}
             </h3>
-            <p className="text-sm sm:text-base text-[#566575] leading-relaxed">
-              {activeStep.systemAction}
+
+            <p className="text-base text-[#4A5568] leading-relaxed max-w-xl">
+              {current.detail}
             </p>
+
+            <div className="pt-2 flex items-center gap-4">
+              <button
+                type="button"
+                onClick={() => setActiveStep((prev) => (prev + 1) % stages.length)}
+                className="inline-flex items-center gap-2 px-5 py-2.5 rounded-full bg-[#101820] text-white text-xs font-semibold hover:bg-[#294D6B] transition-colors cursor-pointer"
+              >
+                <span>Advance Sequence</span>
+                <ChevronRight className="w-3.5 h-3.5 text-[#A8C2D2]" />
+              </button>
+
+              <span className="text-xs font-mono text-[#566575]">
+                Step {activeStep + 1} of {stages.length}
+              </span>
+            </div>
           </div>
 
-          <div className="p-4 sm:p-5 rounded-2xl bg-[#F5F9FB] border border-[#D5E1E8] space-y-1 font-mono">
-            <span className="text-[10px] text-[#294D6B] font-bold uppercase block">
-              ARCHITECTURAL INVARIANT
-            </span>
-            <p className="text-[#111827] font-medium text-xs font-sans">{activeStep.invariant}</p>
-          </div>
+          <div className="lg:col-span-5 bg-[#F5F9FB] rounded-2xl p-6 sm:p-8 border border-[#D5E1E8] space-y-4">
+            <div className="text-[11px] font-mono text-[#566575] uppercase tracking-wider pb-2 border-b border-[#D5E1E8]">
+              Automated Operational Telemetry
+            </div>
 
-          {/* Stepper Footer Controls */}
-          <div className="pt-4 flex items-center justify-between font-mono text-xs text-[#566575] border-t border-[#D5E1E8]">
-            <button
-              type="button"
-              disabled={activeStepIndex === 0}
-              onClick={() => setActiveStepIndex((prev) => Math.max(0, prev - 1))}
-              className="px-4 py-2 rounded-full border border-[#D5E1E8] bg-[#F5F9FB] text-[#111827] font-semibold hover:border-[#294D6B] disabled:opacity-35 disabled:pointer-events-none transition-colors cursor-pointer"
-            >
-              ← PREVIOUS STAGE
-            </button>
-            <span className="font-bold text-[#111827]">
-              STAGE {activeStepIndex + 1} OF {pipelineSteps.length}
-            </span>
-            <button
-              type="button"
-              disabled={activeStepIndex === pipelineSteps.length - 1}
-              onClick={() =>
-                setActiveStepIndex((prev) => Math.min(pipelineSteps.length - 1, prev + 1))
-              }
-              className="px-4 py-2 rounded-full bg-[#101820] text-white font-semibold hover:bg-[#294D6B] disabled:opacity-35 disabled:pointer-events-none transition-colors flex items-center gap-1.5 cursor-pointer"
-            >
-              <span>NEXT STAGE</span>
-              <ArrowRight className="w-3.5 h-3.5" />
-            </button>
+            <div className="p-4 rounded-xl bg-white border border-[#D5E1E8] space-y-1">
+              <span className="text-[10px] font-mono uppercase text-[#294D6B] block font-semibold">
+                Execution Guarantee:
+              </span>
+              <p className="text-xs text-[#111827] font-medium">{current.guarantee}</p>
+            </div>
+
+            <div className="p-4 rounded-xl bg-white border border-[#D5E1E8] space-y-1">
+              <span className="text-[10px] font-mono uppercase text-[#566575] block font-semibold">
+                Active Benchmark:
+              </span>
+              <p className="text-xs font-mono text-[#294D6B] font-bold">
+                {current.telemetryMetric}
+              </p>
+            </div>
           </div>
         </div>
       </div>
