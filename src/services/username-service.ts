@@ -170,7 +170,6 @@ export async function registerUsernameMapping(
       normalizedUsername: normalized,
       displayName: displayName?.trim() || username.trim(),
       email: email.trim().toLowerCase(),
-      role: 'operator',
       updatedAt: serverTimestamp(),
     },
     { merge: true }

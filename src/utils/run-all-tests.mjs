@@ -62,13 +62,13 @@ const mockDirectory = {
     uid: 'uid-elena-01',
     email: 'elena@enterprise.com',
     passHash: 'SecurePass1!',
-    role: 'operator',
+    role: 'member',
   },
   'marcus_v': {
     uid: 'uid-marcus-02',
     email: 'marcus@globalfreight.org',
     passHash: 'OrionControl2026!',
-    role: 'operator',
+    role: 'member',
   },
 };
 
@@ -159,7 +159,7 @@ function runTest(name, fn) {
 // 1. Username validation: valid characters, min/max length, rejected characters
 runTest('1. Username validation: valid characters, min/max length, rejected characters', () => {
   assert.equal(validateUsername('elena_r').isValid, true);
-  assert.equal(validateUsername('operator_99').isValid, true);
+  assert.equal(validateUsername('member_99').isValid, true);
   assert.equal(validateUsername('john123').isValid, true);
   assert.equal(validateUsername('abc').isValid, true);
   assert.equal(validateUsername('a'.repeat(30)).isValid, true);
@@ -184,7 +184,7 @@ runTest('1. Username validation: valid characters, min/max length, rejected char
 runTest('2. Case-insensitive uniqueness logic and normalization', () => {
   assert.equal(normalizeUsername('  Elena_R  '), 'elena_r');
   assert.equal(normalizeUsername('ALEX_HUNTER'), 'alex_hunter');
-  assert.equal(normalizeUsername('Operator_01'), 'operator_01');
+  assert.equal(normalizeUsername('Member_01'), 'member_01');
 
   const key1 = normalizeUsername('SupplyChainLead');
   const key2 = normalizeUsername('supplychainlead');
@@ -280,8 +280,8 @@ runTest('9. Persistent storage of remembered usernames across sessions', () => {
 // 10. Clearing of remembered usernames upon request
 runTest('10. Clearing of remembered usernames upon request', () => {
   const storage = new MockStorage();
-  saveRememberedUsername('operator_7', storage);
-  assert.equal(getRememberedUsername(storage), 'operator_7');
+  saveRememberedUsername('member_7', storage);
+  assert.equal(getRememberedUsername(storage), 'member_7');
 
   clearRememberedUsername(storage);
   assert.equal(storage.getItem(REMEMBERED_USERNAME_STORAGE_KEY), null);
@@ -455,10 +455,10 @@ runTest('19. Release lifecycle enforcement: draft, disabled and retired releases
   const disabledRel = { status: 'disabled', version: '8.9.0' };
   const retiredRel = { status: 'retired', version: '7.0.0' };
 
-  assert.equal(checkReleaseDownloadable(publishedRel, 'operator').allowed, true);
-  assert.equal(checkReleaseDownloadable(draftRel, 'operator').allowed, false);
-  assert.equal(checkReleaseDownloadable(disabledRel, 'operator').allowed, false);
-  assert.equal(checkReleaseDownloadable(retiredRel, 'operator').allowed, false);
+  assert.equal(checkReleaseDownloadable(publishedRel, 'member').allowed, true);
+  assert.equal(checkReleaseDownloadable(draftRel, 'member').allowed, false);
+  assert.equal(checkReleaseDownloadable(disabledRel, 'member').allowed, false);
+  assert.equal(checkReleaseDownloadable(retiredRel, 'member').allowed, false);
 
   assert.equal(checkReleaseDownloadable(publishedRel, 'admin').allowed, true);
   assert.equal(checkReleaseDownloadable(draftRel, 'admin').allowed, true);

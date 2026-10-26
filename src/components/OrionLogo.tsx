@@ -1,53 +1,36 @@
-import React, { useState, useEffect } from 'react';
-import { useOptionalSiteConfig } from '../context/SiteConfigContext';
+import React, { useState } from 'react';
 import type { HeroIntroSequenceState } from '../utils/cinematic-choreography';
+import { useOptionalSiteConfig } from '../context/SiteConfigContext';
 
-interface OrionLogoProps {
+export interface OrionLogoProps {
   companyName?: string;
+  logoUrl?: string;
   size?: 'sm' | 'md' | 'lg';
   tone?: 'dark' | 'light';
   showMark?: boolean;
   className?: string;
-  placement?: 'header' | 'auth' | 'footer' | 'default';
-  customLogoUrl?: string | null;
 }
 
 /**
  * Compact Orion-9 Brand Lockup for Header, Auth Views, and Footer.
- * Kept separate and compact while sharing the infinity-9 & orbital sphere identity.
+ * Configurable via Admin Panel Branding CMS (supports custom logoUrl or default 3D infinity mark).
  */
 export const OrionLogo: React.FC<OrionLogoProps> = ({
-  companyName = 'Orion-9',
+  companyName,
+  logoUrl,
   size = 'md',
   tone = 'dark',
   showMark = true,
   className = '',
-  placement,
-  customLogoUrl,
 }) => {
-  const isLight = tone === 'light';
-  const [imgError, setImgError] = useState(false);
   const siteConfig = useOptionalSiteConfig();
-  const branding = siteConfig?.activeConfig?.branding;
-
-  let effectiveLogoUrl = customLogoUrl;
-  if (effectiveLogoUrl === undefined && branding) {
-    if (placement === 'header') {
-      effectiveLogoUrl = branding.headerLogo || branding.logoUrl || null;
-    } else if (placement === 'auth') {
-      effectiveLogoUrl = branding.authLogo || branding.logoUrl || null;
-    } else if (placement === 'footer') {
-      effectiveLogoUrl = branding.footerLogo || branding.logoUrl || null;
-    } else {
-      effectiveLogoUrl = branding.logoUrl || null;
-    }
-  }
-
-  useEffect(() => {
-    setImgError(false);
-  }, [effectiveLogoUrl]);
-
-  const hasCustomLogo = Boolean(effectiveLogoUrl && !imgError);
+  const configuredName = siteConfig?.activeConfig?.branding?.companyName;
+  const displayName = (companyName && companyName !== 'Orion-9')
+    ? companyName
+    : (configuredName || companyName || 'Orion-9');
+  const effectiveLogoUrl = logoUrl ?? siteConfig?.activeConfig?.branding?.logoUrl;
+  const [imgError, setImgError] = useState(false);
+  const isLight = tone === 'light';
 
   const markSizes = {
     sm: 'w-7 h-7',
@@ -63,54 +46,57 @@ export const OrionLogo: React.FC<OrionLogoProps> = ({
 
   const primaryStroke = isLight ? '#FFFFFF' : '#070B19';
   const badgeBg = isLight ? '#FFFFFF' : '#070B19';
+  const hasCustomLogo = Boolean(effectiveLogoUrl && !imgError);
 
   return (
     <span className={`inline-flex items-center gap-2.5 select-none ${className}`}>
       {showMark && (
         <span
-          className={`${markSizes[size]} rounded-lg flex items-center justify-center shrink-0 shadow-2xs border border-[#38BDF8]/30 overflow-hidden p-0.5`}
-          style={{ backgroundColor: badgeBg }}
+          className={`${markSizes[size]} rounded-lg flex items-center justify-center shrink-0 shadow-2xs border border-[#38BDF8]/30 overflow-hidden ${
+            hasCustomLogo ? 'bg-transparent p-0.5' : ''
+          }`}
+          style={{ backgroundColor: hasCustomLogo ? 'transparent' : badgeBg }}
           aria-hidden="true"
         >
           {hasCustomLogo ? (
             <img
-              src={effectiveLogoUrl!}
-              alt={`${companyName} Logo`}
-              className="w-full h-full object-contain select-none"
+              src={effectiveLogoUrl}
+              alt={displayName}
               onError={() => setImgError(true)}
+              className="w-full h-full object-contain rounded-md"
             />
           ) : (
             <svg
-            viewBox="0 0 64 64"
-            className="w-6 h-6"
-            fill="none"
-            xmlns="http://www.w3.org/2000/svg"
-          >
-            {/* Compact orbital arc */}
-            <path
-              d="M6 31A26 24 0 0 1 58 26"
-              stroke="#38BDF8"
-              strokeWidth="2.2"
-              strokeLinecap="round"
-            />
-            {/* Compact Infinity-9 metallic ribbon */}
-            <path
-              d="M32 31C26 21 12 21 12 32C12 43 26 43 32 31C38 20 51 20 51 31C51 39 43 46 36 52"
-              stroke={isLight ? '#070B19' : '#FFFFFF'}
-              strokeWidth="5.2"
-              strokeLinecap="round"
-              strokeLinejoin="round"
-            />
-            <path
-              d="M23 24L41 40"
-              stroke="#38BDF8"
-              strokeWidth="3.2"
-              strokeLinecap="round"
-            />
-            {/* Starburst accent & orbital node */}
-            <circle cx="48" cy="18" r="2.5" fill="#7DD3FC" />
-            <circle cx="58" cy="31" r="2.8" fill="#070B19" stroke="#38BDF8" strokeWidth="1.6" />
-          </svg>
+              viewBox="0 0 64 64"
+              className="w-6 h-6"
+              fill="none"
+              xmlns="http://www.w3.org/2000/svg"
+            >
+              {/* Compact orbital arc */}
+              <path
+                d="M6 31A26 24 0 0 1 58 26"
+                stroke="#38BDF8"
+                strokeWidth="2.2"
+                strokeLinecap="round"
+              />
+              {/* Compact Infinity-9 metallic ribbon */}
+              <path
+                d="M32 31C26 21 12 21 12 32C12 43 26 43 32 31C38 20 51 20 51 31C51 39 43 46 36 52"
+                stroke={isLight ? '#070B19' : '#FFFFFF'}
+                strokeWidth="5.2"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              />
+              <path
+                d="M23 24L41 40"
+                stroke="#38BDF8"
+                strokeWidth="3.2"
+                strokeLinecap="round"
+              />
+              {/* Starburst accent & orbital node */}
+              <circle cx="48" cy="18" r="2.5" fill="#7DD3FC" />
+              <circle cx="58" cy="31" r="2.8" fill="#070B19" stroke="#38BDF8" strokeWidth="1.6" />
+            </svg>
           )}
         </span>
       )}
@@ -118,7 +104,7 @@ export const OrionLogo: React.FC<OrionLogoProps> = ({
         className={`font-wordmark ${textSizes[size]} font-black tracking-[-0.02em] leading-none whitespace-nowrap`}
         style={{ color: primaryStroke }}
       >
-        {companyName.toUpperCase()}
+        {displayName.toUpperCase()}
       </span>
     </span>
   );

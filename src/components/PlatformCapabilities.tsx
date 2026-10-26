@@ -86,7 +86,7 @@ const capabilities: CapabilityItem[] = [
     architectureDetail: {
       inputs: 'Validated exception triggers, inventory reorder thresholds, dynamic carrier rerouting events',
       processing: 'Deterministic state machine execution, policy-based boundary constraints, rollback hooks',
-      outcome: 'Sub-second resolution for routine logistics bottlenecks without operator fatigue',
+      outcome: 'Sub-second resolution for routine logistics bottlenecks without manual alert fatigue',
       governance: 'Mandatory two-person sign-off for financial threshold breaches, automated fallback to manual hold',
     },
   },

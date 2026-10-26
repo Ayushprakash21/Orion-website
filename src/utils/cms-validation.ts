@@ -1,16 +1,68 @@
-import type {
+import {
   BrandingConfig,
   HomepageConfig,
   NavigationConfig,
   SeoConfig,
   FooterConfig,
-} from '../types/cms.ts';
+} from '../types/cms';
 
 /**
  * Validates that a URL is safe for use in CTAs, navigation links, or media assets.
  * Rejects javascript:, data:, vbscript:, and malformed URLs.
  * Allows internal anchors (#...), relative paths (/...), and https:// or http://localhost URLs.
  */
+/**
+ * Validates that an image URL or uploaded data URI is safe for logo and media display.
+ * Supports https://, relative paths (/...), and safe base64 data URIs (data:image/...).
+ */
+export function isSafeCmsImageUrl(url: string): boolean {
+  if (!url || typeof url !== 'string') return false;
+  const trimmed = url.trim();
+  if (!trimmed || trimmed.length > 5242880) return false; // Up to 5MB
+
+  const lower = trimmed.toLowerCase();
+  // Safe base64 image data URIs
+  if (
+    lower.startsWith('data:image/png;base64,') ||
+    lower.startsWith('data:image/jpeg;base64,') ||
+    lower.startsWith('data:image/jpg;base64,') ||
+    lower.startsWith('data:image/svg+xml;base64,') ||
+    lower.startsWith('data:image/webp;base64,') ||
+    lower.startsWith('data:image/gif;base64,')
+  ) {
+    return true;
+  }
+
+  // Reject unsafe schemes
+  if (
+    lower.startsWith('javascript:') ||
+    lower.startsWith('data:') ||
+    lower.startsWith('vbscript:') ||
+    lower.startsWith('file:')
+  ) {
+    return false;
+  }
+
+  if (trimmed.startsWith('#') || trimmed.startsWith('/')) {
+    if (trimmed.startsWith('//')) return false;
+    return true;
+  }
+
+  try {
+    const parsed = new URL(trimmed);
+    if (parsed.protocol === 'https:') return true;
+    if (
+      parsed.protocol === 'http:' &&
+      (parsed.hostname === 'localhost' || parsed.hostname === '127.0.0.1')
+    ) {
+      return true;
+    }
+    return false;
+  } catch {
+    return false;
+  }
+}
+
 export function isSafeCmsUrl(url: string): boolean {
   if (!url || typeof url !== 'string') return false;
   const trimmed = url.trim();
@@ -67,27 +119,6 @@ export function sanitizeCmsText(input: string, maxLength = 300): string {
     .slice(0, maxLength);
 }
 
-export function isSafeLogoUrl(url: string): boolean {
-  if (!url || typeof url !== 'string') return false;
-  const trimmed = url.trim();
-  if (!trimmed) return false;
-  const lower = trimmed.toLowerCase();
-  if (
-    lower.startsWith('javascript:') ||
-    lower.startsWith('vbscript:') ||
-    lower.startsWith('file:')
-  ) {
-    return false;
-  }
-  if (lower.startsWith('data:image/')) {
-    if (lower.startsWith('data:image/svg+xml') && (lower.includes('<script') || lower.includes('onload=') || lower.includes('onerror='))) {
-      return false;
-    }
-    return true;
-  }
-  return isSafeCmsUrl(trimmed);
-}
-
 export function validateBrandingConfig(config: BrandingConfig): {
   valid: boolean;
   errors: string[];
@@ -103,17 +134,11 @@ export function validateBrandingConfig(config: BrandingConfig): {
   if (!config.tagline || config.tagline.trim().length < 4 || config.tagline.length > 160) {
     errors.push('Tagline must be between 4 and 160 characters.');
   }
-  if (config.logoUrl && !isSafeLogoUrl(config.logoUrl)) {
-    errors.push('Logo URL must be a valid https://, relative path, or safe image data URL.');
+  if (config.logoUrl && !isSafeCmsImageUrl(config.logoUrl)) {
+    errors.push('Logo URL must be a valid https://, relative /assets/ path, or uploaded image.');
   }
-  if (config.headerLogo && !isSafeLogoUrl(config.headerLogo)) {
-    errors.push('Header Logo URL must be a valid https://, relative path, or safe image data URL.');
-  }
-  if (config.authLogo && !isSafeLogoUrl(config.authLogo)) {
-    errors.push('Authentication Logo URL must be a valid https://, relative path, or safe image data URL.');
-  }
-  if (config.footerLogo && !isSafeLogoUrl(config.footerLogo)) {
-    errors.push('Footer Logo URL must be a valid https://, relative path, or safe image data URL.');
+  if (config.customOrbUrl && !isSafeCmsImageUrl(config.customOrbUrl)) {
+    errors.push('Auth Orb URL must be a valid https://, relative path, or uploaded image.');
   }
 
   const colorFields: [string, string][] = [

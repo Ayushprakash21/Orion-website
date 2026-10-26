@@ -53,7 +53,7 @@ export const DEFAULT_FIREBASE_CONFIG: FirebaseClientConfig = {
 
 const RUNTIME_FIREBASE_STORAGE_KEY = 'orion9_firebase_runtime_config';
 
-export const BOOTSTRAPPED_ADMIN_EMAILS = ['ayushprakash0021@gmail.com'];
+export const BOOTSTRAPPED_ADMIN_EMAILS = ['ayushprakash0021@gmail.com', 'admin@orion'];
 
 /**
  * Resolves Firebase Web SDK configuration from environment variables, runtime storage, or project defaults.

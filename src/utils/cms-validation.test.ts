@@ -2,6 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import {
   isSafeCmsUrl,
+  isSafeCmsImageUrl,
   isValidHexColor,
   sanitizeCmsText,
   validateBrandingConfig,
@@ -40,4 +41,23 @@ test('DEFAULT_SITE_CONFIG passes all CMS section validators', () => {
   assert.equal(validateNavigationConfig(DEFAULT_SITE_CONFIG.navigation).valid, true);
   assert.equal(validateHomepageConfig(DEFAULT_SITE_CONFIG.homepage).valid, true);
   assert.equal(validateSeoConfig(DEFAULT_SITE_CONFIG.seo).valid, true);
+});
+
+test('isSafeCmsImageUrl allows safe image schemes, base64 data URIs, and validates branding with custom logo', () => {
+  assert.equal(isSafeCmsImageUrl('https://cdn.example.com/logo.png'), true);
+  assert.equal(isSafeCmsImageUrl('/assets/aistudio/image_6aa7d4ca.png'), true);
+  assert.equal(isSafeCmsImageUrl('data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg=='), true);
+
+  assert.equal(isSafeCmsImageUrl('javascript:alert(1)'), false);
+  assert.equal(isSafeCmsImageUrl('data:text/html,<script>'), false);
+
+  const customBranding = {
+    ...DEFAULT_SITE_CONFIG.branding,
+    companyName: 'Acme Logistics',
+    logoUrl: '/assets/aistudio/image_6aa7d4ca.png',
+    customOrbUrl: 'https://cdn.example.com/orb.png',
+    showOrb: true,
+  };
+  const result = validateBrandingConfig(customBranding);
+  assert.equal(result.valid, true);
 });

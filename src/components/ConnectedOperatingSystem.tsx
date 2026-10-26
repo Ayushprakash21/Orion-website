@@ -114,7 +114,7 @@ const coreModules: CoreModule[] = [
     id: 'mod-copilot',
     number: '08',
     title: 'Operational Reasoning Engine',
-    tagline: 'Contextual root-cause synthesis for operators.',
+    tagline: 'Contextual root-cause synthesis for operations teams.',
     description:
       'Synthesizes complex network exceptions, traces upstream bill-of-material dependencies, and guides operations teams through scenario evaluation.',
     technicalCapabilities: [

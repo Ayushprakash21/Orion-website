@@ -40,7 +40,7 @@ export const AuthModal: React.FC = () => {
         {authModalMode === 'signup' ? (
           <FlowSignup
             title={activeConfig.branding.companyName}
-            subtitle="Provision your operator credentials and get started."
+            subtitle="Create your account credentials and get started."
             defaultExpanded={true}
             showSocial={activeConfig.authSettings.allowGoogleAuth}
             onSubmit={async ({ name, username, email, password, terms }) => {

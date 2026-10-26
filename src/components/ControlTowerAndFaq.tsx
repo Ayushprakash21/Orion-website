@@ -76,7 +76,7 @@ const FAQ_ITEMS = [
   {
     question: 'Is Orion-9 compliant with enterprise security and audit requirements?',
     answer:
-      'Yes. Orion-9 is engineered with SOC 2 Type II controls, ISO 27001 alignment, tenant-isolated encryption, and an immutable cryptographic audit log recording every telemetry input, solver simulation, and operator authorization.',
+      'Yes. Orion-9 is engineered with SOC 2 Type II controls, ISO 27001 alignment, tenant-isolated encryption, and an immutable cryptographic audit log recording every telemetry input, solver simulation, and authorized sign-off.',
   },
 ];
 

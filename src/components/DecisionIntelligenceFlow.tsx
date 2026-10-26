@@ -80,7 +80,7 @@ export const DecisionIntelligenceFlow: React.FC = () => {
 
           <p className="text-base sm:text-lg text-[#4A5568] leading-relaxed">
             Follow a live disruption scenario: how Orion-9 detects an unexpected maritime delay,
-            maps affected enterprise commitments, and guides operators to the optimal intervention.
+            maps affected enterprise commitments, and guides teams to the optimal intervention.
           </p>
         </div>
 

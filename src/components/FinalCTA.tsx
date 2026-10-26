@@ -66,7 +66,7 @@ export const FinalCTA: React.FC<FinalCTAProps> = ({
               className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-7 py-4 liquid-glass-button text-[var(--orion-text-primary)] font-medium text-sm rounded-full transition-all shadow-xs cursor-pointer"
             >
               <UserPlus className="w-4 h-4 text-[#294D6B]" />
-              <span>Create Operator Account</span>
+              <span>Create Account</span>
             </button>
           )}
 

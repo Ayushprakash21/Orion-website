@@ -18,7 +18,7 @@
     },
     "UserProfile": {
       "title": "UserProfile",
-      "description": "Authenticated Orion-9 operator profile",
+      "description": "Authenticated Orion-9 user profile",
       "type": "object",
       "properties": {
         "uid": {
@@ -27,7 +27,7 @@
         },
         "username": {
           "type": "string",
-          "description": "Unique chosen operator username"
+          "description": "Unique chosen username"
         },
         "normalizedUsername": {
           "type": "string",
@@ -35,19 +35,19 @@
         },
         "displayName": {
           "type": "string",
-          "description": "Operator full name"
+          "description": "User full name"
         },
         "email": {
           "type": "string",
-          "description": "Operator email address"
+          "description": "User email address"
         },
         "role": {
           "type": "string",
-          "enum": ["operator", "admin"],
-          "description": "Non-escalatable operator role"
+          "enum": ["member", "admin"],
+          "description": "Non-escalatable user role"
         }
       },
-      "required": ["uid", "email", "role"]
+      "required": ["uid", "email"]
     },
     "UsernameRecord": {
       "title": "UsernameRecord",
@@ -169,7 +169,7 @@
       "schema": {
         "$ref": "#/entities/UserProfile"
       },
-      "description": "Operator user profiles"
+      "description": "User profiles"
     },
     "/usernames/{normalizedUsername}": {
       "schema": {

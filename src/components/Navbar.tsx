@@ -1,7 +1,6 @@
 import React, { useState } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { useSiteConfig } from '../context/SiteConfigContext';
-import { useTheme } from '../context/ThemeContext';
 import { OrionLogo } from './OrionLogo';
 import {
   Menu,
@@ -12,9 +11,6 @@ import {
   Sliders,
   Eye,
   Download,
-  Sun,
-  Moon,
-  ChevronDown,
 } from 'lucide-react';
 
 interface NavbarProps {
@@ -26,13 +22,11 @@ export const Navbar: React.FC<NavbarProps> = ({ onNavigate, onOpenDownload }) =>
   const { user, isAdmin, launchOrion, logout, isFirebaseConfigured, destinationUrl } =
     useAuth();
   const { activeConfig, isPreviewMode, setIsPreviewMode } = useSiteConfig();
-  const { theme, toggleTheme } = useTheme();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [userDropdownOpen, setUserDropdownOpen] = useState(false);
 
   const handleRoute = (path: string) => {
     setMobileMenuOpen(false);
-    setUserDropdownOpen(false);
     if (onNavigate) {
       onNavigate(path);
     } else {
@@ -44,20 +38,20 @@ export const Navbar: React.FC<NavbarProps> = ({ onNavigate, onOpenDownload }) =>
   const navLinks = [
     { label: 'Process', href: '#process' },
     { label: 'Capabilities', href: '#capabilities' },
-    { label: 'Orion-9 OS', href: '#control-tower' },
+    { label: 'Control Tower', href: '#control-tower' },
     { label: 'Readiness', href: '#faq' },
   ];
 
   const companyName = activeConfig.branding.companyName || 'Orion-9';
 
   return (
-    <header className="fixed top-0 left-0 right-0 z-50 w-full pointer-events-none transition-all duration-300">
+    <header className="fixed top-0 left-0 right-0 z-50 w-full pointer-events-none">
       {/* Draft Preview Mode Banner (Admin) */}
       {isPreviewMode && (
-        <div className="pointer-events-auto bg-[#070B19]/90 backdrop-blur-md text-white px-4 py-2 text-xs flex flex-wrap items-center justify-between gap-3 border-b border-white/10 shadow-sm">
+        <div className="pointer-events-auto bg-[#070B19] text-white px-4 py-2 text-xs flex flex-wrap items-center justify-between gap-3">
           <div className="flex items-center gap-2">
             <Eye className="w-3.5 h-3.5 text-[#38BDF8]" />
-            <span className="font-medium">Viewing Unpublished CMS Draft</span>
+            <span>Viewing Unpublished CMS Draft</span>
           </div>
           <div className="flex items-center gap-3">
             <button
@@ -70,7 +64,7 @@ export const Navbar: React.FC<NavbarProps> = ({ onNavigate, onOpenDownload }) =>
             <button
               type="button"
               onClick={() => handleRoute('/admin')}
-              className="px-3 py-1 rounded-lg bg-white/90 hover:bg-white text-[#070B19] font-semibold text-xs cursor-pointer shadow-xs transition"
+              className="px-3 py-1 rounded-lg bg-white text-[#070B19] font-semibold text-xs cursor-pointer"
             >
               Admin Console
             </button>
@@ -78,10 +72,9 @@ export const Navbar: React.FC<NavbarProps> = ({ onNavigate, onOpenDownload }) =>
         </div>
       )}
 
-      {/* Floating macOS Liquid Glass Navigation Bar */}
-      <div className="max-w-[1440px] mx-auto px-4 sm:px-6 pt-3 sm:pt-4">
-        <div className="pointer-events-auto liquid-glass-nav rounded-2xl px-4 sm:px-6 h-16 sm:h-17 flex items-center justify-between gap-6 transition-all duration-300">
-          {/* Zone 1: Left Brand Lockup */}
+      <div className="pointer-events-auto bg-white border-b border-[#DCE7F0]">
+        <div className="max-w-[1440px] mx-auto px-5 sm:px-10 h-18 flex items-center justify-between gap-8">
+          {/* Zone 1: Left Orion-9 Logo */}
           <a
             href="/"
             onClick={(e) => {
@@ -92,192 +85,152 @@ export const Navbar: React.FC<NavbarProps> = ({ onNavigate, onOpenDownload }) =>
                 window.scrollTo({ top: 0, behavior: 'smooth' });
               }
             }}
-            className="inline-flex items-center shrink-0 focus:outline-hidden group"
+            className="inline-flex items-center shrink-0 focus:outline-hidden"
             aria-label={`${companyName} Home`}
           >
-            <OrionLogo
-              companyName={companyName}
-              size="md"
-              tone={theme === 'dark' ? 'light' : 'dark'}
-              placement="header"
-            />
+            <OrionLogo companyName={companyName} logoUrl={activeConfig.branding.logoUrl} size="md" tone="dark" />
           </a>
 
-          {/* Zone 2: Center macOS Translucent Nav Pill */}
+          {/* Zone 2: Center Navigation Links */}
           <nav
-            className="hidden lg:flex items-center gap-1.5 px-3 py-1.5 rounded-full liquid-glass-subtle"
+            className="hidden lg:flex items-center gap-8"
             aria-label="Primary Navigation"
           >
             {navLinks.map((item) => (
               <a
                 key={item.label}
                 href={item.href}
-                className="px-3.5 py-1.5 rounded-full text-xs font-medium text-[var(--orion-text-secondary)] hover:text-[var(--orion-text-primary)] hover:bg-white/40 dark:hover:bg-white/10 transition-all duration-200 whitespace-nowrap"
+                className="text-sm font-medium text-[#334155] hover:text-[#070B19] transition-colors whitespace-nowrap shrink-0"
               >
                 {item.label}
               </a>
             ))}
           </nav>
 
-          {/* Zone 3: Right Actions & System Controls */}
-          <div className="hidden lg:flex items-center gap-2.5 shrink-0">
-            {/* Theme Toggle (macOS Sun/Moon pill) */}
-            <button
-              type="button"
-              onClick={toggleTheme}
-              className="p-2 rounded-xl liquid-glass-button text-[var(--orion-text-secondary)] hover:text-[var(--orion-text-primary)] cursor-pointer"
-              aria-label={`Switch to ${theme === 'dark' ? 'light' : 'dark'} mode`}
-              title={`Switch to ${theme === 'dark' ? 'light' : 'dark'} mode`}
-            >
-              {theme === 'dark' ? (
-                <Sun className="w-4 h-4 text-amber-400" />
-              ) : (
-                <Moon className="w-4 h-4 text-slate-700" />
-              )}
-            </button>
+          {/* Zone 3: Right Authentication & Launch Actions */}
+          <div className="hidden lg:flex items-center gap-3 shrink-0">
+            {user ? (
+              <div className="relative">
+                <button
+                  type="button"
+                  onClick={() => setUserDropdownOpen(!userDropdownOpen)}
+                  className="flex items-center gap-2 px-4 py-2 rounded-lg bg-white border border-[#CBD5E1] text-sm font-medium text-[#070B19] hover:border-[#070B19] transition-colors cursor-pointer whitespace-nowrap"
+                >
+                  <UserCircle2 className="w-4 h-4 text-[#0284C7]" />
+                  <span className="truncate max-w-[130px]">
+                    {user.displayName || user.email?.split('@')[0] || 'Account'}
+                  </span>
+                </button>
 
-            {/* Public Navigation for Logged-Out Visitors: Sign in, Sign up, Download Desktop */}
-            {!user ? (
+                {userDropdownOpen && (
+                  <div className="absolute right-0 mt-2 w-60 rounded-xl bg-white border border-[#DCE7F0] shadow-lg p-2 text-xs z-50">
+                    <div className="px-3 py-2.5 border-b border-[#E2E8F0] mb-1">
+                      <p className="text-[11px] font-semibold text-[#64748B]">
+                        Active Account
+                      </p>
+                      <p className="font-medium text-[#070B19] truncate mt-0.5">{user.email}</p>
+                      <div className="flex items-center gap-1.5 mt-1 text-[11px] text-[#0284C7]">
+                        <ShieldCheck className="w-3.5 h-3.5" />
+                        <span>{isFirebaseConfigured ? 'Firebase Verified' : 'Authenticated'}</span>
+                      </div>
+                    </div>
+
+                    {isAdmin && (
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setUserDropdownOpen(false);
+                          handleRoute('/admin');
+                        }}
+                        className="w-full flex items-center gap-2 px-3 py-2 rounded-lg text-[#070B19] hover:bg-[#F2F9FD] transition-colors text-left font-medium cursor-pointer"
+                      >
+                        <Sliders className="w-3.5 h-3.5 text-[#0284C7]" />
+                        <span>Admin Console</span>
+                      </button>
+                    )}
+
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setUserDropdownOpen(false);
+                        logout();
+                      }}
+                      className="w-full flex items-center gap-2 px-3 py-2 rounded-lg text-rose-600 hover:bg-rose-50 transition-colors text-left font-medium cursor-pointer"
+                    >
+                      <LogOut className="w-3.5 h-3.5" />
+                      <span>Sign out</span>
+                    </button>
+                  </div>
+                )}
+              </div>
+            ) : (
               <>
                 <button
                   type="button"
                   onClick={() => handleRoute('/login')}
-                  className="px-3.5 py-2 rounded-xl text-xs font-medium text-[var(--orion-text-primary)] hover:bg-white/40 dark:hover:bg-white/10 transition cursor-pointer whitespace-nowrap"
+                  className="px-4 py-2 rounded-lg text-sm font-medium text-[#070B19] hover:bg-[#EAF4FB] transition-colors cursor-pointer whitespace-nowrap shrink-0"
                 >
                   Sign in
                 </button>
                 <button
                   type="button"
                   onClick={() => handleRoute('/signup')}
-                  className="px-3.5 py-2 rounded-xl liquid-glass-button text-xs font-semibold text-[var(--orion-text-primary)] cursor-pointer whitespace-nowrap"
+                  className="px-4 py-2 rounded-lg bg-white border border-[#CBD5E1] text-sm font-medium text-[#070B19] hover:border-[#070B19] transition-colors cursor-pointer whitespace-nowrap shrink-0"
                 >
                   Sign up
                 </button>
-                <button
-                  type="button"
-                  onClick={() => {
-                    handleRoute('/login?redirect=/download&platform=windows');
-                  }}
-                  className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl liquid-glass-button text-xs font-semibold text-[var(--orion-text-primary)] cursor-pointer whitespace-nowrap"
-                  title="Download Orion-9 Desktop Workstation"
-                >
-                  <Download className="w-3.5 h-3.5 text-[var(--orion-accent)]" />
-                  <span>Download Desktop</span>
-                </button>
-              </>
-            ) : (
-              <>
-                <button
-                  type="button"
-                  onClick={() => {
-                    if (onOpenDownload) onOpenDownload();
-                    else handleRoute('/download');
-                  }}
-                  className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl liquid-glass-button text-xs font-medium text-[var(--orion-text-primary)] cursor-pointer whitespace-nowrap"
-                  title="Download Orion-9 Desktop Workstation"
-                >
-                  <Download className="w-3.5 h-3.5 text-[var(--orion-accent)]" />
-                  <span>Download Desktop</span>
-                </button>
-
-                <div className="relative">
-                  <button
-                    type="button"
-                    onClick={() => setUserDropdownOpen(!userDropdownOpen)}
-                    className="flex items-center gap-2 px-3.5 py-2 rounded-xl liquid-glass-button text-xs font-semibold text-[var(--orion-text-primary)] cursor-pointer whitespace-nowrap"
-                  >
-                    <UserCircle2 className="w-4 h-4 text-[var(--orion-accent)]" />
-                    <span className="truncate max-w-[120px]">
-                      {user.displayName || user.email?.split('@')[0] || 'Operator'}
-                    </span>
-                    <ChevronDown className="w-3 h-3 text-[var(--orion-text-muted)]" />
-                  </button>
-
-                  {userDropdownOpen && (
-                    <div className="absolute right-0 mt-2 w-64 rounded-2xl liquid-glass-elevated p-2 text-xs z-50 animate-in fade-in zoom-in-95 duration-150">
-                      <div className="px-3 py-2.5 border-b border-[var(--glass-border-subtle)] mb-1">
-                        <p className="text-[10px] font-mono uppercase tracking-wider text-[var(--orion-text-muted)]">
-                          Active Operator
-                        </p>
-                        <p className="font-semibold text-[var(--orion-text-primary)] truncate mt-0.5">
-                          {user.email}
-                        </p>
-                        <div className="flex items-center gap-1.5 mt-1 text-[11px] text-[var(--orion-accent)]">
-                          <ShieldCheck className="w-3.5 h-3.5" />
-                          <span>{isFirebaseConfigured ? 'Verified Operator' : 'Authenticated'}</span>
-                        </div>
-                      </div>
-
-                      {isAdmin && (
-                        <button
-                          type="button"
-                          onClick={() => {
-                            setUserDropdownOpen(false);
-                            handleRoute('/admin');
-                          }}
-                          className="w-full flex items-center gap-2 px-3 py-2 rounded-xl text-[var(--orion-text-primary)] hover:bg-white/50 dark:hover:bg-white/10 transition-colors text-left font-medium cursor-pointer"
-                        >
-                          <Sliders className="w-3.5 h-3.5 text-[var(--orion-accent)]" />
-                          <span>Admin Console</span>
-                        </button>
-                      )}
-
-                      <button
-                        type="button"
-                        onClick={() => {
-                          setUserDropdownOpen(false);
-                          logout();
-                        }}
-                        className="w-full flex items-center gap-2 px-3 py-2 rounded-xl text-rose-500 hover:bg-rose-500/10 transition-colors text-left font-medium cursor-pointer"
-                      >
-                        <LogOut className="w-3.5 h-3.5" />
-                        <span>Sign out</span>
-                      </button>
-                    </div>
-                  )}
-                </div>
-
-                {/* Launch Orion-9 OS Primary Action (Authenticated Only) */}
-                <button
-                  type="button"
-                  onClick={() => launchOrion(destinationUrl)}
-                  className="px-4 py-2 rounded-xl bg-gradient-to-r from-[#0284C7] to-[#0369A1] hover:from-[#0369A1] hover:to-[#075985] text-white text-xs font-semibold transition-all shadow-[0_4px_16px_rgba(2,132,199,0.35)] hover:shadow-[0_6px_20px_rgba(2,132,199,0.45)] cursor-pointer whitespace-nowrap active:scale-[0.98]"
-                >
-                  Launch Orion-9 OS
-                </button>
               </>
             )}
-          </div>
 
-          {/* Mobile Right Controls */}
-          <div className="flex lg:hidden items-center gap-2 shrink-0">
             <button
               type="button"
-              onClick={toggleTheme}
-              className="p-1.5 rounded-lg liquid-glass-button text-[var(--orion-text-secondary)]"
-              aria-label="Toggle theme"
+              onClick={() => {
+                if (user) {
+                  if (onOpenDownload) onOpenDownload();
+                  else handleRoute('/download');
+                } else {
+                  handleRoute('/login?redirect=/download&platform=windows');
+                }
+              }}
+              className="hidden sm:inline-flex items-center gap-1.5 px-3 py-2 rounded-lg bg-[#F1F5F9] border border-[#CBD5E1] text-xs font-semibold text-[#070B19] hover:bg-[#E2E8F0] transition-colors cursor-pointer whitespace-nowrap shrink-0"
+              title="Download Orion-9 Desktop Workstation (Windows & macOS)"
             >
-              {theme === 'dark' ? (
-                <Sun className="w-3.5 h-3.5 text-amber-400" />
-              ) : (
-                <Moon className="w-3.5 h-3.5 text-slate-700" />
-              )}
+              <Download className="w-3.5 h-3.5 text-[#0284C7]" />
+              <span>Download Desktop</span>
             </button>
 
-            {user && (
+            <button
+              type="button"
+              onClick={() => launchOrion(destinationUrl)}
+              className="px-4 py-2 rounded-lg bg-[#070B19] text-white text-sm font-semibold hover:bg-[#1E293B] transition-colors cursor-pointer whitespace-nowrap shrink-0"
+            >
+              Launch Control Tower
+            </button>
+          </div>
+
+          {/* Mobile Controls */}
+          <div className="flex lg:hidden items-center gap-2 shrink-0">
+            {!user && (
               <button
                 type="button"
-                onClick={() => launchOrion(destinationUrl)}
-                className="px-3 py-1.5 rounded-lg bg-[var(--orion-accent)] text-white text-xs font-semibold whitespace-nowrap shadow-xs"
+                onClick={() => handleRoute('/login')}
+                className="hidden sm:inline-flex px-3 py-1.5 rounded-lg border border-[#CBD5E1] bg-white text-xs font-medium text-[#070B19] whitespace-nowrap"
               >
-                Orion-9 OS
+                Sign in
               </button>
             )}
-
+            <button
+              type="button"
+              onClick={() => launchOrion(destinationUrl)}
+              className="px-3 py-1.5 rounded-lg bg-[#070B19] text-white text-xs font-semibold whitespace-nowrap"
+            >
+              <span className="sm:hidden">Control Tower</span>
+              <span className="hidden sm:inline">Launch Control Tower</span>
+            </button>
             <button
               type="button"
               onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-              className="p-1.5 rounded-lg liquid-glass-button text-[var(--orion-text-primary)]"
+              className="p-2 rounded-lg bg-white border border-[#CBD5E1] text-[#070B19] shrink-0"
               aria-label="Toggle navigation menu"
             >
               {mobileMenuOpen ? <X className="w-4 h-4" /> : <Menu className="w-4 h-4" />}
@@ -286,105 +239,90 @@ export const Navbar: React.FC<NavbarProps> = ({ onNavigate, onOpenDownload }) =>
         </div>
       </div>
 
-      {/* Mobile Liquid Glass Drawer */}
+      {/* Mobile Drawer */}
       {mobileMenuOpen && (
-        <div className="lg:hidden pointer-events-auto max-w-[1440px] mx-auto px-4 sm:px-6 pt-2">
-          <div className="liquid-glass-elevated rounded-2xl p-5 space-y-4 animate-in fade-in slide-in-from-top-2 duration-200">
-            <nav className="flex flex-col space-y-1" aria-label="Mobile Navigation">
-              {navLinks.map((item) => (
-                <a
-                  key={item.label}
-                  href={item.href}
-                  onClick={() => setMobileMenuOpen(false)}
-                  className="px-3.5 py-2.5 rounded-xl text-xs font-medium text-[var(--orion-text-primary)] hover:bg-white/40 dark:hover:bg-white/10 transition"
+        <div className="lg:hidden pointer-events-auto border-b border-[#DCE7F0] bg-white px-6 py-5 space-y-4 shadow-lg">
+          <nav className="flex flex-col space-y-1.5" aria-label="Mobile Navigation">
+            {navLinks.map((item) => (
+              <a
+                key={item.label}
+                href={item.href}
+                onClick={() => setMobileMenuOpen(false)}
+                className="px-3 py-2 rounded-lg text-sm font-medium text-[#070B19] hover:bg-[#F2F9FD]"
+              >
+                {item.label}
+              </a>
+            ))}
+          </nav>
+
+          <div className="pt-3 border-t border-[#E2E8F0] flex flex-col gap-2.5">
+            {user ? (
+              <div className="grid grid-cols-2 gap-2.5">
+                {isAdmin && (
+                  <button
+                    type="button"
+                    onClick={() => handleRoute('/admin')}
+                    className="py-2.5 px-4 rounded-lg border border-[#CBD5E1] text-sm font-medium text-[#070B19]"
+                  >
+                    Admin Console
+                  </button>
+                )}
+                <button
+                  type="button"
+                  onClick={() => {
+                    setMobileMenuOpen(false);
+                    logout();
+                  }}
+                  className="py-2.5 px-4 rounded-lg bg-rose-50 text-rose-600 text-sm font-medium"
                 >
-                  {item.label}
-                </a>
-              ))}
-            </nav>
+                  Sign out
+                </button>
+              </div>
+            ) : (
+              <div className="grid grid-cols-2 gap-2.5">
+                <button
+                  type="button"
+                  onClick={() => handleRoute('/login')}
+                  className="py-2.5 px-4 rounded-lg border border-[#CBD5E1] bg-white text-sm font-medium text-[#070B19]"
+                >
+                  Sign in
+                </button>
+                <button
+                  type="button"
+                  onClick={() => handleRoute('/signup')}
+                  className="py-2.5 px-4 rounded-lg border border-[#070B19] bg-[#F2F9FD] text-sm font-semibold text-[#070B19]"
+                >
+                  Sign up
+                </button>
+              </div>
+            )}
+            <button
+              type="button"
+              onClick={() => {
+                setMobileMenuOpen(false);
+                if (user) {
+                  if (onOpenDownload) onOpenDownload();
+                  else handleRoute('/download');
+                } else {
+                  handleRoute('/login?redirect=/download&platform=windows');
+                }
+              }}
+              className="w-full flex items-center justify-center gap-2 py-2.5 px-4 rounded-lg border border-[#CBD5E1] bg-[#F8FAFC] text-sm font-semibold text-[#070B19] cursor-pointer"
+            >
+              <Download className="w-4 h-4 text-[#0284C7]" />
+              <span>Download Desktop App</span>
+            </button>
 
-            <div className="pt-3 border-t border-[var(--glass-border-subtle)] flex flex-col gap-2">
-              {user ? (
-                <>
-                  <div className="grid grid-cols-2 gap-2">
-                    {isAdmin && (
-                      <button
-                        type="button"
-                        onClick={() => handleRoute('/admin')}
-                        className="py-2 px-3 rounded-xl liquid-glass-button text-xs font-medium text-[var(--orion-text-primary)] text-center"
-                      >
-                        Admin Console
-                      </button>
-                    )}
-                    <button
-                      type="button"
-                      onClick={() => {
-                        setMobileMenuOpen(false);
-                        logout();
-                      }}
-                      className="py-2 px-3 rounded-xl bg-rose-500/10 text-rose-500 text-xs font-medium text-center"
-                    >
-                      Sign out
-                    </button>
-                  </div>
-
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setMobileMenuOpen(false);
-                      if (onOpenDownload) onOpenDownload();
-                      else handleRoute('/download');
-                    }}
-                    className="w-full flex items-center justify-center gap-2 py-2.5 px-4 rounded-xl liquid-glass-button text-xs font-semibold text-[var(--orion-text-primary)]"
-                  >
-                    <Download className="w-3.5 h-3.5 text-[var(--orion-accent)]" />
-                    <span>Download Desktop</span>
-                  </button>
-
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setMobileMenuOpen(false);
-                      launchOrion(destinationUrl);
-                    }}
-                    className="w-full py-2.5 px-4 rounded-xl bg-gradient-to-r from-[#0284C7] to-[#0369A1] text-white text-xs font-semibold text-center shadow-md shadow-sky-600/20"
-                  >
-                    Launch Orion-9 OS
-                  </button>
-                </>
-              ) : (
-                <>
-                  <div className="grid grid-cols-2 gap-2">
-                    <button
-                      type="button"
-                      onClick={() => handleRoute('/login')}
-                      className="py-2 px-3 rounded-xl liquid-glass-button text-xs font-medium text-[var(--orion-text-primary)] text-center"
-                    >
-                      Sign in
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => handleRoute('/signup')}
-                      className="py-2 px-3 rounded-xl bg-[var(--orion-accent)] text-white text-xs font-semibold text-center"
-                    >
-                      Sign up
-                    </button>
-                  </div>
-
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setMobileMenuOpen(false);
-                      handleRoute('/login?redirect=/download&platform=windows');
-                    }}
-                    className="w-full flex items-center justify-center gap-2 py-2.5 px-4 rounded-xl liquid-glass-button text-xs font-semibold text-[var(--orion-text-primary)]"
-                  >
-                    <Download className="w-3.5 h-3.5 text-[var(--orion-accent)]" />
-                    <span>Download Desktop</span>
-                  </button>
-                </>
-              )}
-            </div>
+            <button
+              type="button"
+              onClick={() => {
+                setMobileMenuOpen(false);
+                launchOrion(destinationUrl);
+              }}
+              className="w-full py-2.5 px-4 rounded-lg bg-[#070B19] text-white text-sm font-semibold cursor-pointer"
+            >
+              Launch Control Tower
+            </button>
           </div>
         </div>
       )}

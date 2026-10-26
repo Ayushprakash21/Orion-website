@@ -18,21 +18,21 @@ export const ControlTowerPreview: React.FC = () => {
   const [isResolved, setIsResolved] = useState<boolean>(false);
 
   return (
-    <section id="control-tower" className="py-24 sm:py-32 bg-[var(--orion-canvas)] border-b border-[var(--glass-border-subtle)] relative transition-colors duration-300">
+    <section id="control-tower" className="py-24 sm:py-32 bg-[#F5F9FB] border-b border-[#D5E1E8] relative">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         {/* Section Header */}
         <div className="flex flex-col lg:flex-row lg:items-end justify-between gap-6 mb-14">
           <div className="max-w-3xl space-y-4">
-            <span className="text-xs font-mono font-semibold text-[var(--orion-accent)] uppercase tracking-wider block">
-              Orion-9 OS Cockpit
+            <span className="text-xs font-semibold text-[#294D6B] uppercase tracking-wider block">
+              Control Tower Cockpit
             </span>
 
-            <h2 className="text-3xl sm:text-4xl lg:text-5xl font-extrabold tracking-[-0.03em] text-[var(--orion-text-primary)] leading-[1.08]">
+            <h2 className="text-3xl sm:text-4xl lg:text-5xl font-bold tracking-[-0.03em] text-[#111827] leading-[1.08]">
               One command surface for global operations.
             </h2>
 
-            <p className="text-base sm:text-lg text-[var(--orion-text-secondary)] leading-relaxed">
-              Designed for logistics directors and supply chain operators. Monitor exceptions across global corridors,
+            <p className="text-base sm:text-lg text-[#4A5568] leading-relaxed">
+              Designed for logistics directors and supply chain teams. Monitor exceptions across global corridors,
               evaluate recommended trade-offs, and commit governed interventions with complete confidence.
             </p>
           </div>
@@ -41,26 +41,26 @@ export const ControlTowerPreview: React.FC = () => {
             <button
               type="button"
               onClick={() => launchOrion(destinationUrl)}
-              className="inline-flex items-center gap-2.5 px-6 py-3.5 rounded-xl bg-gradient-to-r from-[#0284C7] to-[#0369A1] hover:from-[#0369A1] hover:to-[#075985] text-white text-xs font-semibold transition-all shadow-lg shadow-sky-600/20 cursor-pointer"
+              className="inline-flex items-center gap-2.5 px-6 py-3.5 rounded-full bg-[#111827] text-white text-xs font-semibold hover:bg-[#294D6B] transition-all shadow-[0_8px_24px_rgba(17,24,39,0.14)] cursor-pointer"
             >
-              <span>Launch Orion-9 OS</span>
-              <ExternalLink className="w-3.5 h-3.5 text-sky-200" />
+              <span>Launch Live Control Tower</span>
+              <ExternalLink className="w-3.5 h-3.5 text-[#A8C2D2]" />
             </button>
           </div>
         </div>
 
-        {/* Intentionally Composed Liquid Glass Window */}
-        <div className="rounded-3xl liquid-glass-elevated border border-[var(--glass-border)] text-white shadow-2xl overflow-hidden">
-          {/* Bezel Titlebar with macOS Controls */}
-          <div className="px-6 py-4 border-b border-white/10 bg-black/40 backdrop-blur-md flex flex-wrap items-center justify-between gap-4 text-xs">
+        {/* Intentionally Composed Dark Product Window (#0B131F) */}
+        <div className="rounded-3xl border border-[#294D6B]/30 bg-[#0B131F] text-white shadow-[0_24px_60px_rgba(11,19,31,0.22)] overflow-hidden">
+          {/* Bezel Titlebar */}
+          <div className="px-6 py-4 border-b border-white/10 bg-[#070D16] flex flex-wrap items-center justify-between gap-4 text-xs">
             <div className="flex items-center gap-3">
               <div className="flex items-center gap-1.5">
-                <span className="w-3 h-3 rounded-full bg-[#FF5F56] border border-[#E0443E]" />
-                <span className="w-3 h-3 rounded-full bg-[#FFBD2E] border border-[#DEA123]" />
-                <span className="w-3 h-3 rounded-full bg-[#27C93F] border border-[#1AAB29]" />
+                <span className="w-2.5 h-2.5 rounded-full bg-rose-500/80" />
+                <span className="w-2.5 h-2.5 rounded-full bg-amber-500/80" />
+                <span className="w-2.5 h-2.5 rounded-full bg-emerald-500/80" />
               </div>
               <span className="text-white/20 hidden sm:inline">|</span>
-              <span className="font-semibold text-white tracking-wide font-mono text-[11px]">
+              <span className="font-semibold text-white tracking-wide">
                 ORION-9 CONTROL TOWER · EXCEPTION RESOLVER
               </span>
             </div>
@@ -211,7 +211,7 @@ export const ControlTowerPreview: React.FC = () => {
                   <p>14:32:04 UTC · Telemetry anomaly logged from AIS Satellite feeder</p>
                   <p>14:32:05 UTC · Entity graph mapped container 4,200 TEU to Plant DE-02</p>
                   <p>14:32:08 UTC · Multi-objective solver generated 3 candidate solutions</p>
-                  <p className="text-white">14:32:15 UTC · Recommended Sea-Air split queued for operator review</p>
+                  <p className="text-white">14:32:15 UTC · Recommended Sea-Air split queued for authorization review</p>
                 </div>
               </div>
             )}

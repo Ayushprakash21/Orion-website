@@ -109,7 +109,7 @@ service cloud.firestore {
     }
 
     // ===============================================================
-    // 3. Operator User Profiles (Self Read/Write Without Role Escalation)
+    // 3. User Profiles (Self Read/Write Without Role Escalation)
     // ===============================================================
     match /users/{userId} {
       allow get: if isOwner(userId) || isAdmin();
@@ -118,7 +118,7 @@ service cloud.firestore {
       allow create: if isOwner(userId) &&
         request.resource.data.uid == userId &&
         isValidString(request.resource.data.email, 3, 160) &&
-        (!('role' in request.resource.data) || request.resource.data.role == 'operator') &&
+        (!('role' in request.resource.data) || request.resource.data.role == 'member') &&
         !('isAdmin' in request.resource.data);
 
       allow update: if (
