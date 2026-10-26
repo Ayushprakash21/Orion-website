@@ -4,216 +4,146 @@ import {
   Database,
   Cpu,
   ShieldCheck,
-  CheckCircle2,
-  Server,
-  Lock,
-  ArrowRight,
-  Sparkles,
+  ChevronDown,
+  ChevronUp,
+  Layers,
+  ArrowUpRight,
 } from 'lucide-react';
 
-interface Pillar {
-  id: string;
+interface ArchLayer {
   number: string;
-  title: string;
-  eyebrow: string;
-  summary: string;
-  connectors: string[];
-  protocol: string;
-  sla: string;
+  name: string;
+  executiveSummary: string;
+  primarySystems: string[];
+  technicalSpecs: string;
 }
 
-const pillars: Pillar[] = [
+const architectureLayers: ArchLayer[] = [
   {
-    id: 'pillar-1',
     number: '01',
-    eyebrow: 'INGESTION & CONNECTOR LAYER',
-    title: 'Enterprise Integration Fabric',
-    summary:
-      'Bi-directional enterprise connectors and event streaming ingestion bridging legacy systems, carrier streams, and modern warehouse networks without custom point-to-point middleware.',
-    connectors: ['SAP S/4HANA & ECC', 'Oracle SCM Cloud', 'Manhattan Associates WMS', 'Carrier EDI 850/856/304', 'Satellite AIS & ADS-B'],
-    protocol: 'Kafka, gRPC, REST, AS2, WebSocket',
-    sla: 'Sub-second event deduplication and streaming reconciliation',
+    name: 'Integration & Ingestion Fabric',
+    executiveSummary:
+      'Connects your existing ERPs, warehouse management systems, carrier EDI streams, and satellite telemetry into a unified real-time event pipeline without custom middleware.',
+    primarySystems: ['SAP S/4HANA', 'Oracle SCM', 'Manhattan WMS', 'Carrier EDI (850/856)', 'Satellite AIS / ADS-B'],
+    technicalSpecs: 'Kafka, gRPC, and AS2 endpoints with sub-second event deduplication and cryptographic transport encryption.',
   },
   {
-    id: 'pillar-2',
     number: '02',
-    eyebrow: 'SEMANTIC GRAPH & DIGITAL TWIN',
-    title: 'Canonical Graph Data Model',
-    summary:
-      'Harmonizes orders, inventory units, bill-of-materials (BOM) hierarchies, bills of lading, and multi-tier supplier IDs into an unambiguous, synchronized operational graph.',
-    connectors: ['Entity Resolution Engine', 'BOM Multi-Echelon Mapping', 'State Machine Registry', 'Global Geofence Index'],
-    protocol: 'JSON-Schema, Protocol Buffers, W3C DID',
-    sla: '100% Schema validation & cryptographic state integrity',
+    name: 'Canonical Graph & Master Data Model',
+    executiveSummary:
+      'Harmonizes disparate part numbers, purchase orders, carrier manifests, and bill-of-materials into an unambiguous, synchronized digital twin of physical operations.',
+    primarySystems: ['Entity Disambiguation Engine', 'BOM Relationship Graph', 'Master Location Registry', 'Multi-Tier Supplier Index'],
+    technicalSpecs: 'Strict schema enforcement and state machine validation across enterprise boundaries.',
   },
   {
-    id: 'pillar-3',
     number: '03',
-    eyebrow: 'OPTIMIZATION & SOLVER MATRIX',
-    title: 'Decision Intelligence Layer',
-    summary:
-      'Stochastic solvers and multi-objective optimization algorithms evaluating landed costs, SLA penalties, emissions, and transit velocity in real time.',
-    connectors: ['Mixed-Integer Linear Solvers', 'Monte Carlo Disruption Models', 'Pareto Frontier Evaluator', 'Lead-Time Variance Predictors'],
-    protocol: 'High-Performance Mathematical Solvers',
-    sla: '< 180ms decision formulation & scenario scoring',
+    name: 'Decision Intelligence & Optimization Matrix',
+    executiveSummary:
+      'Continuously simulates supply-chain vulnerabilities, models multi-echelon safety stock burn rates, and computes mathematically optimal mitigation pathways.',
+    primarySystems: ['Mixed-Integer Linear Solvers', 'Monte Carlo Disruption Models', 'Pareto Trade-Off Evaluator', 'Lead-Time Predictor'],
+    technicalSpecs: 'Sub-second multi-scenario evaluation balancing expedite cost, transit speed, and Scope 3 emissions.',
   },
   {
-    id: 'pillar-4',
     number: '04',
-    eyebrow: 'CLOSED-LOOP ORCHESTRATION',
-    title: 'Governed Autonomous Execution',
-    summary:
-      'Dispatches policy-approved reroutes directly into carrier booking APIs, warehouse staging bays, and customs clearance queues with immutable audit logging.',
-    connectors: ['Carrier Booking API Adapters', 'WMS Staging Webhooks', 'Two-Person Authorization Gate', 'Append-Only Audit Ledger'],
-    protocol: 'TLS 1.3, mTLS Zero-Trust, Signed Webhooks',
-    sla: 'Zero unauthorized freight commitments or shadow overrides',
+    name: 'Governed Closed-Loop Execution',
+    executiveSummary:
+      'Dispatches policy-approved interventions directly into carrier booking APIs and warehouse staging bays, backed by immutable audit trails and two-person authorization thresholds.',
+    primarySystems: ['Carrier Booking API Gateways', 'WMS Dispatch Adapters', 'Two-Person Authorization Gate', 'Append-Only Audit Ledger'],
+    technicalSpecs: 'Zero-trust mTLS non-repudiation and tamper-evident event logging.',
   },
 ];
 
 export const ArchitectureConnectivity: React.FC = () => {
-  const [selectedPillarId, setSelectedPillarId] = useState<string>('pillar-1');
-  const activePillar = pillars.find((p) => p.id === selectedPillarId) || pillars[0];
+  const [expandedLayer, setExpandedLayer] = useState<string | null>(null);
 
   return (
     <section id="architecture" className="py-24 sm:py-32 bg-[#EAF4F8] border-b border-[#D5E1E8] relative">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        {/* Editorial Section Header */}
-        <div className="max-w-3xl mb-16 space-y-4">
-          <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-white border border-[#D5E1E8] text-xs font-mono text-[#294D6B]">
-            <span className="w-1.5 h-1.5 rounded-full bg-[#294D6B]" />
-            <span className="font-semibold text-[#111827]">05 / ENTERPRISE ARCHITECTURE</span>
-          </div>
+        {/* Section Header */}
+        <div className="max-w-3xl mb-14 space-y-4">
+          <span className="text-xs font-semibold text-[#294D6B] uppercase tracking-wider block">
+            System Architecture
+          </span>
 
           <h2 className="text-3xl sm:text-4xl lg:text-5xl font-bold tracking-[-0.03em] text-[#111827] leading-[1.08]">
-            Engineered for Zero-Trust Enterprise Scale.
+            Engineered for enterprise scale and deterministic trust.
           </h2>
 
           <p className="text-base sm:text-lg text-[#4A5568] leading-relaxed">
-            A 4-pillar architectural foundation connecting legacy enterprise infrastructure
-            with deterministic, closed-loop autonomous intelligence.
+            A 4-tier modular platform connecting legacy core systems with real-time autonomous intelligence
+            and policy-bounded governance.
           </p>
         </div>
 
-        {/* 4 Pillars Interactive Grid */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-12">
-          {pillars.map((pillar) => {
-            const isSelected = selectedPillarId === pillar.id;
+        {/* Dimensional Architecture Stack */}
+        <div className="space-y-4 max-w-5xl mx-auto">
+          {architectureLayers.map((layer) => {
+            const isExpanded = expandedLayer === layer.number;
             return (
-              <button
-                key={pillar.id}
-                type="button"
-                onClick={() => setSelectedPillarId(pillar.id)}
-                className={`p-6 sm:p-7 rounded-3xl border text-left transition-all cursor-pointer flex flex-col justify-between ${
-                  isSelected
-                    ? 'bg-white border-[#294D6B] shadow-[0_16px_36px_rgba(41,77,107,0.14)] scale-[1.02]'
-                    : 'bg-white/80 border-[#D5E1E8] hover:bg-white hover:border-[#294D6B]/40 shadow-xs'
-                }`}
+              <div
+                key={layer.number}
+                className="p-7 sm:p-8 rounded-3xl bg-white border border-[#D5E1E8] shadow-[0_10px_30px_rgba(20,40,65,0.04)] hover:shadow-[0_16px_40px_rgba(20,40,65,0.08)] transition-all"
               >
-                <div>
-                  <div className="flex items-center justify-between text-xs font-mono mb-4">
-                    <span
-                      className={`w-7 h-7 rounded-full flex items-center justify-center font-bold ${
-                        isSelected
-                          ? 'bg-[#294D6B] text-white'
-                          : 'bg-[#EAF4F8] text-[#566575]'
-                      }`}
-                    >
-                      {pillar.number}
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                  <div className="flex items-start sm:items-center gap-4">
+                    <span className="w-10 h-10 rounded-2xl bg-[#EAF4F8] border border-[#D5E1E8] text-[#294D6B] font-mono font-bold text-sm flex items-center justify-center shrink-0">
+                      {layer.number}
                     </span>
-                    <span className="text-[10px] text-[#566575] font-semibold uppercase">
-                      PILLAR
-                    </span>
+
+                    <div>
+                      <h3 className="text-xl font-bold text-[#111827] tracking-tight">
+                        {layer.name}
+                      </h3>
+                      <p className="text-xs text-[#566575] mt-0.5">
+                        {layer.primarySystems.slice(0, 3).join(' · ')}
+                      </p>
+                    </div>
                   </div>
 
-                  <span className="text-[10px] font-mono uppercase tracking-wider text-[#294D6B] block mb-1">
-                    {pillar.eyebrow}
-                  </span>
-
-                  <h3 className="text-lg font-bold text-[#111827] leading-tight mb-2">
-                    {pillar.title}
-                  </h3>
-
-                  <p className="text-xs text-[#566575] line-clamp-3 leading-relaxed">
-                    {pillar.summary}
-                  </p>
+                  <button
+                    type="button"
+                    onClick={() => setExpandedLayer(isExpanded ? null : layer.number)}
+                    className="self-start sm:self-auto px-4 py-2 rounded-full border border-[#D5E1E8] text-xs font-medium text-[#4A5568] hover:text-[#111827] hover:border-[#294D6B] transition-all cursor-pointer flex items-center gap-1.5"
+                  >
+                    <span>{isExpanded ? 'Hide Specs' : 'View Specifications'}</span>
+                    {isExpanded ? <ChevronUp className="w-3.5 h-3.5" /> : <ChevronDown className="w-3.5 h-3.5" />}
+                  </button>
                 </div>
 
-                <div className="mt-6 pt-4 border-t border-[#D5E1E8]/70 flex items-center justify-between text-[11px] font-mono">
-                  <span className={isSelected ? 'text-[#294D6B] font-bold' : 'text-slate-400'}>
-                    {isSelected ? '● SELECTED' : 'VIEW DETAILS'}
-                  </span>
-                  <ArrowRight
-                    className={`w-3.5 h-3.5 transition-transform ${
-                      isSelected ? 'text-[#294D6B] translate-x-1' : 'text-slate-400'
-                    }`}
-                  />
-                </div>
-              </button>
+                <p className="text-sm text-[#4A5568] leading-relaxed mt-4 pt-4 border-t border-[#EAF4F8]">
+                  {layer.executiveSummary}
+                </p>
+
+                {/* Progressive Disclosure: Technical Invariants */}
+                {isExpanded && (
+                  <div className="mt-4 pt-4 border-t border-[#EAF4F8] bg-[#F5F9FB] rounded-2xl p-5 space-y-3 text-xs">
+                    <div>
+                      <span className="font-semibold text-[#111827] block mb-1">
+                        Connected Enterprise Platforms:
+                      </span>
+                      <div className="flex flex-wrap gap-2">
+                        {layer.primarySystems.map((sys) => (
+                          <span
+                            key={sys}
+                            className="px-3 py-1 rounded-full bg-white border border-[#D5E1E8] text-[#111827] font-medium"
+                          >
+                            {sys}
+                          </span>
+                        ))}
+                      </div>
+                    </div>
+
+                    <div className="pt-2 border-t border-[#D5E1E8]/60">
+                      <span className="font-semibold text-[#111827] block mb-0.5">
+                        Technical Protocols &amp; Guarantees:
+                      </span>
+                      <p className="text-[#566575]">{layer.technicalSpecs}</p>
+                    </div>
+                  </div>
+                )}
+              </div>
             );
           })}
-        </div>
-
-        {/* Detailed Architectural Deep-Dive Card */}
-        <div className="p-8 sm:p-12 rounded-3xl bg-white border border-[#D5E1E8] shadow-[0_16px_40px_rgba(20,40,65,0.06)] grid grid-cols-1 lg:grid-cols-12 gap-8 items-center">
-          <div className="lg:col-span-7 space-y-4">
-            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-[#EAF4F8] text-xs font-mono text-[#294D6B]">
-              <span className="font-semibold">PILLAR {activePillar.number}</span>
-              <span>/</span>
-              <span>{activePillar.eyebrow}</span>
-            </div>
-
-            <h3 className="text-2xl sm:text-3xl font-bold text-[#111827] tracking-tight">
-              {activePillar.title}
-            </h3>
-
-            <p className="text-base text-[#4A5568] leading-relaxed">
-              {activePillar.summary}
-            </p>
-
-            <div className="space-y-2 pt-2">
-              <span className="text-xs font-mono uppercase tracking-wider text-[#566575] block">
-                Enterprise Interfaces & Connectors:
-              </span>
-              <div className="flex flex-wrap gap-2">
-                {activePillar.connectors.map((c) => (
-                  <span
-                    key={c}
-                    className="px-3 py-1 rounded-full bg-[#F5F9FB] border border-[#D5E1E8] text-xs font-medium text-[#111827]"
-                  >
-                    {c}
-                  </span>
-                ))}
-              </div>
-            </div>
-          </div>
-
-          <div className="lg:col-span-5 bg-[#F5F9FB] rounded-2xl p-6 sm:p-8 border border-[#D5E1E8] space-y-4 font-mono text-xs">
-            <div className="text-[11px] text-[#566575] uppercase tracking-wider pb-2 border-b border-[#D5E1E8]">
-              Architectural Invariants & Protocols
-            </div>
-
-            <div className="space-y-3">
-              <div>
-                <span className="text-[#566575] block text-[10px] uppercase">
-                  Transport & Protocol Standards:
-                </span>
-                <p className="text-[#111827] font-bold text-xs mt-0.5">{activePillar.protocol}</p>
-              </div>
-
-              <div className="pt-2 border-t border-[#D5E1E8]/70">
-                <span className="text-[#566575] block text-[10px] uppercase">
-                  Execution Guarantee & SLA:
-                </span>
-                <p className="text-[#294D6B] font-bold text-xs mt-0.5">{activePillar.sla}</p>
-              </div>
-
-              <div className="pt-2 border-t border-[#D5E1E8]/70 flex items-center gap-2 text-emerald-700">
-                <ShieldCheck className="w-4 h-4 text-emerald-600" />
-                <span className="text-[11px] font-sans font-semibold">
-                  SOC 2 Type II & ISO 27001 Certified Architecture
-                </span>
-              </div>
-            </div>
-          </div>
         </div>
       </div>
     </section>

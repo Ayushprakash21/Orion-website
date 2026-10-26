@@ -48,7 +48,6 @@ const AppContent: React.FC = () => {
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
-  // Sync dynamic SEO meta title & description from CMS config
   useEffect(() => {
     if (activeConfig.seo.metaTitle) {
       document.title = activeConfig.seo.metaTitle;
@@ -59,7 +58,7 @@ const AppContent: React.FC = () => {
     }
   }, [activeConfig.seo.metaTitle, activeConfig.seo.metaDescription]);
 
-  // Synchronized section entrance reveals
+  // Smooth section reveals without clipping
   useEffect(() => {
     if (currentPath !== '/') return;
     const prefersReducedMotion = window.matchMedia(
@@ -68,35 +67,25 @@ const AppContent: React.FC = () => {
     if (prefersReducedMotion || !mainRef.current) return;
 
     const ctx = gsap.context(() => {
-      const headings = gsap.utils.toArray<HTMLElement>('.cinematic-stage h2');
-      headings.forEach((h2) => {
-        gsap.fromTo(
-          h2,
-          {
-            clipPath: 'inset(0% 0% 100% 0%)',
-            y: 28,
-            opacity: 0,
+      const stages = gsap.utils.toArray<HTMLElement>('.cinematic-stage');
+      stages.forEach((stage) => {
+        gsap.from(stage, {
+          y: 20,
+          opacity: 0.9,
+          duration: 0.7,
+          ease: 'power2.out',
+          scrollTrigger: {
+            trigger: stage,
+            start: 'top 90%',
+            toggleActions: 'play none none none',
           },
-          {
-            clipPath: 'inset(0% 0% 0% 0%)',
-            y: 0,
-            opacity: 1,
-            duration: 0.9,
-            ease: 'power4.out',
-            scrollTrigger: {
-              trigger: h2,
-              start: 'top 88%',
-              toggleActions: 'play none none none',
-            },
-          }
-        );
+        });
       });
     }, mainRef);
 
     return () => ctx.revert();
   }, [currentPath]);
 
-  // Dedicated Route Handling: /login, /signup, /admin/login, /admin
   if (currentPath === '/login') {
     return <AuthPageView mode="login" onNavigate={navigate} />;
   }
@@ -117,55 +106,53 @@ const AppContent: React.FC = () => {
 
   return (
     <div className="min-h-screen bg-[#EAF4F8] text-[#111827] selection:bg-[#294D6B] selection:text-white flex flex-col font-sans">
-      {/* Persistent Refined Navigation Bar */}
       <Navbar onNavigate={navigate} />
 
-      {/* Main Coherent Story Sequence */}
       <main ref={mainRef} className="flex-1">
-        {/* Section 1 — Hero */}
+        {/* 1. Hero */}
         <Hero />
 
-        {/* Section 2 — The Problem */}
+        {/* 2. Disruption Propagation Cascade */}
         {vis.operationalProblem !== false && (
           <div className="cinematic-stage">
             <OperationalProblem />
           </div>
         )}
 
-        {/* Section 3 — One Connected Network */}
+        {/* 3. Expansive Topology & Continuous Route */}
         {vis.supplyChainNetwork !== false && (
           <div className="cinematic-stage">
             <OneConnectedNetwork />
           </div>
         )}
 
-        {/* Section 4 — From Signal to Decision */}
+        {/* 4. Decision Intelligence Narrative Story */}
         {vis.operationalIntelligence !== false && (
           <div className="cinematic-stage">
             <DecisionIntelligenceFlow />
           </div>
         )}
 
-        {/* Section 5 — Interactive Product Preview */}
+        {/* 5. Composed Control Tower Product Demonstration */}
         {vis.controlTowerPreview !== false && (
           <div className="cinematic-stage">
             <ControlTowerPreview />
           </div>
         )}
 
-        {/* Section 6 — Architecture */}
+        {/* 6. Dimensional 4-Tier Architecture */}
         {vis.integrationsAndReadiness !== false && (
           <div className="cinematic-stage">
             <ArchitectureConnectivity />
           </div>
         )}
 
-        {/* Section 7 — Closing Call to Action */}
+        {/* 7. Closing Invitation */}
         {vis.finalCta !== false && (
           <div className="cinematic-stage">
             <FinalCTA
               onLaunchApp={() => launchOrion()}
-              onOpenAuth={(mode) => openAuthModal(mode || 'login')}
+              onOpenAuth={(mode) => openAuthModal(mode || 'signup')}
               onNavigate={navigate}
               isAuthenticated={isAuthenticated}
             />
@@ -173,10 +160,10 @@ const AppContent: React.FC = () => {
         )}
       </main>
 
-      {/* Section 8 — Enterprise Footer */}
+      {/* 8. Refined Enterprise Footer */}
       <Footer onNavigate={navigate} />
 
-      {/* Modals for Quick Auth & Secure Control Tower Launch Handoff */}
+      {/* Modals for Quick Auth & Launch */}
       <AuthModal />
       <TransitionModal />
     </div>
