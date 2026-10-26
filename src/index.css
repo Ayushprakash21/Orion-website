@@ -2,31 +2,43 @@
 
 @layer base {
   :root {
-    --bg-night: #050505;
-    --panel-bg: #0c0c0c;
-    --panel-elevated: #141414;
-    --text-primary: #f4f6fa;
-    --text-secondary: rgba(255, 255, 255, 0.72);
-    --text-muted: rgba(255, 255, 255, 0.46);
-    --border-hairline: rgba(255, 255, 255, 0.12);
-    --border-accent: rgba(255, 255, 255, 0.22);
-    --color-cyan: #f5f5f5;
-    --color-lime: #ffffff;
-    --color-amber: #d0d0d0;
-    --color-red: #a6a6a6;
+    --orion-canvas: #EAF4F8;
+    --orion-alt-bg: #F5F9FB;
+    --orion-surface: #FFFFFF;
+    --orion-text-primary: #111827;
+    --orion-text-secondary: #566575;
+    --orion-border: #D5E1E8;
+    --orion-deep-blue: #294D6B;
+    --orion-steel-blue: #A8C2D2;
+    --orion-dark-surface: #101820;
   }
 
   body {
     font-family: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
-    background-color: var(--bg-night);
-    background-image: radial-gradient(ellipse at 50% 0%, rgba(255,255,255,.055), transparent 58%);
-    color: var(--text-primary);
+    background-color: var(--orion-canvas);
+    color: var(--orion-text-primary);
     overflow-x: hidden;
   }
 
   code, pre, .font-mono {
     font-family: 'JetBrains Mono', monospace;
   }
+}
+
+/* Custom subtle ice-blue scrollbar */
+::-webkit-scrollbar {
+  width: 7px;
+  height: 7px;
+}
+::-webkit-scrollbar-track {
+  background: #EAF4F8;
+}
+::-webkit-scrollbar-thumb {
+  background: #A8C2D2;
+  border-radius: 9999px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: #294D6B;
 }
 
 @media (prefers-reduced-motion: reduce) {
@@ -37,25 +49,3 @@
     scroll-behavior: auto !important;
   }
 }
-
-
-/* ORION-9 monochrome motion system */
-:root { color-scheme: dark; --motion-ink: #050505; --motion-white: #f5f5f5; --motion-gray: #a3a3a3; }
-html { scroll-behavior: smooth; background: #050505; }
-::selection { background: #f5f5f5; color: #050505; }
-.orion-kicker { color: #d4d4d4 !important; }
-.orion-accent, [class*="text-[#3fd8ff]"], [class*="text-[#c6ff2e]"], [class*="text-cyan-"], [class*="text-lime-"] { color: #f5f5f5 !important; }
-.orion-primary, [class*="bg-[#c6ff2e]"], [class*="bg-[#3fd8ff]"] { background-color: #f5f5f5 !important; color: #050505 !important; box-shadow: 0 8px 32px rgba(255,255,255,.12) !important; }
-.orion-primary:hover, [class*="bg-[#c6ff2e]"]:hover { background-color: #d4d4d4 !important; }
-.orion-surface { background: #0b0b0b; border: 1px solid rgba(255,255,255,.14); }
-.orion-outline { border-color: rgba(255,255,255,.25) !important; }
-
-/* Scroll story reveal hooks: visible without JS; animated when GSAP is available. */
-[data-motion-reveal] { will-change: transform, opacity; }
-.motion-route-dash { stroke-dasharray: 7 12; animation: orion-route-flow 2.4s linear infinite; }
-.motion-pulse { animation: orion-pulse 2.4s ease-in-out infinite; transform-origin: center; }
-.motion-scanline { background: linear-gradient(to bottom, transparent, rgba(255,255,255,.09), transparent); animation: orion-scan 6s linear infinite; pointer-events:none; }
-@keyframes orion-route-flow { to { stroke-dashoffset: -76; } }
-@keyframes orion-pulse { 0%,100% { opacity:.45; transform:scale(.9); } 50% { opacity:1; transform:scale(1.12); } }
-@keyframes orion-scan { from { transform: translateY(-110%); } to { transform: translateY(110%); } }
-@media (prefers-reduced-motion: reduce) { html { scroll-behavior:auto; } .motion-route-dash,.motion-pulse,.motion-scanline { animation:none !important; } [data-motion-reveal] { opacity:1 !important; transform:none !important; filter:none !important; } }

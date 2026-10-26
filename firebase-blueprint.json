@@ -1,0 +1,129 @@
+{
+  "entities": {
+    "SiteConfigSection": {
+      "title": "SiteConfigSection",
+      "description": "Published or draft structured configuration document for Orion-9 CMS sections",
+      "type": "object",
+      "properties": {
+        "updatedAt": {
+          "type": "string",
+          "description": "ISO timestamp of last configuration update"
+        },
+        "updatedBy": {
+          "type": "string",
+          "description": "Administrator email or UID that published the update"
+        }
+      },
+      "required": ["updatedAt", "updatedBy"]
+    },
+    "UserProfile": {
+      "title": "UserProfile",
+      "description": "Authenticated Orion-9 operator profile",
+      "type": "object",
+      "properties": {
+        "uid": {
+          "type": "string",
+          "description": "Firebase Authentication UID"
+        },
+        "displayName": {
+          "type": "string",
+          "description": "Operator full name"
+        },
+        "email": {
+          "type": "string",
+          "description": "Operator email address"
+        },
+        "role": {
+          "type": "string",
+          "enum": ["operator", "admin"],
+          "description": "Non-escalatable operator role"
+        }
+      },
+      "required": ["uid", "email", "role"]
+    },
+    "AdminAclRecord": {
+      "title": "AdminAclRecord",
+      "description": "Server-side administrator role assignment in /admins/{uid}",
+      "type": "object",
+      "properties": {
+        "email": {
+          "type": "string",
+          "description": "Administrator email address"
+        },
+        "role": {
+          "type": "string",
+          "enum": ["admin", "editor", "viewer"],
+          "description": "Administrative permission tier"
+        },
+        "active": {
+          "type": "boolean",
+          "description": "Whether administrator privileges are currently active"
+        },
+        "grantedBy": {
+          "type": "string",
+          "description": "UID or email of granting administrator"
+        }
+      },
+      "required": ["email", "role", "active"]
+    },
+    "AuditLogEntry": {
+      "title": "AuditLogEntry",
+      "description": "Immutable administrative change log entry",
+      "type": "object",
+      "properties": {
+        "actorUid": {
+          "type": "string"
+        },
+        "actorEmail": {
+          "type": "string"
+        },
+        "section": {
+          "type": "string"
+        },
+        "action": {
+          "type": "string",
+          "enum": ["publish", "save_draft", "reset_defaults", "auth_config", "role_check"]
+        },
+        "summary": {
+          "type": "string"
+        },
+        "timestamp": {
+          "type": "string"
+        }
+      },
+      "required": ["actorUid", "actorEmail", "section", "action", "summary", "timestamp"]
+    }
+  },
+  "firestore": {
+    "/siteConfig/{sectionId}": {
+      "schema": {
+        "$ref": "#/entities/SiteConfigSection"
+      },
+      "description": "Publicly readable, admin-writable published CMS configuration sections"
+    },
+    "/siteConfigDrafts/{sectionId}": {
+      "schema": {
+        "$ref": "#/entities/SiteConfigSection"
+      },
+      "description": "Admin-only draft CMS configuration sections"
+    },
+    "/users/{userId}": {
+      "schema": {
+        "$ref": "#/entities/UserProfile"
+      },
+      "description": "Operator user profiles"
+    },
+    "/admins/{adminUid}": {
+      "schema": {
+        "$ref": "#/entities/AdminAclRecord"
+      },
+      "description": "Administrator role registry"
+    },
+    "/auditLogs/{logId}": {
+      "schema": {
+        "$ref": "#/entities/AuditLogEntry"
+      },
+      "description": "Append-only administrative audit trail"
+    }
+  }
+}

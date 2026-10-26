@@ -1,16 +1,25 @@
-import React, { createContext, useContext, useEffect, useState, useMemo } from 'react';
+import React, { createContext, useContext, useEffect, useState, useMemo, useCallback } from 'react';
 import {
   initializeFirebase,
   signInWithEmailAndPassword,
   createUserWithEmailAndPassword,
   signOut,
   sendPasswordResetEmail,
+  sendEmailVerification,
   updateProfile,
   onAuthStateChanged,
+  GoogleAuthProvider,
+  signInWithPopup,
+  setPersistence,
+  browserLocalPersistence,
+  browserSessionPersistence,
+  verifyAdminAuthorization,
+  doc,
+  setDoc,
+  serverTimestamp,
   type User,
 } from '../services/firebase';
 import {
-  DEFAULT_ORION_APP_URL,
   resolveLaunchUrl,
   evaluateCrossAppAuth,
   type CrossAppAuthStatus,
@@ -18,6 +27,9 @@ import {
 
 interface AuthContextType {
   user: User | null;
+  isAuthenticated: boolean;
+  isAdmin: boolean;
+  adminAuthSource: string;
   loading: boolean;
   isFirebaseConfigured: boolean;
   authModalOpen: boolean;
@@ -29,18 +41,58 @@ interface AuthContextType {
   destinationUrl: string;
   openAuthModal: (mode?: 'login' | 'signup' | 'forgot') => void;
   closeAuthModal: () => void;
-  launchOrion: () => void;
-  login: (email: string, pass: string) => Promise<{ success: boolean; error?: string }>;
-  signup: (name: string, email: string, pass: string) => Promise<{ success: boolean; error?: string }>;
+  launchOrion: (customTargetUrl?: string) => void;
+  login: (
+    email: string,
+    pass: string,
+    remember?: boolean
+  ) => Promise<{ success: boolean; error?: string; user?: User }>;
+  signup: (
+    name: string,
+    email: string,
+    pass: string
+  ) => Promise<{ success: boolean; error?: string; verificationSent?: boolean }>;
+  loginWithGoogle: () => Promise<{ success: boolean; error?: string }>;
   resetPassword: (email: string) => Promise<{ success: boolean; error?: string }>;
   logout: () => Promise<void>;
-  simulateAuthForPreview: (name: string, email: string) => void;
+  refreshAdminStatus: () => Promise<boolean>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
+export function mapFirebaseAuthError(err: unknown, fallback: string): string {
+  const code = (err as { code?: string })?.code || '';
+  switch (code) {
+    case 'auth/invalid-credential':
+    case 'auth/user-not-found':
+    case 'auth/wrong-password':
+      return 'Invalid email or password. Please check your credentials and try again.';
+    case 'auth/invalid-email':
+      return 'Please enter a valid email address.';
+    case 'auth/email-already-in-use':
+      return 'An account with this email address already exists. Please sign in instead.';
+    case 'auth/weak-password':
+      return 'Password is too weak. Use at least 8 characters with letters and numbers.';
+    case 'auth/too-many-requests':
+      return 'Too many unsuccessful attempts. Access has been temporarily paused for security—please try again in a few minutes.';
+    case 'auth/network-request-failed':
+      return 'Network connection error. Please check your internet connection and retry.';
+    case 'auth/popup-closed-by-user':
+      return 'Sign-in popup was closed before completing authentication.';
+    case 'auth/operation-not-allowed':
+      return 'This sign-in provider is not enabled in the current Firebase project.';
+    default:
+      if (err instanceof Error && err.message) {
+        return err.message;
+      }
+      return fallback;
+  }
+}
+
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
+  const [isAdmin, setIsAdmin] = useState<boolean>(false);
+  const [adminAuthSource, setAdminAuthSource] = useState<string>('none');
   const [loading, setLoading] = useState<boolean>(true);
   const [isFirebaseConfigured, setIsFirebaseConfigured] = useState<boolean>(false);
   const [authModalOpen, setAuthModalOpen] = useState<boolean>(false);
@@ -53,65 +105,82 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const resolved = useMemo(() => resolveLaunchUrl(), []);
   const destinationUrl = resolved.url;
 
+  const checkAdmin = useCallback(async (targetUser: User | null): Promise<boolean> => {
+    if (!targetUser) {
+      setIsAdmin(false);
+      setAdminAuthSource('none');
+      return false;
+    }
+    const res = await verifyAdminAuthorization(targetUser);
+    setIsAdmin(res.isAdmin);
+    setAdminAuthSource(res.source);
+    return res.isAdmin;
+  }, []);
+
   useEffect(() => {
     const { auth, isConfigured } = initializeFirebase();
     setIsFirebaseConfigured(isConfigured);
 
     if (isConfigured && auth) {
-      const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
+      const unsubscribe = onAuthStateChanged(auth, async (currentUser) => {
         setUser(currentUser);
+        await checkAdmin(currentUser);
         setLoading(false);
       });
       return () => unsubscribe();
     } else {
       setLoading(false);
     }
-  }, []);
+  }, [checkAdmin]);
 
-  const openAuthModal = (mode: 'login' | 'signup' | 'forgot' = 'login') => {
+  const openAuthModal = useCallback((mode: 'login' | 'signup' | 'forgot' = 'login') => {
     setAuthModalMode(mode);
     setAuthModalOpen(true);
-  };
+  }, []);
 
-  const closeAuthModal = () => {
+  const closeAuthModal = useCallback(() => {
     setAuthModalOpen(false);
-  };
+  }, []);
 
-  const executeLiveLaunch = () => {
-    setIsTransitioning(true);
-    setTransitionMessage('Connecting to the Orion-9 Control Tower at ' + destinationUrl);
+  const executeLiveLaunch = useCallback(
+    (customTargetUrl?: string) => {
+      const safeTarget = customTargetUrl ? resolveLaunchUrl(customTargetUrl).url : destinationUrl;
+      setIsTransitioning(true);
+      setTransitionMessage('Connecting to the Orion-9 Control Tower at ' + safeTarget);
 
-    // Give a clear, accessible visual cue of navigation to the live application
-    setTimeout(() => {
-      // Direct navigation to the authenticated live application
-      window.location.href = destinationUrl;
-    }, 1200);
-  };
+      setTimeout(() => {
+        window.location.href = safeTarget;
+      }, 1100);
+    },
+    [destinationUrl]
+  );
 
-  const launchOrion = () => {
-    if (!user) {
-      // If unauthenticated, record intent to launch and open login dialog
-      setLaunchPending(true);
-      openAuthModal('login');
-      return;
-    }
+  const launchOrion = useCallback(
+    (customTargetUrl?: string) => {
+      executeLiveLaunch(customTargetUrl);
+    },
+    [executeLiveLaunch]
+  );
 
-    executeLiveLaunch();
-  };
-
-  const login = async (email: string, pass: string): Promise<{ success: boolean; error?: string }> => {
+  const login = async (
+    email: string,
+    pass: string,
+    remember = true
+  ): Promise<{ success: boolean; error?: string; user?: User }> => {
     const { auth, isConfigured } = initializeFirebase();
     if (!isConfigured || !auth) {
       return {
         success: false,
         error:
-          'Firebase Authentication is not yet provisioned in this environment. Please configure Firebase or use the secure live application redirect.',
+          'Firebase Authentication is not configured in this environment. Set VITE_FIREBASE_API_KEY and VITE_FIREBASE_PROJECT_ID in your environment configuration to enable live Firebase authentication.',
       };
     }
 
     try {
-      const cred = await signInWithEmailAndPassword(auth, email, pass);
+      await setPersistence(auth, remember ? browserLocalPersistence : browserSessionPersistence);
+      const cred = await signInWithEmailAndPassword(auth, email.trim(), pass);
       setUser(cred.user);
+      await checkAdmin(cred.user);
       closeAuthModal();
 
       if (launchPending) {
@@ -119,39 +188,113 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         executeLiveLaunch();
       }
 
-      return { success: true };
+      return { success: true, user: cred.user };
     } catch (err: unknown) {
-      const code = (err as { code?: string })?.code || '';
-      let message = 'Failed to sign in. Please check your credentials.';
-      if (code === 'auth/invalid-credential' || code === 'auth/user-not-found' || code === 'auth/wrong-password') {
-        message = 'Invalid email or password. Please verify your credentials.';
-      } else if (code === 'auth/too-many-requests') {
-        message = 'Access temporarily restricted due to many failed attempts. Try again later.';
-      } else if (code === 'auth/network-request-failed') {
-        message = 'Network error. Please check your internet connectivity.';
-      } else if (err instanceof Error) {
-        message = err.message;
-      }
-      return { success: false, error: message };
+      return {
+        success: false,
+        error: mapFirebaseAuthError(err, 'Failed to sign in. Please verify your credentials.'),
+      };
     }
   };
 
-  const signup = async (name: string, email: string, pass: string): Promise<{ success: boolean; error?: string }> => {
-    const { auth, isConfigured } = initializeFirebase();
+  const signup = async (
+    name: string,
+    email: string,
+    pass: string
+  ): Promise<{ success: boolean; error?: string; verificationSent?: boolean }> => {
+    const { auth, db, isConfigured } = initializeFirebase();
     if (!isConfigured || !auth) {
       return {
         success: false,
         error:
-          'Firebase Authentication is not yet provisioned in this environment. Please configure Firebase or access the live Orion-9 platform directly.',
+          'Firebase Authentication is not configured in this environment. Set VITE_FIREBASE_API_KEY and VITE_FIREBASE_PROJECT_ID in your environment configuration to enable account creation.',
       };
     }
 
     try {
-      const cred = await createUserWithEmailAndPassword(auth, email, pass);
+      const cred = await createUserWithEmailAndPassword(auth, email.trim(), pass);
       if (name && cred.user) {
-        await updateProfile(cred.user, { displayName: name });
+        await updateProfile(cred.user, { displayName: name.trim() });
+      }
+
+      let verificationSent = false;
+      try {
+        await sendEmailVerification(cred.user);
+        verificationSent = true;
+      } catch {
+        // Non-fatal if email verification rate-limited
+      }
+
+      if (db && cred.user) {
+        try {
+          await setDoc(
+            doc(db, 'users', cred.user.uid),
+            {
+              uid: cred.user.uid,
+              displayName: name.trim(),
+              email: cred.user.email,
+              role: 'operator',
+              createdAt: serverTimestamp(),
+              updatedAt: serverTimestamp(),
+            },
+            { merge: true }
+          );
+        } catch {
+          // Non-fatal if Firestore rules or offline state prevent profile write
+        }
+      }
+
+      setUser(cred.user);
+      await checkAdmin(cred.user);
+      closeAuthModal();
+
+      if (launchPending) {
+        setLaunchPending(false);
+        executeLiveLaunch();
+      }
+
+      return { success: true, verificationSent };
+    } catch (err: unknown) {
+      return {
+        success: false,
+        error: mapFirebaseAuthError(err, 'Registration failed. Please try again.'),
+      };
+    }
+  };
+
+  const loginWithGoogle = async (): Promise<{ success: boolean; error?: string }> => {
+    const { auth, db, isConfigured } = initializeFirebase();
+    if (!isConfigured || !auth) {
+      return {
+        success: false,
+        error:
+          'Google Sign-In requires an active Firebase Authentication configuration (VITE_FIREBASE_API_KEY and VITE_FIREBASE_PROJECT_ID).',
+      };
+    }
+
+    try {
+      const provider = new GoogleAuthProvider();
+      provider.setCustomParameters({ prompt: 'select_account' });
+      const cred = await signInWithPopup(auth, provider);
+      if (db && cred.user) {
+        try {
+          await setDoc(
+            doc(db, 'users', cred.user.uid),
+            {
+              uid: cred.user.uid,
+              displayName: cred.user.displayName || '',
+              email: cred.user.email || '',
+              role: 'operator',
+              updatedAt: serverTimestamp(),
+            },
+            { merge: true }
+          );
+        } catch {
+          // Non-fatal
+        }
       }
       setUser(cred.user);
+      await checkAdmin(cred.user);
       closeAuthModal();
 
       if (launchPending) {
@@ -161,18 +304,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
       return { success: true };
     } catch (err: unknown) {
-      const code = (err as { code?: string })?.code || '';
-      let message = 'Registration failed. Please try again.';
-      if (code === 'auth/email-already-in-use') {
-        message = 'An account with this email address already exists. Please log in.';
-      } else if (code === 'auth/weak-password') {
-        message = 'Password is too weak. Please include at least 8 characters with numbers or symbols.';
-      } else if (code === 'auth/invalid-email') {
-        message = 'Invalid email format.';
-      } else if (err instanceof Error) {
-        message = err.message;
-      }
-      return { success: false, error: message };
+      return {
+        success: false,
+        error: mapFirebaseAuthError(err, 'Google sign-in could not be completed.'),
+      };
     }
   };
 
@@ -181,17 +316,19 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     if (!isConfigured || !auth) {
       return {
         success: false,
-        error: 'Firebase Authentication is not provisioned in this environment.',
+        error:
+          'Password reset requires an active Firebase Authentication configuration (VITE_FIREBASE_API_KEY and VITE_FIREBASE_PROJECT_ID).',
       };
     }
 
     try {
-      await sendPasswordResetEmail(auth, email);
+      await sendPasswordResetEmail(auth, email.trim());
       return { success: true };
     } catch (err: unknown) {
-      let message = 'Failed to send password reset email.';
-      if (err instanceof Error) message = err.message;
-      return { success: false, error: message };
+      return {
+        success: false,
+        error: mapFirebaseAuthError(err, 'Failed to send password reset email.'),
+      };
     }
   };
 
@@ -201,43 +338,24 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       await signOut(auth);
     }
     setUser(null);
+    setIsAdmin(false);
+    setAdminAuthSource('none');
   };
 
-  // Only used for interactive preview testing when Firebase backend is unprovisioned, with clear transparency
-  const simulateAuthForPreview = (name: string, email: string) => {
-    const mockUser = {
-      uid: 'preview-session-id',
-      email,
-      displayName: name,
-      emailVerified: true,
-      isAnonymous: false,
-      metadata: {},
-      providerData: [],
-      refreshToken: '',
-      tenantId: null,
-      delete: async () => {},
-      getIdToken: async () => '',
-      getIdTokenResult: async () => ({} as any),
-      reload: async () => {},
-      toJSON: () => ({}),
-      phoneNumber: null,
-      photoURL: null,
-      providerId: 'password',
-    } as unknown as User;
-
-    setUser(mockUser);
-    closeAuthModal();
-
-    if (launchPending) {
-      setLaunchPending(false);
-      executeLiveLaunch();
-    }
+  const refreshAdminStatus = async (): Promise<boolean> => {
+    const { auth, isConfigured } = initializeFirebase();
+    setIsFirebaseConfigured(isConfigured);
+    const currentUser = auth?.currentUser || user;
+    return checkAdmin(currentUser);
   };
 
   return (
     <AuthContext.Provider
       value={{
         user,
+        isAuthenticated: Boolean(user),
+        isAdmin,
+        adminAuthSource,
         loading,
         isFirebaseConfigured,
         authModalOpen,
@@ -252,9 +370,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         launchOrion,
         login,
         signup,
+        loginWithGoogle,
         resetPassword,
         logout,
-        simulateAuthForPreview,
+        refreshAdminStatus,
       }}
     >
       {children}

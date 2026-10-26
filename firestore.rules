@@ -1,0 +1,153 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // ===============================================================
+    // Helper Functions
+    // ===============================================================
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+
+    function isOwner(userId) {
+      return isAuthenticated() && request.auth.uid == userId;
+    }
+
+    function hasAdminDoc() {
+      return isAuthenticated() &&
+        exists(/databases/$(database)/documents/admins/$(request.auth.uid)) &&
+        get(/databases/$(database)/documents/admins/$(request.auth.uid)).data.role == 'admin' &&
+        get(/databases/$(database)/documents/admins/$(request.auth.uid)).data.active == true;
+    }
+
+    function isVerifiedBootstrapOwner() {
+      return isAuthenticated() &&
+        request.auth.token.email == 'ayushprakash0021@gmail.com' &&
+        request.auth.token.email_verified == true;
+    }
+
+    // Verified Admin Authorization:
+    // Never trusts client-writable user profile fields.
+    function isAdmin() {
+      return isAuthenticated() && (
+        request.auth.token.admin == true ||
+        hasAdminDoc() ||
+        isVerifiedBootstrapOwner()
+      );
+    }
+
+    function isValidString(val, minLen, maxLen) {
+      return val is string && val.size() >= minLen && val.size() <= maxLen;
+    }
+
+    // ===============================================================
+    // 1. Published Website Configuration (Public Read, Admin Write)
+    // ===============================================================
+    match /siteConfig/{sectionId} {
+      allow get, list: if sectionId in [
+        'branding',
+        'navigation',
+        'homepage',
+        'footer',
+        'seo',
+        'authSettings',
+        'mediaLibrary'
+      ];
+
+      allow create, update: if isAdmin() &&
+        sectionId in [
+          'branding',
+          'navigation',
+          'homepage',
+          'footer',
+          'seo',
+          'authSettings',
+          'mediaLibrary'
+        ] &&
+        request.resource.data.keys().hasAll(['updatedAt', 'updatedBy']) &&
+        isValidString(request.resource.data.updatedBy, 2, 160);
+
+      allow delete: if false;
+    }
+
+    // ===============================================================
+    // 2. Draft Website Configuration (Admin Only)
+    // ===============================================================
+    match /siteConfigDrafts/{sectionId} {
+      allow read, create, update: if isAdmin() &&
+        sectionId in [
+          'branding',
+          'navigation',
+          'homepage',
+          'footer',
+          'seo',
+          'authSettings',
+          'mediaLibrary'
+        ];
+      allow delete: if isAdmin();
+    }
+
+    // ===============================================================
+    // 3. Operator User Profiles (Self Read/Write Without Role Escalation)
+    // ===============================================================
+    match /users/{userId} {
+      allow get: if isOwner(userId) || isAdmin();
+      allow list: if isAdmin();
+
+      allow create: if isOwner(userId) &&
+        request.resource.data.uid == userId &&
+        isValidString(request.resource.data.email, 3, 160) &&
+        (!('role' in request.resource.data) || request.resource.data.role == 'operator') &&
+        !('isAdmin' in request.resource.data);
+
+      allow update: if (
+        isOwner(userId) &&
+        request.resource.data.uid == resource.data.uid &&
+        request.resource.data.role == resource.data.role &&
+        !('isAdmin' in request.resource.data)
+      ) || isAdmin();
+
+      allow delete: if isAdmin();
+    }
+
+    // ===============================================================
+    // 4. Administrator ACL Registry (Admin Read/Write Only)
+    // ===============================================================
+    match /admins/{adminUid} {
+      allow get: if isOwner(adminUid) || isAdmin();
+      allow list: if isAdmin();
+      allow create, update: if isAdmin() &&
+        request.resource.data.keys().hasAll(['email', 'role', 'active']) &&
+        request.resource.data.role in ['admin', 'editor', 'viewer'] &&
+        request.resource.data.active is bool &&
+        isValidString(request.resource.data.email, 3, 160);
+      allow delete: if isAdmin();
+    }
+
+    // ===============================================================
+    // 5. Immutable Administrative Audit Logs (Admin Read & Append-Only)
+    // ===============================================================
+    match /auditLogs/{logId} {
+      allow get, list: if isAdmin();
+      allow create: if isAdmin() &&
+        request.resource.data.keys().hasAll([
+          'actorUid',
+          'actorEmail',
+          'section',
+          'action',
+          'summary',
+          'timestamp'
+        ]) &&
+        request.resource.data.actorUid == request.auth.uid &&
+        isValidString(request.resource.data.summary, 2, 400);
+      allow update, delete: if false;
+    }
+
+    // ===============================================================
+    // 6. Explicit Default Deny
+    // ===============================================================
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}

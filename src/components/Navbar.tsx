@@ -1,134 +1,206 @@
 import React, { useState } from 'react';
 import { useAuth } from '../context/AuthContext';
-import { Menu, X, ArrowRight, UserCircle2, LogOut, ExternalLink, ShieldCheck } from 'lucide-react';
+import { useSiteConfig } from '../context/SiteConfigContext';
+import {
+  Menu,
+  X,
+  ArrowRight,
+  UserCircle2,
+  LogOut,
+  ShieldCheck,
+  Sliders,
+  Eye,
+} from 'lucide-react';
 
-export const Navbar: React.FC = () => {
-  const { user, openAuthModal, launchOrion, logout, isFirebaseConfigured } = useAuth();
+interface NavbarProps {
+  onNavigate?: (path: string) => void;
+}
+
+export const Navbar: React.FC<NavbarProps> = ({ onNavigate }) => {
+  const { user, isAdmin, launchOrion, logout, isFirebaseConfigured } = useAuth();
+  const { activeConfig, isPreviewMode, setIsPreviewMode } = useSiteConfig();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [userDropdownOpen, setUserDropdownOpen] = useState(false);
 
-  return (
-    <header className="sticky top-0 z-40 w-full backdrop-blur-md bg-[#0f1626]/85 border-b border-white/10 transition-colors">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-18 flex items-center justify-between gap-8">
-        {/* Desktop Left: Clean Nav Links */}
-        <nav className="hidden lg:flex items-center gap-7 text-sm font-medium tracking-wide text-white/70" aria-label="Main Navigation">
-          <a
-            href="#platform"
-            className="hover:text-white transition-colors py-1 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#f5f5f5] rounded-sm whitespace-nowrap shrink-0"
-          >
-            PLATFORM
-          </a>
-          <a
-            href="#capabilities"
-            className="hover:text-white transition-colors py-1 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#f5f5f5] rounded-sm whitespace-nowrap shrink-0"
-          >
-            CAPABILITIES
-          </a>
-          <a
-            href="#architecture"
-            className="hover:text-white transition-colors py-1 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#f5f5f5] rounded-sm whitespace-nowrap shrink-0"
-          >
-            ARCHITECTURE
-          </a>
-          <a
-            href="#value"
-            className="hover:text-white transition-colors py-1 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#f5f5f5] rounded-sm whitespace-nowrap shrink-0"
-          >
-            ABOUT
-          </a>
-        </nav>
+  const handleRoute = (path: string) => {
+    setMobileMenuOpen(false);
+    if (onNavigate) {
+      onNavigate(path);
+    } else {
+      window.history.pushState({}, '', path);
+      window.dispatchEvent(new PopStateEvent('popstate'));
+    }
+  };
 
-        {/* Center: ORION-9 Wordmark */}
+  const visibleNavItems = activeConfig.navigation.items.filter((item) => item.visible);
+
+  return (
+    <header className="sticky top-0 z-40 w-full backdrop-blur-xl bg-[#EAF4F8]/88 border-b border-[#D5E1E8] transition-colors">
+      {/* Draft Preview Banner when Admin is previewing unpublished CMS edits */}
+      {isPreviewMode && (
+        <div className="bg-[#101820] text-white px-4 py-2 text-xs font-mono flex flex-wrap items-center justify-between gap-3">
+          <div className="flex items-center gap-2">
+            <Eye className="w-3.5 h-3.5 text-[#A8C2D2]" />
+            <span>CMS DRAFT PREVIEW MODE ACTIVE — Viewing unpublished changes</span>
+          </div>
+          <div className="flex items-center gap-3">
+            <button
+              type="button"
+              onClick={() => setIsPreviewMode(false)}
+              className="underline text-[#A8C2D2] hover:text-white cursor-pointer"
+            >
+              Switch to Published Live
+            </button>
+            <button
+              type="button"
+              onClick={() => handleRoute('/admin')}
+              className="px-3 py-1 rounded-full bg-[#294D6B] text-white font-sans font-semibold text-[11px] cursor-pointer"
+            >
+              Return to Admin Console
+            </button>
+          </div>
+        </div>
+      )}
+
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-20 flex items-center justify-between gap-6">
+        {/* Brand Identity */}
         <a
           href="#"
-          className="flex items-center gap-2.5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#f5f5f5] rounded-md px-1"
-          aria-label="Orion-9 Operating System Home"
+          onClick={(e) => {
+            if (window.location.pathname !== '/') {
+              e.preventDefault();
+              handleRoute('/');
+            }
+          }}
+          className="flex items-center gap-3 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#294D6B] rounded-xl pr-2"
+          aria-label={`${activeConfig.branding.companyName} Home`}
         >
-          <div className="w-7 h-7 rounded-md bg-[#1d293d] border border-cyan-400/40 flex items-center justify-center text-[#f5f5f5] font-mono text-xs font-bold tracking-tighter">
-            Ω9
+          <div className="w-9 h-9 rounded-xl bg-[#101820] text-white flex items-center justify-center font-mono text-xs font-bold tracking-tighter shadow-sm">
+            {activeConfig.branding.shortMark}
           </div>
-          <span className="text-xl font-bold tracking-wider text-white font-mono uppercase whitespace-nowrap shrink-0">
-            ORION-9
-          </span>
+          <div className="flex flex-col">
+            <span className="text-base font-bold tracking-tight text-[#111827] leading-none">
+              {activeConfig.branding.companyName}
+            </span>
+            <span className="text-[10px] font-mono uppercase tracking-widest text-[#566575] mt-0.5 hidden sm:inline">
+              SUPPLY CHAIN OS
+            </span>
+          </div>
         </a>
 
-        {/* Desktop Right: Auth Actions + Launch Orion-9 */}
-        <div className="hidden lg:flex items-center gap-4 shrink-0">
+        {/* Center Navigation Links */}
+        <nav
+          className="hidden lg:flex items-center gap-1 rounded-full border border-[#D5E1E8] bg-white/80 px-2 py-1.5 shadow-[0_2px_10px_rgba(16,24,32,0.03)]"
+          aria-label="Main Navigation"
+        >
+          {visibleNavItems.map((item) => (
+            <a
+              key={item.id}
+              href={item.href}
+              className="px-4 py-1.5 rounded-full text-xs font-semibold text-[#566575] hover:text-[#111827] hover:bg-[#EAF4F8]/70 transition-colors whitespace-nowrap"
+            >
+              {item.label}
+            </a>
+          ))}
+        </nav>
+
+        {/* Desktop Right: Auth Links & Pill CTA */}
+        <div className="hidden lg:flex items-center gap-3 shrink-0">
           {user ? (
             <div className="relative">
               <button
                 type="button"
                 onClick={() => setUserDropdownOpen(!userDropdownOpen)}
-                className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-[#151e30] border border-white/15 text-sm text-white/90 hover:border-white/30 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#f5f5f5] transition-all"
+                className="flex items-center gap-2 px-3.5 py-2 rounded-full bg-white border border-[#D5E1E8] text-xs font-semibold text-[#111827] hover:border-[#294D6B] transition-all cursor-pointer shadow-2xs"
                 aria-expanded={userDropdownOpen}
                 aria-haspopup="true"
               >
-                <UserCircle2 className="w-4 h-4 text-[#f5f5f5]" />
-                <span className="truncate max-w-[130px] font-medium">
-                  {user.displayName || user.email?.split('@')[0] || 'Authenticated'}
+                <UserCircle2 className="w-4 h-4 text-[#294D6B]" />
+                <span className="truncate max-w-[130px]">
+                  {user.displayName || user.email?.split('@')[0] || 'Operator'}
                 </span>
               </button>
 
               {userDropdownOpen && (
-                <div className="absolute right-0 mt-2 w-56 rounded-xl bg-[#151e30] border border-white/15 shadow-2xl p-2 text-sm z-50 animate-in fade-in zoom-in-95">
-                  <div className="px-3 py-2 border-b border-white/10 mb-1">
-                    <p className="text-xs text-white/50">Signed in as</p>
-                    <p className="text-xs font-medium text-white truncate">{user.email}</p>
-                    <div className="flex items-center gap-1.5 mt-1 text-[11px] text-white">
+                <div className="absolute right-0 mt-2 w-60 rounded-2xl bg-white border border-[#D5E1E8] shadow-xl p-2 text-xs z-50">
+                  <div className="px-3 py-2.5 border-b border-[#D5E1E8] mb-1">
+                    <p className="text-[10px] font-mono uppercase text-[#566575]">OPERATOR ACCOUNT</p>
+                    <p className="font-semibold text-[#111827] truncate mt-0.5">{user.email}</p>
+                    <div className="flex items-center gap-1.5 mt-1 text-[10px] text-[#294D6B] font-mono">
                       <ShieldCheck className="w-3.5 h-3.5" />
-                      <span>{isFirebaseConfigured ? 'Firebase Verified' : 'Session Active'}</span>
+                      <span>{isFirebaseConfigured ? 'Firebase Verified' : 'Authenticated'}</span>
                     </div>
                   </div>
+
+                  {isAdmin && (
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setUserDropdownOpen(false);
+                        handleRoute('/admin');
+                      }}
+                      className="w-full flex items-center gap-2 px-3 py-2 rounded-xl text-[#111827] hover:bg-[#EAF4F8] transition-colors text-left font-medium cursor-pointer"
+                    >
+                      <Sliders className="w-3.5 h-3.5 text-[#294D6B]" />
+                      <span>Admin Console</span>
+                    </button>
+                  )}
+
                   <button
+                    type="button"
                     onClick={() => {
                       setUserDropdownOpen(false);
                       logout();
                     }}
-                    className="w-full flex items-center gap-2 px-3 py-2 rounded-lg text-red-300 hover:bg-white/5 hover:text-red-200 transition-colors text-left"
+                    className="w-full flex items-center gap-2 px-3 py-2 rounded-xl text-red-600 hover:bg-red-50 transition-colors text-left font-medium cursor-pointer"
                   >
-                    <LogOut className="w-4 h-4" />
-                    <span>Log Out</span>
+                    <LogOut className="w-3.5 h-3.5" />
+                    <span>Sign Out</span>
                   </button>
                 </div>
               )}
             </div>
           ) : (
             <div className="flex items-center gap-2">
-              <button
-                type="button"
-                onClick={() => openAuthModal('login')}
-                className="px-3.5 py-2 text-xs font-medium uppercase tracking-wider text-white/80 hover:text-white transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#f5f5f5] rounded-md"
-              >
-                Log In
-              </button>
-              <button
-                type="button"
-                onClick={() => openAuthModal('signup')}
-                className="px-3.5 py-2 text-xs font-medium uppercase tracking-wider text-white/80 hover:text-white transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#f5f5f5] rounded-md"
-              >
-                Sign Up
-              </button>
+              {activeConfig.navigation.showSignIn && (
+                <button
+                  type="button"
+                  onClick={() => handleRoute('/login')}
+                  className="px-4 py-2 rounded-full text-xs font-semibold text-[#111827] hover:bg-white/80 transition-colors cursor-pointer"
+                >
+                  Log in
+                </button>
+              )}
+              {activeConfig.navigation.showSignUp && (
+                <button
+                  type="button"
+                  onClick={() => handleRoute('/signup')}
+                  className="px-4 py-2 rounded-full border border-[#D5E1E8] bg-white text-xs font-semibold text-[#111827] hover:border-[#294D6B] transition-all cursor-pointer"
+                >
+                  Sign up
+                </button>
+              )}
             </div>
           )}
 
-          {/* Primary CTA: Launch Orion-9 */}
+          {/* Pill-shaped Launch CTA */}
           <button
             type="button"
-            onClick={launchOrion}
-            className="flex items-center gap-2 px-5 py-2.5 rounded-full bg-[#f5f5f5] text-[#0f1626] font-semibold text-xs uppercase tracking-wider shadow-lg shadow-[#f5f5f5]/20 hover:bg-[#e5e5e5] hover:shadow-[#f5f5f5]/30 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white focus-visible:ring-offset-2 focus-visible:ring-offset-[#0f1626] transition-all whitespace-nowrap active:scale-[0.98]"
-            aria-label="Launch Orion-9 Control Tower"
+            onClick={() => launchOrion(activeConfig.navigation.launchControlTowerUrl)}
+            className="flex items-center gap-2 px-5 py-2.5 rounded-full bg-[#101820] text-white font-semibold text-xs hover:bg-[#294D6B] transition-all shadow-[0_8px_20px_rgba(16,24,32,0.14)] whitespace-nowrap active:scale-[0.98] cursor-pointer"
+            aria-label={activeConfig.navigation.launchControlTowerLabel}
           >
-            <span>Launch Orion-9</span>
+            <span>{activeConfig.navigation.launchControlTowerLabel}</span>
             <ArrowRight className="w-3.5 h-3.5" />
           </button>
         </div>
 
-        {/* Mobile: Compact Action + Toggle */}
-        <div className="flex lg:hidden items-center gap-3">
+        {/* Mobile Actions */}
+        <div className="flex lg:hidden items-center gap-2.5">
           <button
             type="button"
-            onClick={launchOrion}
-            className="flex items-center gap-1.5 px-3.5 py-1.5 rounded-full bg-[#f5f5f5] text-[#0f1626] font-semibold text-xs uppercase tracking-wider"
+            onClick={() => launchOrion(activeConfig.navigation.launchControlTowerUrl)}
+            className="flex items-center gap-1.5 px-3.5 py-2 rounded-full bg-[#101820] text-white font-semibold text-xs"
           >
             <span>Launch</span>
             <ArrowRight className="w-3 h-3" />
@@ -137,76 +209,54 @@ export const Navbar: React.FC = () => {
           <button
             type="button"
             onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-            className="p-2 text-white/80 hover:text-white rounded-lg border border-white/10"
+            className="p-2 text-[#111827] rounded-full border border-[#D5E1E8] bg-white"
             aria-label={mobileMenuOpen ? 'Close Navigation Menu' : 'Open Navigation Menu'}
             aria-expanded={mobileMenuOpen}
           >
-            {mobileMenuOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
+            {mobileMenuOpen ? <X className="w-4 h-4" /> : <Menu className="w-4 h-4" />}
           </button>
         </div>
       </div>
 
       {/* Mobile Menu Dropdown */}
       {mobileMenuOpen && (
-        <div className="lg:hidden px-4 pt-2 pb-6 bg-[#0f1626]/98 border-b border-white/10 space-y-3">
-          <nav className="flex flex-col space-y-2 py-2 text-sm text-white/80 font-medium">
-            <a
-              href="#platform"
-              onClick={() => setMobileMenuOpen(false)}
-              className="px-3 py-2 rounded-lg hover:bg-white/5 transition-colors"
-            >
-              PLATFORM
-            </a>
-            <a
-              href="#capabilities"
-              onClick={() => setMobileMenuOpen(false)}
-              className="px-3 py-2 rounded-lg hover:bg-white/5 transition-colors"
-            >
-              CAPABILITIES
-            </a>
-            <a
-              href="#architecture"
-              onClick={() => setMobileMenuOpen(false)}
-              className="px-3 py-2 rounded-lg hover:bg-white/5 transition-colors"
-            >
-              ARCHITECTURE
-            </a>
-            <a
-              href="#value"
-              onClick={() => setMobileMenuOpen(false)}
-              className="px-3 py-2 rounded-lg hover:bg-white/5 transition-colors"
-            >
-              ABOUT
-            </a>
+        <div className="lg:hidden px-4 pt-2 pb-6 bg-[#F5F9FB] border-b border-[#D5E1E8] space-y-3 text-xs">
+          <nav className="flex flex-col space-y-1 py-2">
+            {visibleNavItems.map((item) => (
+              <a
+                key={item.id}
+                href={item.href}
+                onClick={() => setMobileMenuOpen(false)}
+                className="px-3.5 py-2.5 rounded-xl font-semibold text-[#111827] hover:bg-[#EAF4F8] transition-colors"
+              >
+                {item.label}
+              </a>
+            ))}
           </nav>
 
-          <div className="pt-3 border-t border-white/10 flex flex-col gap-2">
+          <div className="pt-3 border-t border-[#D5E1E8] flex flex-col gap-2">
             {user ? (
-              <div className="flex items-center justify-between px-3 py-2 rounded-lg bg-[#151e30] text-sm">
-                <span className="truncate text-white/80">{user.email}</span>
-                <button onClick={logout} className="text-red-300 text-xs font-semibold">
-                  Log Out
+              <div className="flex items-center justify-between px-3.5 py-2.5 rounded-xl bg-white border border-[#D5E1E8]">
+                <span className="truncate font-medium text-[#111827]">{user.email}</span>
+                <button onClick={logout} className="text-red-600 font-semibold">
+                  Sign Out
                 </button>
               </div>
             ) : (
-              <div className="grid grid-cols-2 gap-2">
+              <div className="grid grid-cols-2 gap-2.5">
                 <button
-                  onClick={() => {
-                    setMobileMenuOpen(false);
-                    openAuthModal('login');
-                  }}
-                  className="w-full py-2.5 rounded-lg border border-white/20 text-center text-xs uppercase font-medium text-white"
+                  type="button"
+                  onClick={() => handleRoute('/login')}
+                  className="w-full py-2.5 rounded-full border border-[#D5E1E8] bg-white text-center font-semibold text-[#111827]"
                 >
-                  Log In
+                  Log in
                 </button>
                 <button
-                  onClick={() => {
-                    setMobileMenuOpen(false);
-                    openAuthModal('signup');
-                  }}
-                  className="w-full py-2.5 rounded-lg bg-[#1d293d] border border-white/20 text-center text-xs uppercase font-medium text-white"
+                  type="button"
+                  onClick={() => handleRoute('/signup')}
+                  className="w-full py-2.5 rounded-full bg-[#294D6B] text-center font-semibold text-white"
                 >
-                  Sign Up
+                  Sign up
                 </button>
               </div>
             )}

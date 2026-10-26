@@ -154,7 +154,7 @@ export const OperationalValue: React.FC = () => {
 
           <button
             type="button"
-            onClick={launchOrion}
+            onClick={() => launchOrion()}
             className="flex items-center gap-2.5 px-8 py-4 rounded-full bg-[#f5f5f5] text-[#0f1626] font-bold text-sm uppercase tracking-wider shadow-xl shadow-[#f5f5f5]/25 hover:bg-[#e5e5e5] hover:shadow-[#f5f5f5]/40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white transition-all transform hover:-translate-y-0.5 whitespace-nowrap shrink-0"
           >
             <span>Launch Orion-9 →</span>

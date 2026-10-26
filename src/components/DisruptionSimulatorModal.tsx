@@ -8,11 +8,7 @@ import {
   CheckCircle2,
   ArrowRight,
   ShieldAlert,
-  Sliders,
-  DollarSign,
-  Clock,
   X,
-  FileText,
 } from 'lucide-react';
 
 interface DisruptionSimulatorModalProps {
@@ -52,10 +48,8 @@ export const DisruptionSimulatorModal: React.FC<DisruptionSimulatorModalProps> =
       if (onApplyMitigation && chosenOption) {
         onApplyMitigation(selectedScenario.title, chosenOption.title);
       }
-    }, 1400);
+    }, 1200);
   };
-
-  const currentOption = selectedScenario.mitigationOptions.find((o) => o.id === selectedOptionId);
 
   return (
     <div
@@ -64,32 +58,32 @@ export const DisruptionSimulatorModal: React.FC<DisruptionSimulatorModalProps> =
       aria-modal="true"
       aria-labelledby="disruption-modal-title"
     >
-      <div className="relative w-full max-w-4xl bg-[#151e30] border border-amber-400/40 rounded-3xl shadow-2xl p-6 sm:p-8 max-h-[92vh] overflow-y-auto text-white">
+      <div className="relative w-full max-w-4xl bg-[#0b0b0b] border border-white/20 rounded-sm shadow-2xl p-6 sm:p-8 max-h-[92vh] overflow-y-auto text-[#f5f5f5]">
         {/* Close Button */}
         <button
           onClick={onClose}
-          className="absolute top-6 right-6 p-2 rounded-xl text-white/50 hover:text-white hover:bg-white/10 transition-colors"
+          className="absolute top-6 right-6 p-1.5 rounded-sm text-white/40 hover:text-white hover:bg-white/10 transition-colors"
           aria-label="Close disruption simulator"
         >
           <X className="w-5 h-5" />
         </button>
 
         {/* Modal Header */}
-        <div className="space-y-2 mb-6">
-          <div className="flex items-center gap-2 text-xs font-mono text-neutral-300 uppercase tracking-widest">
-            <AlertTriangle className="w-4 h-4" />
-            <span>ORION-9 AI DISRUPTION & MITIGATION SIMULATOR</span>
+        <div className="space-y-1.5 mb-6">
+          <div className="flex items-center gap-2 text-[11px] font-mono text-white/60 uppercase tracking-widest">
+            <AlertTriangle className="w-3.5 h-3.5 text-white" />
+            <span>AI INCIDENT RESOLUTION & MITIGATION ENGINE</span>
           </div>
           <h3 id="disruption-modal-title" className="text-2xl sm:text-3xl font-extrabold tracking-tight">
             Autonomous Incident Triage & Scenario Evaluation
           </h3>
-          <p className="text-sm text-white/70">
-            Simulate real-world supply chain anomalies, inspect Orion-9’s contextual AI reasoning, and compare multi-objective trade-off curves before governed execution.
+          <p className="text-xs sm:text-sm text-[#a0a0a0]">
+            Simulate physical bottlenecks, inspect Orion-9’s contextual AI reasoning, and compare multi-objective trade-off curves before governed execution.
           </p>
         </div>
 
         {/* Scenario Selection Tabs */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-6">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-6 font-mono text-xs">
           {DISRUPTION_SCENARIOS.map((scenario) => {
             const isSelected = scenario.id === selectedScenario.id;
             return (
@@ -97,55 +91,55 @@ export const DisruptionSimulatorModal: React.FC<DisruptionSimulatorModalProps> =
                 key={scenario.id}
                 type="button"
                 onClick={() => handleScenarioChange(scenario)}
-                className={`p-4 rounded-xl border text-left transition-all ${
+                className={`p-4 rounded-sm border text-left transition-all ${
                   isSelected
-                    ? 'bg-[#1d293d] border-amber-400/70 shadow-lg shadow-amber-950/30'
-                    : 'bg-[#0f1626] border-white/10 hover:border-white/20'
+                    ? 'bg-[#171717] border-white shadow-lg'
+                    : 'bg-[#050505] border-white/10 hover:border-white/20'
                 }`}
               >
                 <div className="flex items-center justify-between mb-1.5">
-                  <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-amber-500/10 text-neutral-300 border border-amber-500/20">
+                  <span className="text-[10px] px-1.5 py-0.5 rounded-sm bg-white/10 text-white border border-white/20">
                     {scenario.severity.toUpperCase()} SEVERITY
                   </span>
-                  <span className="text-xs font-mono text-white/50">{scenario.location}</span>
+                  <span className="text-[10px] text-white/40">{scenario.location}</span>
                 </div>
-                <h4 className="text-sm font-bold text-white tracking-tight">{scenario.title}</h4>
+                <h4 className="text-xs font-bold text-white tracking-tight">{scenario.title}</h4>
               </button>
             );
           })}
         </div>
 
-        {/* Scenario Deep Dive: Anomaly Signal & Root Cause */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
-          <div className="p-4 rounded-xl bg-[#0f1626] border border-white/10 space-y-1.5">
-            <span className="text-xs font-mono text-neutral-300 uppercase tracking-wider block">
-              01. Detected Incident & Anomaly
+        {/* Anomaly Signal & Upstream Ripple Effect */}
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-3 mb-6 font-mono text-xs">
+          <div className="p-4 rounded-sm bg-[#050505] border border-white/10 space-y-1.5">
+            <span className="text-[10px] text-white/50 uppercase tracking-wider block">
+              01. DETECTED ANOMALY SIGNAL
             </span>
-            <p className="text-xs text-white/80 leading-relaxed font-mono">
+            <p className="text-xs text-white/80 leading-relaxed">
               {selectedScenario.summary}
             </p>
           </div>
 
-          <div className="p-4 rounded-xl bg-[#0f1626] border border-white/10 space-y-1.5">
-            <span className="text-xs font-mono text-[#f5f5f5] uppercase tracking-wider block">
-              02. Upstream Lead-Time Ripple Effect
+          <div className="p-4 rounded-sm bg-[#050505] border border-white/10 space-y-1.5">
+            <span className="text-[10px] text-white/50 uppercase tracking-wider block">
+              02. UPSTREAM SUPPLY CHAIN IMPACT
             </span>
-            <p className="text-xs text-white/80 leading-relaxed font-mono">
+            <p className="text-xs text-white/80 leading-relaxed">
               {selectedScenario.upstreamImpact}
             </p>
           </div>
         </div>
 
-        {/* AI Copilot Reasoning & Scenario Options */}
-        <div className="space-y-4 mb-6">
-          <div className="flex items-center gap-2 pb-2 border-b border-white/10">
-            <Bot className="w-4 h-4 text-[#f5f5f5]" />
-            <h4 className="text-sm font-bold uppercase tracking-wider text-white">
-              AI Copilot Evaluated Trade-Off Pathways
-            </h4>
+        {/* AI Copilot Evaluated Options */}
+        <div className="space-y-3 mb-6">
+          <div className="flex items-center gap-2 pb-2 border-b border-white/10 font-mono text-xs text-white/60">
+            <Bot className="w-4 h-4 text-white" />
+            <span className="uppercase tracking-wider font-semibold">
+              AI COPILOT EVALUATED TRADE-OFF PATHWAYS
+            </span>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
             {selectedScenario.mitigationOptions.map((opt) => {
               const isSelected = opt.id === selectedOptionId;
               return (
@@ -155,37 +149,37 @@ export const DisruptionSimulatorModal: React.FC<DisruptionSimulatorModalProps> =
                     setSelectedOptionId(opt.id);
                     setExecutionSuccess(false);
                   }}
-                  className={`p-4 rounded-xl border cursor-pointer transition-all flex flex-col justify-between ${
+                  className={`p-4 rounded-sm border cursor-pointer transition-all flex flex-col justify-between ${
                     isSelected
-                      ? 'bg-[#1d293d] border-[#f5f5f5] shadow-xl shadow-lime-950/40 ring-1 ring-[#f5f5f5]/40'
-                      : 'bg-[#0f1626] border-white/10 hover:border-white/25'
+                      ? 'bg-[#171717] border-white shadow-lg ring-1 ring-white/30'
+                      : 'bg-[#050505] border-white/10 hover:border-white/20'
                   }`}
                 >
                   <div className="space-y-2">
-                    <div className="flex items-center justify-between">
-                      <span className="text-[10px] font-mono text-white/40">SCENARIO PATH</span>
+                    <div className="flex items-center justify-between font-mono text-[10px]">
+                      <span className="text-white/40">SCENARIO</span>
                       {opt.recommended && (
-                        <span className="text-[10px] font-mono font-bold px-2 py-0.5 rounded bg-[#f5f5f5]/10 text-[#f5f5f5] border border-[#f5f5f5]/30">
+                        <span className="px-1.5 py-0.5 rounded-sm bg-white text-black font-bold">
                           RECOMMENDED
                         </span>
                       )}
                     </div>
-                    <h5 className="text-sm font-bold text-white tracking-tight">{opt.title}</h5>
-                    <p className="text-xs text-white/60 leading-relaxed">{opt.actionDescription}</p>
+                    <h5 className="text-xs font-bold text-white tracking-tight">{opt.title}</h5>
+                    <p className="text-[11px] text-white/60 leading-relaxed">{opt.actionDescription}</p>
                   </div>
 
-                  <div className="pt-3 mt-3 border-t border-white/10 space-y-1.5 font-mono text-xs">
-                    <div className="flex justify-between text-white/70">
+                  <div className="pt-3 mt-3 border-t border-white/10 space-y-1 font-mono text-[11px]">
+                    <div className="flex justify-between text-white/60">
                       <span>BUDGET:</span>
-                      <span className="text-white font-bold">{opt.costImpact}</span>
+                      <span className="text-white font-medium">{opt.costImpact}</span>
                     </div>
-                    <div className="flex justify-between text-white/70">
+                    <div className="flex justify-between text-white/60">
                       <span>SLA RECOVERY:</span>
-                      <span className="text-[#f5f5f5] font-bold">{opt.timeRecovery}</span>
+                      <span className="text-white font-medium">{opt.timeRecovery}</span>
                     </div>
-                    <div className="flex justify-between text-white/70">
+                    <div className="flex justify-between text-white/60">
                       <span>RISK SCORE:</span>
-                      <span className="text-neutral-300">{opt.riskScore}</span>
+                      <span className="text-white/80">{opt.riskScore}</span>
                     </div>
                   </div>
                 </div>
@@ -195,16 +189,16 @@ export const DisruptionSimulatorModal: React.FC<DisruptionSimulatorModalProps> =
         </div>
 
         {/* Execution & Governance Bar */}
-        <div className="pt-4 border-t border-white/10 flex flex-col sm:flex-row items-center justify-between gap-4">
-          <div className="flex items-center gap-2 text-xs font-mono text-white/60">
-            <ShieldAlert className="w-4 h-4 text-[#f5f5f5]" />
+        <div className="pt-4 border-t border-white/10 flex flex-col sm:flex-row items-center justify-between gap-4 font-mono text-xs">
+          <div className="flex items-center gap-2 text-white/50">
+            <ShieldAlert className="w-4 h-4 text-white/70" />
             <span>GOVERNANCE: REQUIRES DUAL HUMAN SIGN-OFF TO DISPATCH</span>
           </div>
 
           <div className="flex items-center gap-3 w-full sm:w-auto">
             {executionSuccess ? (
-              <div className="flex items-center gap-2 px-5 py-2.5 rounded-full bg-emerald-500/15 border border-emerald-400/40 text-emerald-300 font-mono text-xs font-bold">
-                <CheckCircle2 className="w-4 h-4 text-emerald-400" />
+              <div className="flex items-center gap-2 px-4 py-2 rounded-sm bg-[#171717] border border-white/40 text-white font-bold">
+                <CheckCircle2 className="w-4 h-4 text-white" />
                 <span>DISPATCHED & AUDIT TRAIL COMMITTED</span>
               </div>
             ) : (
@@ -212,13 +206,13 @@ export const DisruptionSimulatorModal: React.FC<DisruptionSimulatorModalProps> =
                 type="button"
                 onClick={handleExecute}
                 disabled={isExecuting}
-                className="w-full sm:w-auto flex items-center justify-center gap-2 px-6 py-3 rounded-full bg-[#f5f5f5] text-[#0f1626] font-bold text-xs uppercase tracking-wider shadow-lg shadow-[#f5f5f5]/20 hover:bg-[#e5e5e5] transition-all disabled:opacity-50"
+                className="w-full sm:w-auto flex items-center justify-center gap-2 px-5 py-2.5 rounded-sm bg-white text-black font-bold uppercase tracking-wider hover:bg-[#e8e8e8] transition-all disabled:opacity-50"
               >
                 {isExecuting ? (
                   <span>Dispatching Electronic Orders...</span>
                 ) : (
                   <>
-                    <span>Execute Autonomous Reroute</span>
+                    <span>Execute Autonomous Mitigation</span>
                     <ArrowRight className="w-3.5 h-3.5" />
                   </>
                 )}

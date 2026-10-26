@@ -3,324 +3,323 @@ import { GlobalLogisticsScene, ScenePerspective } from './GlobalLogisticsScene';
 import { DisruptionSimulatorModal } from './DisruptionSimulatorModal';
 import { LOGISTICS_VEHICLES, LOGISTICS_NODES } from '../data/logisticsNetwork';
 import { LogisticsVehicle, LogisticsNode, TransportMode } from '../types/logistics';
+import { useSiteConfig } from '../context/SiteConfigContext';
 import {
   Ship,
   Plane,
   Truck,
-  Building2,
   Compass,
   AlertTriangle,
   Zap,
-  Activity,
-  Layers,
-  SlidersHorizontal,
-  ChevronRight,
-  Maximize2,
+  MapPin,
 } from 'lucide-react';
 
 export const InteractiveControlTower: React.FC = () => {
+  const { activeConfig } = useSiteConfig();
+  const hp = activeConfig.homepage;
+
   const [activePerspective, setActivePerspective] = useState<ScenePerspective>('global');
   const [activeFilter, setActiveFilter] = useState<TransportMode | 'all'>('all');
   const [speedMultiplier, setSpeedMultiplier] = useState<number>(1);
   const [selectedEntity, setSelectedEntity] = useState<LogisticsVehicle | LogisticsNode | null>(null);
   const [isSimulatorOpen, setIsSimulatorOpen] = useState<boolean>(false);
+  const [disruptionActive, setDisruptionActive] = useState<boolean>(false);
   const [activeDisruptionAlert, setActiveDisruptionAlert] = useState<string | null>(null);
 
-  const filteredVehicles =
-    activeFilter === 'all'
-      ? LOGISTICS_VEHICLES
-      : LOGISTICS_VEHICLES.filter((v) => v.mode === activeFilter);
-
   const handleMitigationApplied = (scenarioTitle: string, optionTitle: string) => {
-    setActiveDisruptionAlert(`Mitigation active: ${optionTitle} applied to "${scenarioTitle}".`);
-    setTimeout(() => {
-      setActiveDisruptionAlert(null);
-    }, 8000);
+    setDisruptionActive(true);
+    setActiveDisruptionAlert(
+      `Autonomous Mitigation Active: ${optionTitle} applied to "${scenarioTitle}". 3D Corridor rerouted.`
+    );
   };
 
   return (
-    <section id="control-tower-experience" className="py-20 bg-[#070b14] border-b border-white/10 relative">
+    <section id="network" className="py-24 bg-[#F5F9FB] border-b border-[#D5E1E8] relative">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         {/* Section Header */}
         <div className="flex flex-col lg:flex-row lg:items-end justify-between gap-6 mb-10">
           <div className="space-y-3 max-w-2xl">
-            <div className="flex items-center gap-2 text-xs font-mono uppercase tracking-widest text-[#f5f5f5]">
-              <Compass className="w-4 h-4 text-[#f5f5f5]" />
-              <span>INTERACTIVE MULTIMODAL CONTROL TOWER</span>
+            <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-white border border-[#D5E1E8] text-[11px] font-mono uppercase tracking-widest text-[#294D6B] font-semibold">
+              <Compass className="w-3.5 h-3.5" />
+              <span>{hp.networkEyebrow}</span>
             </div>
-            <h2 className="text-3xl sm:text-5xl font-extrabold tracking-tight text-white leading-tight">
-              Explore Live Global Logistics.
+            <h2 className="text-3xl sm:text-5xl font-extrabold tracking-[-0.03em] text-[#111827] leading-tight">
+              {hp.networkTitle}
             </h2>
-            <p className="text-base text-white/70 leading-relaxed">
-              Navigate international supply routes in real-time. Track commercial ships traversing ocean corridors, cargo aircraft along high-altitude arcs, and freight trucks servicing continental hubs.
+            <p className="text-sm sm:text-base text-[#566575] leading-relaxed">
+              {hp.networkSubtitle}
             </p>
           </div>
 
-          {/* Action Button: Simulate Disruption */}
           <div className="flex flex-wrap items-center gap-3">
             <button
               type="button"
-              onClick={() => setIsSimulatorOpen(true)}
-              className="flex items-center gap-2 px-5 py-3 rounded-full bg-amber-400/10 border border-amber-400/50 text-neutral-300 font-mono text-xs font-bold uppercase tracking-wider hover:bg-amber-400/20 shadow-lg shadow-amber-950/40 transition-all active:scale-[0.98]"
+              onClick={() => setDisruptionActive((prev) => !prev)}
+              className={`flex items-center gap-2 px-5 py-3 rounded-full font-semibold text-xs transition-all cursor-pointer border ${
+                disruptionActive
+                  ? 'bg-amber-500 text-[#101820] border-amber-400 font-bold'
+                  : 'bg-white text-[#111827] border-[#D5E1E8] hover:border-[#294D6B]'
+              }`}
             >
-              <AlertTriangle className="w-4 h-4 text-neutral-300" />
-              <span>Simulate Regional Disruption</span>
+              <Zap className="w-3.5 h-3.5" />
+              <span>
+                {disruptionActive
+                  ? '3D Bypass Corridor: ACTIVE'
+                  : 'Toggle 3D Disruption State'}
+              </span>
+            </button>
+
+            <button
+              type="button"
+              onClick={() => setIsSimulatorOpen(true)}
+              className="flex items-center gap-2 px-5 py-3 rounded-full bg-[#101820] text-white font-semibold text-xs hover:bg-[#294D6B] transition-all shadow-[0_8px_20px_rgba(16,24,32,0.12)] active:scale-[0.98] cursor-pointer"
+            >
+              <AlertTriangle className="w-3.5 h-3.5 text-[#A8C2D2]" />
+              <span>Open Scenario Solver</span>
             </button>
           </div>
         </div>
 
-        {/* Real-Time Operational Telemetry Ribbon */}
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6 font-mono">
-          <div className="p-4 rounded-xl bg-[#0f1626] border border-white/10 space-y-1">
-            <span className="text-[11px] text-white/40 block">ACTIVE MULTIMODAL FLEET</span>
+        {/* Telemetry Ribbon */}
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6 font-mono text-xs">
+          <div className="p-5 rounded-2xl bg-white border border-[#D5E1E8] space-y-1 shadow-2xs">
+            <span className="text-[10px] text-[#566575] block">ACTIVE MULTIMODAL FLEET</span>
             <div className="flex items-baseline gap-2">
-              <span className="text-2xl font-bold text-white tabular-nums">216</span>
-              <span className="text-xs text-[#f5f5f5]">VESSELS & JETS</span>
+              <span className="text-2xl font-bold text-[#111827] tabular-nums">216</span>
+              <span className="text-[11px] text-[#294D6B] font-semibold">COMMERCIAL UNITS</span>
             </div>
           </div>
 
-          <div className="p-4 rounded-xl bg-[#0f1626] border border-white/10 space-y-1">
-            <span className="text-[11px] text-white/40 block">CONTAINER VOLUME IN-FLIGHT</span>
+          <div className="p-5 rounded-2xl bg-white border border-[#D5E1E8] space-y-1 shadow-2xs">
+            <span className="text-[10px] text-[#566575] block">CONTAINER VOLUME IN-FLIGHT</span>
             <div className="flex items-baseline gap-2">
-              <span className="text-2xl font-bold text-white tabular-nums">8,420</span>
-              <span className="text-xs text-white/60">TEU EQUIV</span>
+              <span className="text-2xl font-bold text-[#111827] tabular-nums">8,420</span>
+              <span className="text-[11px] text-[#294D6B] font-semibold">TEU EQUIV</span>
             </div>
           </div>
 
-          <div className="p-4 rounded-xl bg-[#0f1626] border border-white/10 space-y-1">
-            <span className="text-[11px] text-white/40 block">NETWORK SLA INTEGRITY</span>
+          <div className="p-5 rounded-2xl bg-white border border-[#D5E1E8] space-y-1 shadow-2xs">
+            <span className="text-[10px] text-[#566575] block">NETWORK SLA INTEGRITY</span>
             <div className="flex items-baseline gap-2">
-              <span className="text-2xl font-bold text-[#f5f5f5] tabular-nums">98.4%</span>
-              <span className="text-xs text-white/60">NOMINAL</span>
+              <span className="text-2xl font-bold text-[#111827] tabular-nums">
+                {disruptionActive ? '99.4%' : '98.4%'}
+              </span>
+              <span className="text-[11px] text-[#294D6B] font-semibold">
+                {disruptionActive ? 'BYPASS PROTECTED' : 'NOMINAL'}
+              </span>
             </div>
           </div>
 
-          <div className="p-4 rounded-xl bg-[#0f1626] border border-white/10 space-y-1">
-            <span className="text-[11px] text-white/40 block">UPSTREAM ANOMALIES</span>
+          <div className="p-5 rounded-2xl bg-white border border-[#D5E1E8] space-y-1 shadow-2xs">
+            <span className="text-[10px] text-[#566575] block">ACTIVE EXCEPTIONS</span>
             <div className="flex items-baseline gap-2">
-              <span className="text-2xl font-bold text-neutral-300 tabular-nums">02</span>
-              <span className="text-xs text-neutral-300/80">FLAGGED</span>
+              <span className="text-2xl font-bold text-[#111827] tabular-nums">
+                {disruptionActive ? '01' : '02'}
+              </span>
+              <span className="text-[11px] text-[#294D6B] font-semibold">
+                {disruptionActive ? 'REROUTED' : 'TRIAGED'}
+              </span>
             </div>
           </div>
         </div>
 
-        {/* Optional Active Disruption Notice Banner */}
+        {/* Active Disruption Alert Banner */}
         {activeDisruptionAlert && (
-          <div className="mb-6 p-4 rounded-xl bg-emerald-950/70 border border-emerald-400/40 text-emerald-200 text-xs font-mono flex items-center justify-between animate-in fade-in">
+          <div className="mb-6 p-4 rounded-2xl bg-[#101820] border border-[#294D6B] text-white text-xs font-mono flex items-center justify-between">
             <div className="flex items-center gap-2.5">
-              <Zap className="w-4 h-4 text-emerald-400 shrink-0" />
+              <Zap className="w-4 h-4 text-[#7DD3FC] shrink-0" />
               <span>{activeDisruptionAlert}</span>
             </div>
             <button
+              type="button"
               onClick={() => setActiveDisruptionAlert(null)}
-              className="text-white/60 hover:text-white"
+              className="text-[#A8C2D2] hover:text-white cursor-pointer"
             >
               Dismiss
             </button>
           </div>
         )}
 
-        {/* Main 3D Viewport Frame */}
-        <div className="rounded-3xl border border-white/15 overflow-hidden shadow-2xl relative bg-[#0a0f1b]">
-          {/* Integrated Viewport Toolbar */}
-          <div className="p-4 bg-[#0f1626]/90 border-b border-white/10 flex flex-wrap items-center justify-between gap-4">
-            {/* Perspective View Selectors */}
-            <div className="flex flex-wrap items-center gap-1.5 p-1 rounded-xl bg-[#151e30] border border-white/10 text-xs font-mono">
-              <button
-                type="button"
-                onClick={() => setActivePerspective('global')}
-                className={`px-3 py-1.5 rounded-lg transition-colors ${
-                  activePerspective === 'global' ? 'bg-[#f5f5f5] text-[#0f1626] font-bold' : 'text-white/70 hover:text-white'
-                }`}
-              >
-                Global Overview
-              </button>
-              <button
-                type="button"
-                onClick={() => setActivePerspective('ocean')}
-                className={`px-3 py-1.5 rounded-lg transition-colors ${
-                  activePerspective === 'ocean' ? 'bg-[#f5f5f5] text-[#0f1626] font-bold' : 'text-white/70 hover:text-white'
-                }`}
-              >
-                Maritime Lanes
-              </button>
-              <button
-                type="button"
-                onClick={() => setActivePerspective('air')}
-                className={`px-3 py-1.5 rounded-lg transition-colors ${
-                  activePerspective === 'air' ? 'bg-[#f5f5f5] text-[#0f1626] font-bold' : 'text-white/70 hover:text-white'
-                }`}
-              >
-                Air Corridors
-              </button>
-              <button
-                type="button"
-                onClick={() => setActivePerspective('road')}
-                className={`px-3 py-1.5 rounded-lg transition-colors ${
-                  activePerspective === 'road' ? 'bg-[#f5f5f5] text-[#0f1626] font-bold' : 'text-white/70 hover:text-white'
-                }`}
-              >
-                Road Freight
-              </button>
+        {/* 3D Scene Viewport Frame */}
+        <div className="rounded-3xl border border-[#D5E1E8] overflow-hidden shadow-[0_24px_60px_rgba(16,24,32,0.14)] relative bg-[#101820]">
+          {/* Viewport Toolbar */}
+          <div className="p-3.5 bg-[#101820] border-b border-white/10 flex flex-wrap items-center justify-between gap-4 font-mono text-xs">
+            <div className="flex flex-wrap items-center gap-1 p-1 rounded-full bg-white/[0.05] border border-white/10">
+              {(['global', 'ocean', 'air', 'road'] as ScenePerspective[]).map((persp) => (
+                <button
+                  key={persp}
+                  type="button"
+                  onClick={() => {
+                    setSelectedEntity(null);
+                    setActivePerspective(persp);
+                  }}
+                  className={`px-3.5 py-1.5 rounded-full transition-colors cursor-pointer capitalize ${
+                    activePerspective === persp && !selectedEntity
+                      ? 'bg-white text-[#101820] font-bold'
+                      : 'text-[#A8C2D2] hover:text-white'
+                  }`}
+                >
+                  {persp === 'global'
+                    ? 'Global Network'
+                    : persp === 'ocean'
+                      ? 'Ocean Freight'
+                      : persp === 'air'
+                        ? 'Air Cargo'
+                        : 'Ground Logistics'}
+                </button>
+              ))}
             </div>
 
-            {/* Transport Mode Layer Filters */}
-            <div className="flex items-center gap-2">
-              <span className="text-xs font-mono text-white/40 hidden sm:inline">MODE FILTER:</span>
-              <div className="flex items-center gap-1 bg-[#151e30] p-1 rounded-xl border border-white/10 text-xs">
+            <div className="flex flex-wrap items-center gap-3">
+              {/* Quick Hub Camera Jump Pills */}
+              <div className="hidden xl:flex items-center gap-1 bg-white/[0.05] p-1 rounded-full border border-white/10">
+                <span className="px-2 text-[10px] text-[#A8C2D2] flex items-center gap-1">
+                  <MapPin className="w-3 h-3" />
+                  HUBS:
+                </span>
+                {LOGISTICS_NODES.slice(0, 5).map((node) => (
+                  <button
+                    key={node.id}
+                    type="button"
+                    onClick={() =>
+                      setSelectedEntity(
+                        selectedEntity?.id === node.id ? null : node
+                      )
+                    }
+                    className={`px-2.5 py-1 rounded-full text-[10px] cursor-pointer ${
+                      selectedEntity?.id === node.id
+                        ? 'bg-[#7DD3FC] text-[#101820] font-bold'
+                        : 'text-[#A8C2D2] hover:text-white'
+                    }`}
+                  >
+                    {node.code}
+                  </button>
+                ))}
+              </div>
+
+              <div className="flex items-center gap-1 bg-white/[0.05] p-1 rounded-full border border-white/10">
                 <button
                   type="button"
                   onClick={() => setActiveFilter('all')}
-                  className={`px-2.5 py-1 rounded-lg ${activeFilter === 'all' ? 'bg-white/20 text-white font-bold' : 'text-white/60 hover:text-white'}`}
+                  className={`px-3 py-1 rounded-full cursor-pointer ${
+                    activeFilter === 'all'
+                      ? 'bg-white text-[#101820] font-bold'
+                      : 'text-[#A8C2D2] hover:text-white'
+                  }`}
                 >
                   All
                 </button>
                 <button
                   type="button"
                   onClick={() => setActiveFilter('ocean')}
-                  className={`px-2 py-1 rounded-lg flex items-center gap-1 ${activeFilter === 'ocean' ? 'bg-[#b8b8b8]/30 text-[#f5f5f5] font-bold' : 'text-white/60 hover:text-white'}`}
+                  className={`px-3 py-1 rounded-full flex items-center gap-1 cursor-pointer ${
+                    activeFilter === 'ocean'
+                      ? 'bg-white text-[#101820] font-bold'
+                      : 'text-[#A8C2D2] hover:text-white'
+                  }`}
                 >
-                  <Ship className="w-3.5 h-3.5" />
-                  <span className="hidden md:inline">Ocean</span>
+                  <Ship className="w-3 h-3" />
+                  <span className="hidden sm:inline">Ocean</span>
                 </button>
                 <button
                   type="button"
                   onClick={() => setActiveFilter('air')}
-                  className={`px-2 py-1 rounded-lg flex items-center gap-1 ${activeFilter === 'air' ? 'bg-[#f5f5f5]/30 text-[#f5f5f5] font-bold' : 'text-white/60 hover:text-white'}`}
+                  className={`px-3 py-1 rounded-full flex items-center gap-1 cursor-pointer ${
+                    activeFilter === 'air'
+                      ? 'bg-white text-[#101820] font-bold'
+                      : 'text-[#A8C2D2] hover:text-white'
+                  }`}
                 >
-                  <Plane className="w-3.5 h-3.5" />
-                  <span className="hidden md:inline">Air</span>
+                  <Plane className="w-3 h-3" />
+                  <span className="hidden sm:inline">Air</span>
                 </button>
                 <button
                   type="button"
                   onClick={() => setActiveFilter('road')}
-                  className={`px-2 py-1 rounded-lg flex items-center gap-1 ${activeFilter === 'road' ? 'bg-[#f5f5f5]/30 text-[#f5f5f5] font-bold' : 'text-white/60 hover:text-white'}`}
+                  className={`px-3 py-1 rounded-full flex items-center gap-1 cursor-pointer ${
+                    activeFilter === 'road'
+                      ? 'bg-white text-[#101820] font-bold'
+                      : 'text-[#A8C2D2] hover:text-white'
+                  }`}
                 >
-                  <Truck className="w-3.5 h-3.5" />
-                  <span className="hidden md:inline">Road</span>
+                  <Truck className="w-3 h-3" />
+                  <span className="hidden sm:inline">Road</span>
                 </button>
               </div>
 
-              {/* Speed Multiplier */}
-              <div className="flex items-center gap-1 bg-[#151e30] p-1 rounded-xl border border-white/10 text-xs font-mono">
-                <button
-                  onClick={() => setSpeedMultiplier(1)}
-                  className={`px-2 py-1 rounded-lg ${speedMultiplier === 1 ? 'bg-white/20 text-white font-bold' : 'text-white/50'}`}
-                >
-                  1x
-                </button>
-                <button
-                  onClick={() => setSpeedMultiplier(2)}
-                  className={`px-2 py-1 rounded-lg ${speedMultiplier === 2 ? 'bg-white/20 text-white font-bold' : 'text-white/50'}`}
-                >
-                  2x
-                </button>
-                <button
-                  onClick={() => setSpeedMultiplier(5)}
-                  className={`px-2 py-1 rounded-lg ${speedMultiplier === 5 ? 'bg-white/20 text-white font-bold' : 'text-white/50'}`}
-                >
-                  5x
-                </button>
+              <div className="flex items-center gap-1 bg-white/[0.05] p-1 rounded-full border border-white/10">
+                {[1, 2, 5].map((mult) => (
+                  <button
+                    key={mult}
+                    type="button"
+                    onClick={() => setSpeedMultiplier(mult)}
+                    className={`px-2.5 py-1 rounded-full cursor-pointer ${
+                      speedMultiplier === mult
+                        ? 'bg-white text-[#101820] font-bold'
+                        : 'text-[#A8C2D2]'
+                    }`}
+                  >
+                    {mult}x
+                  </button>
+                ))}
               </div>
             </div>
           </div>
 
-          {/* Three.js 3D Canvas Scene Viewport */}
           <GlobalLogisticsScene
             activePerspective={activePerspective}
             onSelectEntity={(e) => setSelectedEntity(e)}
             selectedEntityId={selectedEntity?.id}
             speedMultiplier={speedMultiplier}
             activeFilter={activeFilter}
+            disruptionActive={disruptionActive}
           />
         </div>
 
-        {/* Live Active Entity Roster Grid (Quick Click to Inspect) */}
-        <div className="mt-8 grid grid-cols-1 md:grid-cols-3 gap-4">
-          <div className="p-4 rounded-2xl bg-[#0f1626] border border-white/10 space-y-3">
-            <div className="flex items-center justify-between text-xs font-mono pb-2 border-b border-white/10">
-              <span className="text-white/60 uppercase">Maritime Vessels</span>
-              <span className="text-[#f5f5f5]">OCEAN FREIGHT</span>
+        {/* Fleet Directory Strip */}
+        <div className="mt-6 grid grid-cols-1 md:grid-cols-3 gap-4 font-mono text-xs">
+          {[
+            { mode: 'ocean' as const, label: 'OCEAN FREIGHT', sub: '2 VESSELS IN TRANSIT', Icon: Ship },
+            { mode: 'air' as const, label: 'AIR CORRIDORS', sub: '2 FLIGHTS EN ROUTE', Icon: Plane },
+            { mode: 'road' as const, label: 'GROUND FREIGHT', sub: '2 ROAD FLEETS DISPATCHED', Icon: Truck },
+          ].map(({ mode, label, sub, Icon }) => (
+            <div
+              key={mode}
+              className="p-4 rounded-2xl bg-white border border-[#D5E1E8] space-y-2.5 shadow-2xs"
+            >
+              <div className="flex items-center justify-between text-[11px] pb-2 border-b border-[#D5E1E8] text-[#566575]">
+                <span className="font-bold text-[#294D6B]">{label}</span>
+                <span>{sub}</span>
+              </div>
+              <div className="space-y-1.5">
+                {LOGISTICS_VEHICLES.filter((v) => v.mode === mode).map((v) => (
+                  <button
+                    key={v.id}
+                    type="button"
+                    onClick={() =>
+                      setSelectedEntity(selectedEntity?.id === v.id ? null : v)
+                    }
+                    className={`w-full p-2.5 rounded-xl border text-left transition-colors flex items-center justify-between cursor-pointer ${
+                      selectedEntity?.id === v.id
+                        ? 'bg-[#101820] border-[#101820] text-white'
+                        : 'bg-[#F5F9FB] border-[#D5E1E8] text-[#111827] hover:border-[#294D6B]'
+                    }`}
+                  >
+                    <div className="flex items-center gap-2 truncate">
+                      <Icon className="w-3.5 h-3.5 text-[#294D6B]" />
+                      <span className="truncate font-semibold">{v.name}</span>
+                    </div>
+                    <span className="text-[10px] opacity-75">
+                      {mode === 'air' ? `${v.speedKmH} km/h` : v.teuOrTonnage}
+                    </span>
+                  </button>
+                ))}
+              </div>
             </div>
-            <div className="space-y-2">
-              {LOGISTICS_VEHICLES.filter((v) => v.mode === 'ocean').map((v) => (
-                <button
-                  key={v.id}
-                  type="button"
-                  onClick={() => setSelectedEntity(v)}
-                  className={`w-full p-2.5 rounded-xl border text-left text-xs transition-colors flex items-center justify-between ${
-                    selectedEntity?.id === v.id
-                      ? 'bg-[#1d293d] border-[#f5f5f5] text-white'
-                      : 'bg-[#151e30] border-white/5 text-white/80 hover:bg-[#182338]'
-                  }`}
-                >
-                  <div className="flex items-center gap-2">
-                    <Ship className="w-3.5 h-3.5 text-[#f5f5f5]" />
-                    <span className="font-semibold">{v.name}</span>
-                  </div>
-                  <span className="font-mono text-[11px] text-white/50">{v.teuOrTonnage}</span>
-                </button>
-              ))}
-            </div>
-          </div>
-
-          <div className="p-4 rounded-2xl bg-[#0f1626] border border-white/10 space-y-3">
-            <div className="flex items-center justify-between text-xs font-mono pb-2 border-b border-white/10">
-              <span className="text-white/60 uppercase">Cargo Aircraft</span>
-              <span className="text-[#f5f5f5]">AIR CORRIDORS</span>
-            </div>
-            <div className="space-y-2">
-              {LOGISTICS_VEHICLES.filter((v) => v.mode === 'air').map((v) => (
-                <button
-                  key={v.id}
-                  type="button"
-                  onClick={() => setSelectedEntity(v)}
-                  className={`w-full p-2.5 rounded-xl border text-left text-xs transition-colors flex items-center justify-between ${
-                    selectedEntity?.id === v.id
-                      ? 'bg-[#1d293d] border-[#f5f5f5] text-white'
-                      : 'bg-[#151e30] border-white/5 text-white/80 hover:bg-[#182338]'
-                  }`}
-                >
-                  <div className="flex items-center gap-2">
-                    <Plane className="w-3.5 h-3.5 text-[#f5f5f5]" />
-                    <span className="font-semibold">{v.name}</span>
-                  </div>
-                  <span className="font-mono text-[11px] text-white/50">{v.speedKmH} km/h</span>
-                </button>
-              ))}
-            </div>
-          </div>
-
-          <div className="p-4 rounded-2xl bg-[#0f1626] border border-white/10 space-y-3">
-            <div className="flex items-center justify-between text-xs font-mono pb-2 border-b border-white/10">
-              <span className="text-white/60 uppercase">Ground Freight Trucks</span>
-              <span className="text-[#f5f5f5]">ROAD LOGISTICS</span>
-            </div>
-            <div className="space-y-2">
-              {LOGISTICS_VEHICLES.filter((v) => v.mode === 'road').map((v) => (
-                <button
-                  key={v.id}
-                  type="button"
-                  onClick={() => setSelectedEntity(v)}
-                  className={`w-full p-2.5 rounded-xl border text-left text-xs transition-colors flex items-center justify-between ${
-                    selectedEntity?.id === v.id
-                      ? 'bg-[#1d293d] border-[#f5f5f5] text-white'
-                      : 'bg-[#151e30] border-white/5 text-white/80 hover:bg-[#182338]'
-                  }`}
-                >
-                  <div className="flex items-center gap-2">
-                    <Truck className="w-3.5 h-3.5 text-[#f5f5f5]" />
-                    <span className="font-semibold">{v.name}</span>
-                  </div>
-                  <span className="font-mono text-[11px] text-white/50">{v.teuOrTonnage}</span>
-                </button>
-              ))}
-            </div>
-          </div>
+          ))}
         </div>
       </div>
 
-      {/* Disruption Simulator Modal */}
       <DisruptionSimulatorModal
         isOpen={isSimulatorOpen}
         onClose={() => setIsSimulatorOpen(false)}
