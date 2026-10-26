@@ -12,12 +12,17 @@ import {
   CheckCircle2,
   Eye,
   EyeOff,
-  Mail,
+  User,
   Info,
+  Terminal,
 } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import { getActiveFirebaseConfig, BOOTSTRAPPED_ADMIN_EMAILS } from '../../services/firebase';
-import { validateEmail } from '../../utils/auth-validation';
+import {
+  validateLoginIdentifier,
+  isLocalDevEnvironment,
+  validateAdminLogin,
+} from '../../utils/auth-validation';
 import { OrionLogo } from '../OrionLogo';
 
 interface AdminLoginProps {
@@ -30,6 +35,7 @@ export function AdminLogin({ onNavigate }: AdminLoginProps) {
     isAuthenticated,
     isAdmin,
     adminAuthSource,
+    isLocalDevAdmin,
     isFirebaseConfigured,
     login,
     loginWithGoogle,
@@ -37,7 +43,7 @@ export function AdminLogin({ onNavigate }: AdminLoginProps) {
     refreshAdminStatus,
   } = useAuth();
 
-  const [email, setEmail] = useState('');
+  const [identifier, setIdentifier] = useState('');
   const [password, setPassword] = useState('');
   const [passwordVisible, setPasswordVisible] = useState(false);
   const [loading, setLoading] = useState(false);
@@ -45,25 +51,43 @@ export function AdminLogin({ onNavigate }: AdminLoginProps) {
   const [showConfigDrawer, setShowConfigDrawer] = useState(false);
   const [showAuthGuide, setShowAuthGuide] = useState(false);
 
+  const isDev = isLocalDevEnvironment();
   const currentConfig = getActiveFirebaseConfig();
+
+  const handleFillDevCredentials = () => {
+    setIdentifier('admin');
+    setPassword('admin');
+    setError(null);
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError(null);
 
-    if (!email.trim() || !password) {
-      setError('Please enter both your administrator email address and password.');
+    const trimmedIdentifier = identifier.trim();
+    if (!trimmedIdentifier || !password) {
+      setError('Please enter both your administrator username/email and password.');
       return;
     }
 
-    const emailCheck = validateEmail(email.trim());
-    if (!emailCheck.isValid) {
-      setError(emailCheck.error || 'Please enter a valid administrator email address.');
+    // Check admin credentials environment compliance
+    const adminEnvCheck = validateAdminLogin(trimmedIdentifier, password);
+    if (adminEnvCheck.isLocalDevAttempt && !adminEnvCheck.allowedInCurrentEnv) {
+      setError(
+        adminEnvCheck.error ||
+          'Local development credentials (admin/admin) are strictly prohibited in production. Please sign in using your verified Firebase Administrator credentials.'
+      );
+      return;
+    }
+
+    const idCheck = validateLoginIdentifier(trimmedIdentifier);
+    if (!idCheck.isValid) {
+      setError(idCheck.error || 'Please enter a valid administrator username or work email.');
       return;
     }
 
     setLoading(true);
-    const res = await login(email.trim(), password, true);
+    const res = await login(trimmedIdentifier, password, true);
     if (!res.success) {
       setError(res.error || 'Administrator authentication failed. Please verify your credentials.');
       setLoading(false);
@@ -124,8 +148,16 @@ export function AdminLogin({ onNavigate }: AdminLoginProps) {
           <span>RESTRICTED ADMIN GATEWAY</span>
           <span aria-hidden="true">·</span>
           <span className={isFirebaseConfigured ? 'text-emerald-700 font-medium' : 'text-amber-700'}>
-            {isFirebaseConfigured ? 'FIREBASE AUTH ONLINE' : 'FIREBASE ENV UNCONFIGURED'}
+            {isFirebaseConfigured ? 'FIREBASE AUTH ONLINE' : 'LOCAL DEV FALLBACK'}
           </span>
+          {isDev && (
+            <>
+              <span aria-hidden="true">·</span>
+              <span className="px-2 py-0.5 rounded-md bg-[#294D6B]/15 text-[#294D6B] font-semibold text-[10px]">
+                LOCAL DEV MODE
+              </span>
+            </>
+          )}
         </div>
       </header>
 
@@ -170,6 +202,29 @@ export function AdminLogin({ onNavigate }: AdminLoginProps) {
             </div>
           </div>
 
+          {/* Local Dev Credentials Assistance Banner */}
+          {isDev && !isAuthenticated && (
+            <div className="mb-6 p-4 rounded-2xl bg-[#F5F9FB] border border-[#D5E1E8] text-xs text-[#294D6B] space-y-2">
+              <div className="flex items-center justify-between">
+                <span className="font-bold flex items-center gap-1.5 text-[#111827]">
+                  <Terminal className="w-3.5 h-3.5 text-[#294D6B]" />
+                  Local Development Credentials Active
+                </span>
+                <button
+                  type="button"
+                  onClick={handleFillDevCredentials}
+                  className="px-2.5 py-1 rounded-md bg-[#294D6B] text-white text-[11px] font-semibold hover:bg-[#101820] transition-colors cursor-pointer"
+                >
+                  Auto-fill (admin / admin)
+                </button>
+              </div>
+              <p className="text-[11.5px] leading-relaxed text-[#566575]">
+                Username: <code className="font-mono font-bold text-[#111827]">admin</code> / Password:{' '}
+                <code className="font-mono font-bold text-[#111827]">admin</code>. These credentials only work in local development/test and are explicitly rejected in production.
+              </p>
+            </div>
+          )}
+
           {/* State 1: Signed in AND verified admin */}
           {isAuthenticated && isAdmin && (
             <div className="space-y-6">
@@ -180,8 +235,7 @@ export function AdminLogin({ onNavigate }: AdminLoginProps) {
                 </div>
                 <p className="text-xs text-emerald-800 leading-relaxed">
                   Authenticated as <span className="font-mono font-medium">{user?.email}</span> via{' '}
-                  <span className="font-mono">{adminAuthSource}</span>. Full CMS &amp; security
-                  governance controls are unlocked.
+                  <span className="font-mono font-semibold">{adminAuthSource}</span>. Full CMS &amp; security governance controls are unlocked.
                 </p>
               </div>
 
@@ -216,7 +270,7 @@ export function AdminLogin({ onNavigate }: AdminLoginProps) {
                 </div>
                 <p className="text-xs text-red-800 leading-relaxed mb-3">
                   Your account (<span className="font-mono font-semibold">{user?.email}</span>) is
-                  authenticated, but is not authorized as an Orion-9 administrator.
+                  authenticated, but does not have verified Orion-9 administrator privileges.
                 </p>
                 <div className="p-3.5 rounded-xl bg-white/90 border border-red-200 text-[11px] font-mono text-red-900 space-y-1">
                   <div>UID: {user?.uid}</div>
@@ -260,9 +314,8 @@ export function AdminLogin({ onNavigate }: AdminLoginProps) {
           {!isAuthenticated && (
             <>
               <p className="text-sm text-[#475569] leading-relaxed mb-6">
-                This console is restricted to authorized Orion-9 platform administrators. Sign in
-                with your administrator credentials verified by Firebase Authentication and
-                Firestore role-based access control.
+                This portal is strictly restricted to authorized Orion-9 platform administrators. Sign in
+                with your administrator username or email address.
               </p>
 
               {error && (
@@ -278,23 +331,26 @@ export function AdminLogin({ onNavigate }: AdminLoginProps) {
               <form onSubmit={handleSubmit} className="space-y-4" noValidate>
                 <div>
                   <label
-                    htmlFor="admin-email"
+                    htmlFor="admin-identifier"
                     className="block text-xs font-bold text-[#070B19] mb-1.5"
                   >
-                    Administrator Email
+                    Administrator Username or Email
                   </label>
                   <div className="relative">
-                    <Mail className="w-4 h-4 text-[#64748B] absolute left-3.5 top-1/2 -translate-y-1/2 pointer-events-none" />
+                    <User className="w-4 h-4 text-[#64748B] absolute left-3.5 top-1/2 -translate-y-1/2 pointer-events-none" />
                     <input
-                      id="admin-email"
-                      name="email"
-                      type="email"
+                      id="admin-identifier"
+                      name="identifier"
+                      type="text"
                       required
+                      autoCapitalize="none"
+                      autoCorrect="off"
+                      spellCheck={false}
                       autoComplete="username"
                       disabled={loading}
-                      value={email}
-                      onChange={(e) => setEmail(e.target.value)}
-                      placeholder="Enter authorized administrator email"
+                      value={identifier}
+                      onChange={(e) => setIdentifier(e.target.value)}
+                      placeholder="admin or admin@company.com"
                       className="w-full pl-10 pr-4 py-3 rounded-xl bg-[#F8FAFC] border border-[#CBD5E1] text-sm text-[#070B19] placeholder-[#64748B] focus:outline-none focus:border-[#0284C7] focus:bg-white transition-colors disabled:opacity-60"
                     />
                   </div>
@@ -381,78 +437,69 @@ export function AdminLogin({ onNavigate }: AdminLoginProps) {
                   />
                   <path
                     fill="#FBBC05"
-                    d="M5.28 14.24c-.24-.72-.38-1.49-.38-2.24s.14-1.52.38-2.24V6.62H1.29C.47 8.24 0 10.06 0 12s.47 3.76 1.29 5.38l3.99-3.14Z"
+                    d="M5.28 14.29A7.19 7.19 0 0 1 4.9 12c0-.8.14-1.57.38-2.29V6.57H1.29A11.97 11.97 0 0 0 0 12c0 1.92.45 3.74 1.29 5.43l3.99-3.14Z"
                   />
                   <path
                     fill="#EA4335"
-                    d="M12 4.75c1.77 0 3.35.61 4.6 1.8l3.42-3.42C17.95 1.19 15.24 0 12 0 7.31 0 3.26 2.7 1.29 6.62l3.99 3.14c.95-2.85 3.6-4.96 6.72-4.96Z"
+                    d="M12 4.75c1.77 0 3.35.61 4.6 1.8l3.42-3.42C17.95 1.19 15.24 0 12 0 7.31 0 3.26 2.7 1.29 6.57l3.99 3.14C6.23 6.86 8.88 4.75 12 4.75Z"
                   />
                 </svg>
-                <span>Continue with Google Workspace Admin</span>
+                <span>Continue with Google Workspace</span>
               </button>
             </>
           )}
 
-          {/* RBAC Authorization Guide Drawer */}
+          {/* Collapsible Auth Guide */}
           {showAuthGuide && (
-            <div className="mt-6 pt-6 border-t border-[#DCE7F0] text-xs text-[#334155] space-y-2.5">
-              <div className="font-bold text-[#070B19]">
-                Administrator Role-Based Access Control (RBAC)
+            <div className="mt-6 p-5 rounded-2xl bg-[#F8FAFC] border border-[#CBD5E1] text-xs text-[#334155] space-y-3">
+              <div className="font-bold text-[#070B19] flex items-center gap-1.5">
+                <CheckCircle2 className="w-4 h-4 text-[#0284C7]" />
+                How Orion-9 Administrator Access Is Authorized
               </div>
               <p className="leading-relaxed">
-                Orion-9 never uses hardcoded frontend passwords. An authenticated Firebase user is
-                granted administrator access when any of the following conditions is satisfied:
+                Orion-9 never relies on client-side hardcoded credentials in production. To access the
+                Administrator Console, an account must satisfy one of three security checks:
               </p>
-              <ul className="list-disc pl-5 space-y-1 text-[11.5px]">
+              <ol className="list-decimal pl-5 space-y-1.5 leading-relaxed">
                 <li>
-                  A Firestore document exists at{' '}
-                  <code className="font-mono bg-[#F1F5F9] px-1.5 py-0.5 rounded">
-                    /admins/&#123;uid&#125;
+                  <strong>Bootstrapped Project Owner</strong>: Sign in with{' '}
+                  <code className="text-[#0284C7] bg-[#E0F2FE] px-1 py-0.5 rounded">
+                    {BOOTSTRAPPED_ADMIN_EMAILS[0]}
                   </code>{' '}
-                  with <code className="font-mono">role: &quot;admin&quot;</code> and{' '}
-                  <code className="font-mono">active: true</code>.
+                  (verified email).
                 </li>
                 <li>
-                  The Firebase ID token contains custom claim{' '}
-                  <code className="font-mono bg-[#F1F5F9] px-1.5 py-0.5 rounded">admin: true</code>.
+                  <strong>Firestore Administrator ACL</strong>: Have an existing admin create a document
+                  in <code className="text-[#0284C7] bg-[#E0F2FE] px-1 py-0.5 rounded">/admins/&#123;uid&#125;</code> with{' '}
+                  <code className="text-[#0284C7] bg-[#E0F2FE] px-1 py-0.5 rounded">
+                    &#123; role: &quot;admin&quot;, active: true &#125;
+                  </code>.
                 </li>
                 <li>
-                  The user signs in with the verified project owner account (
-                  <code className="font-mono">{BOOTSTRAPPED_ADMIN_EMAILS[0]}</code>).
+                  <strong>Firebase Custom Token Claim</strong>: Accounts provisioned via Firebase Admin
+                  SDK with claim <code className="text-[#0284C7] bg-[#E0F2FE] px-1 py-0.5 rounded">&#123; admin: true &#125;</code>.
                 </li>
-              </ul>
+                <li>
+                  <strong>Local Development Credentials</strong>: Only when running on localhost/test,{' '}
+                  <code className="text-[#0284C7] bg-[#E0F2FE] px-1 py-0.5 rounded">admin / admin</code> is permitted for local development speed.
+                </li>
+              </ol>
             </div>
           )}
 
-          {/* Firebase Project Connection Telemetry */}
+          {/* Collapsible Config Drawer */}
           {showConfigDrawer && (
-            <div className="mt-6 pt-6 border-t border-[#DCE7F0]">
-              <div className="flex items-center justify-between mb-3">
-                <span className="text-xs font-mono uppercase tracking-wider text-[#0284C7] font-medium">
-                  Firebase Project Connection
-                </span>
-                <span className="inline-flex items-center gap-1.5 text-[11px] font-mono text-emerald-700">
-                  <CheckCircle2 className="w-3.5 h-3.5" />
-                  ACTIVE
-                </span>
+            <div className="mt-6 p-5 rounded-2xl bg-[#F8FAFC] border border-[#CBD5E1] text-xs text-[#334155] space-y-2">
+              <div className="font-bold text-[#070B19] flex items-center justify-between">
+                <span>Active Firebase Client Configuration</span>
+                <span className="font-mono text-[10px] text-[#64748B]">Read-Only Runtime Inspector</span>
               </div>
-              <div className="p-3.5 rounded-xl bg-[#F8FAFC] border border-[#DCE7F0] text-[11px] font-mono text-[#070B19] space-y-1.5">
-                <div className="flex justify-between gap-2">
-                  <span className="text-[#64748B]">PROJECT ID:</span>
-                  <span className="font-medium">{currentConfig.projectId}</span>
-                </div>
-                <div className="flex justify-between gap-2">
-                  <span className="text-[#64748B]">AUTH DOMAIN:</span>
-                  <span>{currentConfig.authDomain}</span>
-                </div>
-                <div className="flex justify-between gap-2">
-                  <span className="text-[#64748B]">STORAGE BUCKET:</span>
-                  <span>{currentConfig.storageBucket}</span>
-                </div>
-                <div className="flex justify-between gap-2">
-                  <span className="text-[#64748B]">APP ID:</span>
-                  <span className="truncate max-w-[220px]">{currentConfig.appId}</span>
-                </div>
+              <div className="p-3 rounded-xl bg-white border border-[#E2E8F0] font-mono text-[11px] text-[#1E293B] space-y-1 overflow-x-auto">
+                <div>PROJECT ID: {currentConfig.projectId || 'NOT_SET'}</div>
+                <div>AUTH DOMAIN: {currentConfig.authDomain || 'NOT_SET'}</div>
+                <div>STORAGE BUCKET: {currentConfig.storageBucket || 'NOT_SET'}</div>
+                <div>MESSAGING SENDER: {currentConfig.messagingSenderId || 'NOT_SET'}</div>
+                <div>APP ID: {currentConfig.appId || 'NOT_SET'}</div>
               </div>
             </div>
           )}
@@ -460,9 +507,12 @@ export function AdminLogin({ onNavigate }: AdminLoginProps) {
       </main>
 
       {/* Footer */}
-      <footer className="max-w-[1280px] w-full mx-auto text-center text-xs text-[#475569]">
-        Orion-9 Security Architecture · Role-Based Access Control enforced via Firestore Rules
+      <footer className="max-w-[1280px] w-full mx-auto text-center text-xs text-[#64748B] flex flex-wrap items-center justify-between gap-3">
+        <span>Orion-9 Supply Chain Operating System · Administrator Console</span>
+        <span className="font-mono text-[11px]">ENCRYPTED TLS 1.3 · STRICT RBAC</span>
       </footer>
     </div>
   );
 }
+
+export default AdminLogin;

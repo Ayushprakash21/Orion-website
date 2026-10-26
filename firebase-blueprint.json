@@ -25,6 +25,14 @@
           "type": "string",
           "description": "Firebase Authentication UID"
         },
+        "username": {
+          "type": "string",
+          "description": "Unique chosen operator username"
+        },
+        "normalizedUsername": {
+          "type": "string",
+          "description": "Lowercase normalized username"
+        },
         "displayName": {
           "type": "string",
           "description": "Operator full name"
@@ -40,6 +48,30 @@
         }
       },
       "required": ["uid", "email", "role"]
+    },
+    "UsernameRecord": {
+      "title": "UsernameRecord",
+      "description": "One-to-one username index mapping to account email and UID",
+      "type": "object",
+      "properties": {
+        "uid": {
+          "type": "string",
+          "description": "Firebase Authentication UID of the owner"
+        },
+        "username": {
+          "type": "string",
+          "description": "User-chosen username"
+        },
+        "normalizedUsername": {
+          "type": "string",
+          "description": "Normalized lowercase username"
+        },
+        "email": {
+          "type": "string",
+          "description": "Account email address"
+        }
+      },
+      "required": ["uid", "username", "normalizedUsername", "email"]
     },
     "AdminAclRecord": {
       "title": "AdminAclRecord",
@@ -112,6 +144,12 @@
         "$ref": "#/entities/UserProfile"
       },
       "description": "Operator user profiles"
+    },
+    "/usernames/{normalizedUsername}": {
+      "schema": {
+        "$ref": "#/entities/UsernameRecord"
+      },
+      "description": "Username to account resolution index (anti-enumeration: get only, no list)"
     },
     "/admins/{adminUid}": {
       "schema": {

@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { motion } from 'motion/react';
 import {
   User,
+  AtSign,
   Mail,
   Lock,
   Eye,
@@ -12,8 +13,10 @@ import {
   AlertCircle,
   CheckCircle2,
   ShieldCheck,
+  Loader2,
 } from 'lucide-react';
-import { validateSignUp } from '../../utils/auth-validation';
+import { validateSignUp, validateUsername } from '../../utils/auth-validation';
+import { useAuth } from '../../context/AuthContext';
 
 const ease: [number, number, number, number] = [0.22, 1, 0.36, 1];
 
@@ -40,6 +43,7 @@ const GoogleIcon: React.FC<{ size?: number }> = ({ size = 15 }) => (
 
 export interface FlowSignupSubmitPayload {
   name: string;
+  username: string;
   email: string;
   password: string;
   confirmPassword: string;
@@ -75,6 +79,8 @@ export const FlowSignup: React.FC<FlowSignupProps> = ({
   onGoogleSignIn,
   onNavigateLogin,
 }) => {
+  const { checkUsernameAvailability } = useAuth();
+
   const [expanded, setExpanded] = useState<boolean>(defaultExpanded);
   const [passwordVisible, setPasswordVisible] = useState<boolean>(false);
   const [confirmVisible, setConfirmVisible] = useState<boolean>(false);
@@ -82,6 +88,14 @@ export const FlowSignup: React.FC<FlowSignupProps> = ({
   const [loading, setLoading] = useState<boolean>(false);
 
   const [name, setName] = useState<string>('');
+  const [username, setUsername] = useState<string>('');
+  const [usernameChecking, setUsernameChecking] = useState<boolean>(false);
+  const [usernameStatus, setUsernameStatus] = useState<{
+    tested: boolean;
+    valid: boolean;
+    message?: string;
+  }>({ tested: false, valid: false });
+
   const [email, setEmail] = useState<string>('');
   const [password, setPassword] = useState<string>('');
   const [confirmPassword, setConfirmPassword] = useState<string>('');
@@ -96,6 +110,42 @@ export const FlowSignup: React.FC<FlowSignupProps> = ({
     if (trigger === 'click' && !expanded) toggle();
   };
 
+  const handleUsernameBlur = async () => {
+    const trimmed = username.trim();
+    if (!trimmed) {
+      setUsernameStatus({ tested: false, valid: false });
+      return;
+    }
+
+    const val = validateUsername(trimmed);
+    if (!val.isValid) {
+      setUsernameStatus({ tested: true, valid: false, message: val.error });
+      return;
+    }
+
+    setUsernameChecking(true);
+    try {
+      const res = await checkUsernameAvailability(trimmed);
+      if (res.available) {
+        setUsernameStatus({
+          tested: true,
+          valid: true,
+          message: 'Username is available.',
+        });
+      } else {
+        setUsernameStatus({
+          tested: true,
+          valid: false,
+          message: res.error || 'Username is unavailable.',
+        });
+      }
+    } catch {
+      setUsernameStatus({ tested: true, valid: true });
+    } finally {
+      setUsernameChecking(false);
+    }
+  };
+
   const passwordStrength =
     password.length === 0 ? 0 : password.length < 8 ? 1 : password.length < 12 ? 2 : 3;
 
@@ -106,7 +156,15 @@ export const FlowSignup: React.FC<FlowSignupProps> = ({
     setErrorMessage(null);
     setSuccessMessage(null);
 
-    const validation = validateSignUp(name, email, password, confirmPassword);
+    const validation = validateSignUp(
+      name,
+      username,
+      email,
+      password,
+      confirmPassword,
+      terms
+    );
+
     if (!validation.isValid) {
       const firstErr = Object.values(validation.errors)[0];
       setErrorMessage(firstErr || 'Please verify all registration fields.');
@@ -123,6 +181,7 @@ export const FlowSignup: React.FC<FlowSignupProps> = ({
       if (onSubmit) {
         const res = await onSubmit({
           name: name.trim(),
+          username: username.trim(),
           email: email.trim(),
           password,
           confirmPassword,
@@ -181,31 +240,31 @@ export const FlowSignup: React.FC<FlowSignupProps> = ({
 
   return (
     <div
-      className="relative flex w-full items-center justify-center px-4 py-12 font-sans"
+      className="relative flex w-full items-center justify-center px-4 py-8 font-sans"
       onMouseEnter={() => trigger === 'hover' && !loading && setExpanded(true)}
       onMouseLeave={() => trigger === 'hover' && !loading && setExpanded(false)}
     >
-      {/* Subtle Ice-Blue Ambient Aura */}
+      {/* Background Glow */}
       <motion.div
         animate={{
-          opacity: expanded ? 0.92 : 0.65,
-          scale: expanded ? 1.06 : 1,
+          opacity: expanded ? 0.9 : 0.65,
+          scale: expanded ? 1.05 : 1,
         }}
         transition={{ duration: 0.8, ease }}
-        className="pointer-events-none absolute left-1/2 top-1/2 h-[440px] w-[440px] -translate-x-1/2 -translate-y-1/2 rounded-full bg-[#A8C2D2]/30 blur-[110px]"
+        className="pointer-events-none absolute left-1/2 top-1/2 h-[420px] w-[420px] -translate-x-1/2 -translate-y-1/2 rounded-full bg-[#A8C2D2]/30 blur-[110px]"
       />
 
-      <div className="relative flex w-full max-w-[435px] flex-col items-center">
-        {/* Floating Orb */}
+      <div className="relative flex w-full max-w-[440px] flex-col items-center">
+        {/* Floating Sphere */}
         <motion.div
           animate={{
-            y: expanded ? -18 : 0,
+            y: expanded ? -16 : 0,
             scale: expanded ? 1.04 : 1,
           }}
           transition={{ duration: 0.75, ease }}
-          className="absolute -top-[50px] z-30"
+          className="absolute -top-[48px] z-30"
         >
-          <div className="relative h-[48px] w-[48px]">
+          <div className="relative h-[46px] w-[46px]">
             <div className="absolute inset-[2px] rounded-full bg-[radial-gradient(circle_at_30%_24%,#FFFFFF_0%,#D5E8F2_22%,#5682A3_56%,#294D6B_82%,#101820_100%)] shadow-[0_10px_28px_rgba(41,77,107,0.38),0_0_40px_rgba(168,194,210,0.35)]" />
             <div className="absolute left-[10px] top-[7px] h-[9px] w-[13px] rotate-[-20deg] rounded-full bg-white/85 blur-[1.5px]" />
             <motion.div
@@ -213,24 +272,22 @@ export const FlowSignup: React.FC<FlowSignupProps> = ({
               transition={{ duration: 8, repeat: Infinity, ease: 'linear' }}
               className="absolute -inset-[3px] rounded-full border border-[#294D6B]/25"
             />
-            <span className="absolute right-[5px] top-[8px] h-[5px] w-[5px] rounded-full bg-white/80 blur-[0.5px]" />
           </div>
         </motion.div>
 
-        {/* Card */}
+        {/* Frosted Card */}
         <motion.div
           initial={false}
           animate={{
             borderRadius: expanded ? 28 : 22,
           }}
           transition={{ duration: 0.65, ease }}
-          className="relative w-full overflow-hidden border border-[#D5E1E8] bg-white/92 shadow-[0_28px_80px_rgba(16,24,32,0.12),0_2px_12px_rgba(41,77,107,0.06)] backdrop-blur-2xl"
+          className="relative w-full overflow-hidden border border-[#D5E1E8] bg-white/95 shadow-[0_28px_80px_rgba(16,24,32,0.12),0_2px_12px_rgba(41,77,107,0.06)] backdrop-blur-2xl"
         >
-          {/* Atmospheric top highlight */}
           <motion.div
             animate={{
               opacity: expanded ? 1 : 0.7,
-              height: expanded ? 150 : 95,
+              height: expanded ? 140 : 95,
             }}
             transition={{ duration: 0.7, ease }}
             className="pointer-events-none absolute inset-x-0 top-0 bg-[radial-gradient(ellipse_at_center_top,rgba(168,194,210,0.38),transparent_70%)]"
@@ -240,16 +297,15 @@ export const FlowSignup: React.FC<FlowSignupProps> = ({
             <button
               type="button"
               onClick={toggle}
-              className="absolute right-4 top-4 z-20 flex h-7 w-7 items-center justify-center rounded-full border border-[#D5E1E8] bg-[#F5F9FB] text-[#566575] transition hover:border-[#294D6B]/40 hover:text-[#111827]"
+              className="absolute right-4 top-4 z-20 flex h-7 w-7 items-center justify-center rounded-full border border-[#D5E1E8] bg-[#F5F9FB] text-[#566575] transition hover:border-[#294D6B]/40 hover:text-[#111827] cursor-pointer"
               title="Minimize card"
-              aria-label="Minimize registration card"
+              aria-label="Minimize authentication card"
             >
               <ChevronUp size={14} />
             </button>
           )}
 
           <div className="relative z-10 px-7 pt-8 pb-7">
-            {/* Header */}
             <motion.div
               animate={{ y: expanded ? 0 : 2 }}
               transition={{ duration: 0.5, ease }}
@@ -259,7 +315,7 @@ export const FlowSignup: React.FC<FlowSignupProps> = ({
                 <ShieldCheck size={12} />
                 <span>OPERATOR PROVISIONING</span>
               </div>
-              <h2 className="text-[28px] font-bold tracking-[-0.035em] text-[#111827]">
+              <h2 className="text-[26px] font-bold tracking-[-0.03em] text-[#111827]">
                 {title}
               </h2>
               <p className="mt-1 text-[13px] font-medium text-[#566575]">
@@ -267,13 +323,12 @@ export const FlowSignup: React.FC<FlowSignupProps> = ({
               </p>
             </motion.div>
 
-            {/* Compact button */}
             {!expanded && (
               <div className="mt-6 flex justify-center pb-2">
                 <button
                   type="button"
                   onClick={handleCardClick}
-                  className="flex h-[42px] items-center gap-2 rounded-full bg-[#101820] px-6 text-[13px] font-semibold text-white shadow-[0_8px_24px_rgba(16,24,32,0.18)] transition hover:bg-[#294D6B]"
+                  className="flex h-[42px] items-center gap-2 rounded-full bg-[#101820] px-6 text-[13px] font-semibold text-white shadow-[0_8px_24px_rgba(16,24,32,0.18)] transition hover:bg-[#294D6B] cursor-pointer"
                 >
                   <span>{compactText}</span>
                   <ChevronDown size={14} strokeWidth={2.2} />
@@ -281,14 +336,13 @@ export const FlowSignup: React.FC<FlowSignupProps> = ({
               </div>
             )}
 
-            {/* Expanded form */}
             {expanded && (
               <motion.form
                 onSubmit={handleSubmit}
                 initial={{ opacity: 0, y: 10 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.38, ease }}
-                className="mt-6 space-y-3.5"
+                className="mt-6 space-y-3"
                 noValidate
               >
                 {errorMessage && (
@@ -315,7 +369,7 @@ export const FlowSignup: React.FC<FlowSignupProps> = ({
                 <motion.div variants={fieldVariant} initial="hidden" animate="show">
                   <label
                     htmlFor="flow-signup-name"
-                    className="mb-1.5 block text-[11px] font-semibold uppercase tracking-wider text-[#566575]"
+                    className="mb-1 block text-[11px] font-semibold uppercase tracking-wider text-[#566575]"
                   >
                     Full Name
                   </label>
@@ -332,9 +386,75 @@ export const FlowSignup: React.FC<FlowSignupProps> = ({
                       placeholder="Elena Rostova"
                       autoComplete="name"
                       disabled={loading}
-                      className="h-[45px] w-full rounded-[13px] border border-[#D5E1E8] bg-[#F5F9FB] pl-10 pr-3.5 text-[13px] font-medium text-[#111827] outline-none transition placeholder:text-[#566575]/60 focus:border-[#294D6B] focus:bg-white focus:ring-2 focus:ring-[#294D6B]/12 disabled:opacity-60"
+                      className="h-[44px] w-full rounded-[13px] border border-[#D5E1E8] bg-[#F5F9FB] pl-10 pr-3.5 text-[13px] font-medium text-[#111827] outline-none transition placeholder:text-[#566575]/60 focus:border-[#294D6B] focus:bg-white focus:ring-2 focus:ring-[#294D6B]/12 disabled:opacity-60"
                     />
                   </div>
+                </motion.div>
+
+                {/* Unique Username */}
+                <motion.div
+                  variants={fieldVariant}
+                  initial="hidden"
+                  animate="show"
+                  transition={{ delay: 0.04 }}
+                >
+                  <div className="flex items-center justify-between mb-1">
+                    <label
+                      htmlFor="flow-signup-username"
+                      className="block text-[11px] font-semibold uppercase tracking-wider text-[#566575]"
+                    >
+                      Operator Username
+                    </label>
+                    <span className="text-[10px] text-[#566575]">a-z, 0-9, _ (3-30 chars)</span>
+                  </div>
+                  <div className="relative">
+                    <AtSign
+                      size={15}
+                      className="absolute left-3.5 top-1/2 -translate-y-1/2 text-[#566575]"
+                    />
+                    <input
+                      id="flow-signup-username"
+                      type="text"
+                      value={username}
+                      onChange={(e) => {
+                        setUsername(e.target.value);
+                        setUsernameStatus({ tested: false, valid: false });
+                      }}
+                      onBlur={handleUsernameBlur}
+                      placeholder="elena_rostova"
+                      autoCapitalize="none"
+                      autoCorrect="off"
+                      spellCheck={false}
+                      autoComplete="username"
+                      disabled={loading}
+                      className={`h-[44px] w-full rounded-[13px] border bg-[#F5F9FB] pl-10 pr-9 text-[13px] font-medium text-[#111827] outline-none transition placeholder:text-[#566575]/60 focus:bg-white focus:ring-2 disabled:opacity-60 ${
+                        usernameStatus.tested
+                          ? usernameStatus.valid
+                            ? 'border-emerald-300 focus:border-emerald-500 focus:ring-emerald-500/12'
+                            : 'border-red-300 focus:border-red-500 focus:ring-red-500/12'
+                          : 'border-[#D5E1E8] focus:border-[#294D6B] focus:ring-[#294D6B]/12'
+                      }`}
+                    />
+
+                    <div className="absolute right-3 top-1/2 -translate-y-1/2">
+                      {usernameChecking ? (
+                        <Loader2 size={14} className="animate-spin text-[#566575]" />
+                      ) : usernameStatus.tested && usernameStatus.valid ? (
+                        <CheckCircle2 size={14} className="text-emerald-600" />
+                      ) : usernameStatus.tested && !usernameStatus.valid ? (
+                        <AlertCircle size={14} className="text-red-500" />
+                      ) : null}
+                    </div>
+                  </div>
+                  {usernameStatus.tested && usernameStatus.message && (
+                    <p
+                      className={`mt-1 text-[11px] font-medium ${
+                        usernameStatus.valid ? 'text-emerald-700' : 'text-red-600'
+                      }`}
+                    >
+                      {usernameStatus.message}
+                    </p>
+                  )}
                 </motion.div>
 
                 {/* Work Email */}
@@ -342,11 +462,11 @@ export const FlowSignup: React.FC<FlowSignupProps> = ({
                   variants={fieldVariant}
                   initial="hidden"
                   animate="show"
-                  transition={{ delay: 0.05 }}
+                  transition={{ delay: 0.08 }}
                 >
                   <label
                     htmlFor="flow-signup-email"
-                    className="mb-1.5 block text-[11px] font-semibold uppercase tracking-wider text-[#566575]"
+                    className="mb-1 block text-[11px] font-semibold uppercase tracking-wider text-[#566575]"
                   >
                     Work Email Address
                   </label>
@@ -363,7 +483,7 @@ export const FlowSignup: React.FC<FlowSignupProps> = ({
                       placeholder="elena@enterprise.com"
                       autoComplete="email"
                       disabled={loading}
-                      className="h-[45px] w-full rounded-[13px] border border-[#D5E1E8] bg-[#F5F9FB] pl-10 pr-3.5 text-[13px] font-medium text-[#111827] outline-none transition placeholder:text-[#566575]/60 focus:border-[#294D6B] focus:bg-white focus:ring-2 focus:ring-[#294D6B]/12 disabled:opacity-60"
+                      className="h-[44px] w-full rounded-[13px] border border-[#D5E1E8] bg-[#F5F9FB] pl-10 pr-3.5 text-[13px] font-medium text-[#111827] outline-none transition placeholder:text-[#566575]/60 focus:border-[#294D6B] focus:bg-white focus:ring-2 focus:ring-[#294D6B]/12 disabled:opacity-60"
                     />
                   </div>
                 </motion.div>
@@ -373,13 +493,13 @@ export const FlowSignup: React.FC<FlowSignupProps> = ({
                   variants={fieldVariant}
                   initial="hidden"
                   animate="show"
-                  transition={{ delay: 0.1 }}
+                  transition={{ delay: 0.12 }}
                 >
                   <label
                     htmlFor="flow-signup-password"
-                    className="mb-1.5 block text-[11px] font-semibold uppercase tracking-wider text-[#566575]"
+                    className="mb-1 block text-[11px] font-semibold uppercase tracking-wider text-[#566575]"
                   >
-                    Password (min 8 chars, numbers &amp; symbols)
+                    Password (min 8 chars with numbers/symbols)
                   </label>
                   <div className="relative">
                     <Lock
@@ -391,37 +511,49 @@ export const FlowSignup: React.FC<FlowSignupProps> = ({
                       type={passwordVisible ? 'text' : 'password'}
                       value={password}
                       onChange={(e) => setPassword(e.target.value)}
-                      placeholder="Create a strong password"
+                      placeholder="At least 8 characters"
                       autoComplete="new-password"
                       disabled={loading}
-                      className="h-[45px] w-full rounded-[13px] border border-[#D5E1E8] bg-[#F5F9FB] pl-10 pr-10 text-[13px] font-medium text-[#111827] outline-none transition placeholder:text-[#566575]/60 focus:border-[#294D6B] focus:bg-white focus:ring-2 focus:ring-[#294D6B]/12 disabled:opacity-60"
+                      className="h-[44px] w-full rounded-[13px] border border-[#D5E1E8] bg-[#F5F9FB] pl-10 pr-10 text-[13px] font-medium text-[#111827] outline-none transition placeholder:text-[#566575]/60 focus:border-[#294D6B] focus:bg-white focus:ring-2 focus:ring-[#294D6B]/12 disabled:opacity-60"
                     />
                     <button
                       type="button"
                       disabled={loading}
-                      onClick={() => setPasswordVisible((value) => !value)}
-                      className="absolute right-3.5 top-1/2 -translate-y-1/2 text-[#566575] transition hover:text-[#111827] disabled:opacity-40"
+                      onClick={() => setPasswordVisible((v) => !v)}
+                      className="absolute right-3.5 top-1/2 -translate-y-1/2 text-[#566575] hover:text-[#111827] disabled:opacity-40 cursor-pointer"
                       aria-label={passwordVisible ? 'Hide password' : 'Show password'}
                     >
                       {passwordVisible ? <EyeOff size={15} /> : <Eye size={15} />}
                     </button>
                   </div>
 
-                  {/* Password strength bars */}
-                  <div className="mt-2 flex gap-1.5">
-                    {[1, 2, 3].map((level) => (
-                      <motion.span
-                        key={level}
-                        animate={{
-                          opacity: passwordStrength >= level ? 1 : 0.25,
-                          scaleX: passwordStrength >= level ? 1 : 0.94,
-                        }}
-                        className={`h-[3.5px] flex-1 origin-left rounded-full ${
-                          passwordStrength >= level ? 'bg-[#294D6B]' : 'bg-[#A8C2D2]'
-                        }`}
-                      />
-                    ))}
-                  </div>
+                  {/* Password Strength Meter */}
+                  {password.length > 0 && (
+                    <div className="mt-1.5 flex items-center gap-1.5 px-0.5">
+                      <div className="flex flex-1 gap-1">
+                        <span
+                          className={`h-1 flex-1 rounded-full transition ${
+                            passwordStrength >= 1 ? 'bg-amber-400' : 'bg-[#D5E1E8]'
+                          }`}
+                        />
+                        <span
+                          className={`h-1 flex-1 rounded-full transition ${
+                            passwordStrength >= 2 ? 'bg-emerald-400' : 'bg-[#D5E1E8]'
+                          }`}
+                        />
+                        <span
+                          className={`h-1 flex-1 rounded-full transition ${
+                            passwordStrength >= 3 ? 'bg-emerald-600' : 'bg-[#D5E1E8]'
+                          }`}
+                        />
+                      </div>
+                      <span className="text-[10px] font-semibold text-[#566575]">
+                        {passwordStrength === 1 && 'Weak'}
+                        {passwordStrength === 2 && 'Good'}
+                        {passwordStrength === 3 && 'Strong'}
+                      </span>
+                    </div>
+                  )}
                 </motion.div>
 
                 {/* Confirm Password */}
@@ -429,11 +561,11 @@ export const FlowSignup: React.FC<FlowSignupProps> = ({
                   variants={fieldVariant}
                   initial="hidden"
                   animate="show"
-                  transition={{ delay: 0.15 }}
+                  transition={{ delay: 0.16 }}
                 >
                   <label
                     htmlFor="flow-signup-confirm"
-                    className="mb-1.5 block text-[11px] font-semibold uppercase tracking-wider text-[#566575]"
+                    className="mb-1 block text-[11px] font-semibold uppercase tracking-wider text-[#566575]"
                   >
                     Confirm Password
                   </label>
@@ -447,60 +579,52 @@ export const FlowSignup: React.FC<FlowSignupProps> = ({
                       type={confirmVisible ? 'text' : 'password'}
                       value={confirmPassword}
                       onChange={(e) => setConfirmPassword(e.target.value)}
-                      placeholder="Repeat your password"
+                      placeholder="Re-enter your password"
                       autoComplete="new-password"
                       disabled={loading}
-                      className="h-[45px] w-full rounded-[13px] border border-[#D5E1E8] bg-[#F5F9FB] pl-10 pr-10 text-[13px] font-medium text-[#111827] outline-none transition placeholder:text-[#566575]/60 focus:border-[#294D6B] focus:bg-white focus:ring-2 focus:ring-[#294D6B]/12 disabled:opacity-60"
+                      className="h-[44px] w-full rounded-[13px] border border-[#D5E1E8] bg-[#F5F9FB] pl-10 pr-10 text-[13px] font-medium text-[#111827] outline-none transition placeholder:text-[#566575]/60 focus:border-[#294D6B] focus:bg-white focus:ring-2 focus:ring-[#294D6B]/12 disabled:opacity-60"
                     />
                     <button
                       type="button"
                       disabled={loading}
-                      onClick={() => setConfirmVisible((value) => !value)}
-                      className="absolute right-3.5 top-1/2 -translate-y-1/2 text-[#566575] transition hover:text-[#111827] disabled:opacity-40"
-                      aria-label={confirmVisible ? 'Hide confirm password' : 'Show confirm password'}
+                      onClick={() => setConfirmVisible((v) => !v)}
+                      className="absolute right-3.5 top-1/2 -translate-y-1/2 text-[#566575] hover:text-[#111827] disabled:opacity-40 cursor-pointer"
+                      aria-label={confirmVisible ? 'Hide password' : 'Show password'}
                     >
                       {confirmVisible ? <EyeOff size={15} /> : <Eye size={15} />}
                     </button>
                   </div>
-
-                  {confirmPassword.length > 0 && password !== confirmPassword && (
-                    <motion.p
-                      initial={{ opacity: 0 }}
-                      animate={{ opacity: 1 }}
-                      className="mt-1.5 text-[11px] font-medium text-red-600"
-                    >
-                      Passwords do not match.
-                    </motion.p>
-                  )}
                 </motion.div>
 
-                {/* Terms Checkbox */}
+                {/* Terms Acceptance */}
                 {showTerms && (
-                  <motion.button
+                  <motion.div
                     variants={fieldVariant}
                     initial="hidden"
                     animate="show"
                     transition={{ delay: 0.2 }}
-                    type="button"
-                    disabled={loading}
-                    onClick={() => setTerms((value) => !value)}
-                    className="flex items-start gap-2.5 pt-1 text-left text-[11px] font-medium leading-relaxed text-[#566575] transition hover:text-[#111827] disabled:opacity-40"
+                    className="pt-0.5"
                   >
-                    <span
-                      className={`mt-[2px] flex h-[16px] w-[16px] shrink-0 items-center justify-center rounded-[5px] border transition ${
-                        terms
-                          ? 'border-[#294D6B] bg-[#294D6B] text-white'
-                          : 'border-[#D5E1E8] bg-[#F5F9FB]'
-                      }`}
+                    <button
+                      type="button"
+                      disabled={loading}
+                      onClick={() => setTerms((v) => !v)}
+                      className="flex items-start gap-2.5 text-left text-[11.5px] leading-tight text-[#566575] hover:text-[#111827] disabled:opacity-40 cursor-pointer"
                     >
-                      {terms && <Check size={10} strokeWidth={2.8} />}
-                    </span>
-                    <span>
-                      I agree to the Orion-9{' '}
-                      <span className="font-semibold text-[#294D6B]">Enterprise Terms</span> and{' '}
-                      <span className="font-semibold text-[#294D6B]">Security Policy</span>.
-                    </span>
-                  </motion.button>
+                      <span
+                        className={`mt-0.5 flex h-[16px] w-[16px] shrink-0 items-center justify-center rounded-[5px] border transition ${
+                          terms
+                            ? 'border-[#294D6B] bg-[#294D6B] text-white'
+                            : 'border-[#D5E1E8] bg-[#F5F9FB]'
+                        }`}
+                      >
+                        {terms && <Check size={10} strokeWidth={2.8} />}
+                      </span>
+                      <span>
+                        I agree to the Orion-9 Enterprise Terms of Service and Privacy Policy.
+                      </span>
+                    </button>
+                  </motion.div>
                 )}
 
                 {/* Submit Button */}
@@ -508,28 +632,28 @@ export const FlowSignup: React.FC<FlowSignupProps> = ({
                   variants={fadeVariant}
                   initial="hidden"
                   animate="show"
-                  transition={{ delay: 0.24 }}
+                  transition={{ delay: 0.22 }}
                   type="submit"
                   disabled={loading}
-                  className="flex h-[46px] w-full items-center justify-center gap-2 rounded-full bg-[#101820] text-[13px] font-semibold text-white shadow-[0_10px_25px_rgba(16,24,32,0.18)] transition duration-200 hover:bg-[#294D6B] disabled:cursor-not-allowed disabled:opacity-60 cursor-pointer"
+                  className="flex h-[46px] w-full items-center justify-center gap-2 rounded-full bg-[#101820] text-[13px] font-semibold text-white shadow-[0_10px_25px_rgba(16,24,32,0.18)] transition duration-200 hover:bg-[#294D6B] disabled:cursor-wait disabled:opacity-70 cursor-pointer mt-2"
                 >
                   {loading ? (
                     <>
                       <span className="h-4 w-4 animate-spin rounded-full border-2 border-white/30 border-t-white" />
-                      <span>Creating account...</span>
+                      <span>Provisioning operator account...</span>
                     </>
                   ) : (
                     primaryText
                   )}
                 </motion.button>
 
-                {/* Social Sign-Up */}
+                {/* Social Sign-In */}
                 {showSocial && (
                   <>
                     <div className="flex items-center gap-3 py-1">
                       <span className="h-px flex-1 bg-[#D5E1E8]" />
                       <span className="text-[11px] font-medium text-[#566575]">
-                        or sign up with
+                        or register with
                       </span>
                       <span className="h-px flex-1 bg-[#D5E1E8]" />
                     </div>
@@ -541,13 +665,12 @@ export const FlowSignup: React.FC<FlowSignupProps> = ({
                       className="flex h-[42px] w-full items-center justify-center gap-2.5 rounded-full border border-[#D5E1E8] bg-[#F5F9FB] text-[12px] font-semibold text-[#111827] transition hover:border-[#294D6B]/40 hover:bg-white disabled:opacity-50 cursor-pointer"
                     >
                       <GoogleIcon size={15} />
-                      <span>Sign up with Google Workspace</span>
+                      <span>Continue with Google Workspace</span>
                     </button>
                   </>
                 )}
 
-                {/* Footer */}
-                <p className="pt-1.5 text-center text-[12px] font-medium text-[#566575]">
+                <p className="pt-2 text-center text-[12px] font-medium text-[#566575]">
                   Already have an operator account?{' '}
                   <button
                     type="button"
@@ -555,7 +678,7 @@ export const FlowSignup: React.FC<FlowSignupProps> = ({
                     onClick={onNavigateLogin}
                     className="font-semibold text-[#294D6B] transition hover:underline disabled:opacity-40 cursor-pointer"
                   >
-                    Sign in
+                    Sign in here
                   </button>
                 </p>
               </motion.form>

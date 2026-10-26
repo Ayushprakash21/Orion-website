@@ -18,6 +18,7 @@ export const AuthPageView: React.FC<AuthPageViewProps> = ({ mode, onNavigate }) 
     resetPassword,
     loginWithGoogle,
     user,
+    username,
     launchOrion,
     destinationUrl,
     isFirebaseConfigured,
@@ -25,7 +26,7 @@ export const AuthPageView: React.FC<AuthPageViewProps> = ({ mode, onNavigate }) 
   const { activeConfig } = useSiteConfig();
 
   return (
-    <div className="min-h-screen bg-[#EAF4F8] text-[#111827] flex flex-col justify-between relative overflow-hidden">
+    <div className="min-h-screen bg-[#EAF4F8] text-[#111827] flex flex-col justify-between relative overflow-hidden font-sans">
       {/* Subtle architectural background grid */}
       <div
         className="pointer-events-none absolute inset-0 opacity-40"
@@ -84,8 +85,11 @@ export const AuthPageView: React.FC<AuthPageViewProps> = ({ mode, onNavigate }) 
                 ACTIVE OPERATOR SESSION
               </span>
               <h1 className="text-2xl font-bold text-[#111827]">
-                Welcome, {user.displayName || user.email?.split('@')[0]}
+                Welcome, {user.displayName || username || user.email?.split('@')[0]}
               </h1>
+              {username && (
+                <p className="text-xs font-mono text-[#294D6B] font-medium">@{username}</p>
+              )}
               <p className="text-xs text-[#566575]">{user.email}</p>
             </div>
             <div className="flex flex-col gap-2.5 pt-2">
@@ -113,14 +117,14 @@ export const AuthPageView: React.FC<AuthPageViewProps> = ({ mode, onNavigate }) 
             defaultExpanded={true}
             showSocial={activeConfig.authSettings.allowGoogleAuth}
             showForgot={activeConfig.authSettings.allowPasswordReset}
-            onSubmit={async ({ email, password, remember }) => {
-              const res = await login(email, password, remember);
+            onSubmit={async ({ identifier, email, password, remember }) => {
+              const res = await login(identifier || email || '', password, remember);
               if (res.success) {
                 onNavigate('/');
               }
               return res;
             }}
-            onForgotPassword={(email) => resetPassword(email)}
+            onForgotPassword={(identifier) => resetPassword(identifier)}
             onGoogleSignIn={async () => {
               const res = await loginWithGoogle();
               if (res.success) {
@@ -136,8 +140,8 @@ export const AuthPageView: React.FC<AuthPageViewProps> = ({ mode, onNavigate }) 
             subtitle="Provision your operator credentials and get started."
             defaultExpanded={true}
             showSocial={activeConfig.authSettings.allowGoogleAuth}
-            onSubmit={async ({ name, email, password }) => {
-              const res = await signup(name, email, password);
+            onSubmit={async ({ name, username, email, password, terms }) => {
+              const res = await signup(name, username, email, password, terms);
               if (res.success) {
                 onNavigate('/');
               }

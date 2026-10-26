@@ -111,6 +111,27 @@ service cloud.firestore {
     }
 
     // ===============================================================
+    // 3.1 Username Registry (Single-Doc Resolution, Anti-Enumeration)
+    // ===============================================================
+    match /usernames/{normalizedUsername} {
+      // STRICTLY FORBID LISTING: Prevents enumeration or scraping of registered usernames
+      allow list: if false;
+
+      // Allow point get for exact username resolution during authentication & password recovery
+      allow get: if true;
+
+      // An authenticated user can only reserve their own username document once
+      allow create: if isAuthenticated() &&
+        request.resource.data.uid == request.auth.uid &&
+        request.resource.data.normalizedUsername == normalizedUsername &&
+        !exists(/databases/$(database)/documents/usernames/$(normalizedUsername));
+
+      // Usernames are immutable once registered; only verified admins can manage
+      allow update: if false;
+      allow delete: if isAdmin();
+    }
+
+    // ===============================================================
     // 4. Administrator ACL Registry (Admin Read/Write Only)
     // ===============================================================
     match /admins/{adminUid} {

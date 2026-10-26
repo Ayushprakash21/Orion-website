@@ -1,6 +1,7 @@
 /**
- * Core validation and destination security utilities for Orion-9.
- * Handles safe redirection validation, cross-app boundary checks, and form validation.
+ * Core validation, username security, and destination utilities for Orion-9.
+ * Handles safe redirection validation, username rules, credentials validation,
+ * cross-app boundary checks, and device persistence.
  */
 
 export const DEFAULT_ORION_APP_URL = 'https://orion-9.ayushprakash0021.workers.dev/';
@@ -12,29 +13,176 @@ export const TRUSTED_ORION_HOSTS = [
   '127.0.0.1',
 ];
 
+export const REMEMBERED_USERNAME_STORAGE_KEY = 'orion_remembered_username';
+
 /**
- * Validates whether a destination URL is safe and trusted.
- * Rejects javascript: URIs, data: URIs, protocol-relative URLs, and untrusted domains.
+ * Enterprise reserved usernames that regular operators can never claim or register.
+ * Prevents system impersonation, administrative spoofing, and routing collisions.
+ */
+export const RESERVED_USERNAMES = [
+  'admin',
+  'administrator',
+  'root',
+  'system',
+  'sysadmin',
+  'orion',
+  'orion9',
+  'support',
+  'security',
+  'operator',
+  'superadmin',
+  'moderator',
+  'mod',
+  'dev',
+  'developer',
+  'demo',
+  'guest',
+  'test',
+  'api',
+  'help',
+  'billing',
+  'null',
+  'undefined',
+  'void',
+  'owner',
+  'master',
+] as const;
+
+/**
+ * Normalizes usernames consistently: trims whitespace and converts to lowercase.
+ */
+export function normalizeUsername(raw: string): string {
+  if (!raw || typeof raw !== 'string') return '';
+  return raw.trim().toLowerCase();
+}
+
+/**
+ * Validates username syntax, length, character set, and reserved word collision.
+ * Requirements:
+ * - 3 to 30 characters
+ * - Letters (a-z, A-Z), numbers (0-9), and underscores (_) only
+ * - Case-insensitive reserved username protection
+ */
+export function validateUsername(username: string): {
+  isValid: boolean;
+  error?: string;
+  normalized: string;
+} {
+  if (!username || typeof username !== 'string') {
+    return { isValid: false, error: 'Username is required.', normalized: '' };
+  }
+
+  const trimmed = username.trim();
+  const normalized = normalizeUsername(trimmed);
+
+  if (trimmed.length < 3) {
+    return {
+      isValid: false,
+      error: 'Username must be at least 3 characters long.',
+      normalized,
+    };
+  }
+
+  if (trimmed.length > 30) {
+    return {
+      isValid: false,
+      error: 'Username cannot exceed 30 characters.',
+      normalized,
+    };
+  }
+
+  // Only letters, digits, and underscores allowed
+  const usernameRegex = /^[a-zA-Z0-9_]+$/;
+  if (!usernameRegex.test(trimmed)) {
+    return {
+      isValid: false,
+      error: 'Username can only contain letters, numbers, and underscores.',
+      normalized,
+    };
+  }
+
+  // Check reserved usernames (case-insensitive)
+  if ((RESERVED_USERNAMES as readonly string[]).includes(normalized)) {
+    return {
+      isValid: false,
+      error: `The username "${trimmed}" is reserved and unavailable. Please choose another username.`,
+      normalized,
+    };
+  }
+
+  return { isValid: true, normalized };
+}
+
+/**
+ * Validates whether a login identifier is an email or a valid username format.
+ */
+export function validateLoginIdentifier(identifier: string): {
+  isValid: boolean;
+  isEmail: boolean;
+  normalized: string;
+  error?: string;
+} {
+  if (!identifier || typeof identifier !== 'string' || !identifier.trim()) {
+    return {
+      isValid: false,
+      isEmail: false,
+      normalized: '',
+      error: 'Please enter your username or email address.',
+    };
+  }
+
+  const trimmed = identifier.trim();
+  if (trimmed.includes('@')) {
+    const emailCheck = validateEmail(trimmed);
+    return {
+      isValid: emailCheck.isValid,
+      isEmail: true,
+      normalized: trimmed.toLowerCase(),
+      error: emailCheck.error,
+    };
+  }
+
+  const usernameCheck = validateUsername(trimmed);
+  // For login, even reserved usernames (like admin) are syntactically valid inputs,
+  // but invalid characters or length are still rejected.
+  const normalized = normalizeUsername(trimmed);
+  const syntaxValid = /^[a-zA-Z0-9_]{3,30}$/.test(trimmed);
+
+  if (!syntaxValid) {
+    return {
+      isValid: false,
+      isEmail: false,
+      normalized,
+      error: usernameCheck.error || 'Username must be 3-30 characters using letters, numbers, or underscores.',
+    };
+  }
+
+  return {
+    isValid: true,
+    isEmail: false,
+    normalized,
+  };
+}
+
+/**
+ * Validates destination URLs against Orion-9 origin whitelist.
  */
 export function isValidDestinationUrl(rawUrl: string): boolean {
   if (!rawUrl || typeof rawUrl !== 'string') return false;
-  
+
   const trimmed = rawUrl.trim();
-  // Reject dangerous protocols
   if (trimmed.toLowerCase().startsWith('javascript:') || trimmed.toLowerCase().startsWith('data:')) {
     return false;
   }
-  
+
   try {
     const parsed = new URL(trimmed);
-    // Only accept https (or http on localhost during development)
     if (parsed.protocol !== 'https:' && parsed.protocol !== 'http:') {
       return false;
     }
-    
-    // Check if hostname matches or is a subdomain of trusted hosts
+
     const hostname = parsed.hostname.toLowerCase();
-    const isWhitelisted = TRUSTED_ORION_HOSTS.some(trusted => {
+    const isWhitelisted = TRUSTED_ORION_HOSTS.some((trusted) => {
       return hostname === trusted || hostname.endsWith(`.${trusted}`);
     });
 
@@ -45,11 +193,17 @@ export function isValidDestinationUrl(rawUrl: string): boolean {
 }
 
 /**
- * Resolves the final destination for launching Orion-9.
- * Fallbacks safely to the canonical live Orion-9 application URL.
+ * Resolves safe launch URL with fallback.
  */
-export function resolveLaunchUrl(customUrl?: string): { url: string; isTrusted: boolean; reason?: string } {
-  const candidate = customUrl?.trim() || (typeof process !== 'undefined' && process.env?.VITE_ORION_APP_URL) || DEFAULT_ORION_APP_URL;
+export function resolveLaunchUrl(customUrl?: string): {
+  url: string;
+  isTrusted: boolean;
+  reason?: string;
+} {
+  const candidate =
+    customUrl?.trim() ||
+    (typeof process !== 'undefined' && process.env?.VITE_ORION_APP_URL) ||
+    DEFAULT_ORION_APP_URL;
 
   if (isValidDestinationUrl(candidate)) {
     return {
@@ -66,7 +220,7 @@ export function resolveLaunchUrl(customUrl?: string): { url: string; isTrusted: 
 }
 
 /**
- * Validates email formatting according to standard enterprise RFC specifications.
+ * Validates email formatting.
  */
 export function validateEmail(email: string): { isValid: boolean; error?: string } {
   if (!email || !email.trim()) {
@@ -81,9 +235,12 @@ export function validateEmail(email: string): { isValid: boolean; error?: string
 
 /**
  * Validates password strength for Orion-9 enterprise accounts.
- * Requires at least 8 characters with a mix of letters and numbers.
  */
-export function validatePassword(password: string): { isValid: boolean; error?: string; score: number } {
+export function validatePassword(password: string): {
+  isValid: boolean;
+  error?: string;
+  score: number;
+} {
   if (!password) {
     return { isValid: false, error: 'Password is required.', score: 0 };
   }
@@ -102,23 +259,41 @@ export function validatePassword(password: string): { isValid: boolean; error?: 
   if (hasSpecial) score++;
 
   if (!hasNumber && !hasSpecial) {
-    return { isValid: false, error: 'Password must include at least one number or special character.', score };
+    return {
+      isValid: false,
+      error: 'Password must include at least one number or special character.',
+      score,
+    };
   }
 
   return { isValid: true, score };
 }
 
 /**
- * Validates full sign-up form fields.
+ * Validates complete sign-up form fields including full name, unique username,
+ * email, password, password confirmation, and terms acceptance.
  */
-export function validateSignUp(name: string, email: string, password: string, confirmPassword?: string): {
+export function validateSignUp(
+  name: string,
+  username: string,
+  email: string,
+  password: string,
+  confirmPassword?: string,
+  termsAccepted = true
+): {
   isValid: boolean;
   errors: Record<string, string>;
+  normalizedUsername: string;
 } {
   const errors: Record<string, string> = {};
 
   if (!name || name.trim().length < 2) {
     errors.name = 'Full name must be at least 2 characters.';
+  }
+
+  const usernameCheck = validateUsername(username);
+  if (!usernameCheck.isValid) {
+    errors.username = usernameCheck.error!;
   }
 
   const emailCheck = validateEmail(email);
@@ -135,17 +310,138 @@ export function validateSignUp(name: string, email: string, password: string, co
     errors.confirmPassword = 'Passwords do not match.';
   }
 
+  if (!termsAccepted) {
+    errors.terms = 'You must accept the terms of service to continue.';
+  }
+
   return {
     isValid: Object.keys(errors).length === 0,
     errors,
+    normalizedUsername: usernameCheck.normalized,
   };
 }
 
 /**
- * Cross-application authentication analysis:
- * Informs the user whether the landing page and the Cloudflare Workers deployed app
- * share an identical cookie domain / Firebase Auth session.
+ * Device-remembered username helpers.
+ * Never stores or persists passwords or auth tokens.
  */
+export function getRememberedUsername(storage?: Storage): string | null {
+  try {
+    const s = storage || (typeof window !== 'undefined' ? window.localStorage : undefined);
+    if (!s) return null;
+    const value = s.getItem(REMEMBERED_USERNAME_STORAGE_KEY);
+    return value ? value.trim() : null;
+  } catch {
+    return null;
+  }
+}
+
+export function saveRememberedUsername(identifier: string, storage?: Storage): void {
+  try {
+    const s = storage || (typeof window !== 'undefined' ? window.localStorage : undefined);
+    if (!s) return;
+    if (identifier && identifier.trim()) {
+      s.setItem(REMEMBERED_USERNAME_STORAGE_KEY, identifier.trim());
+    } else {
+      s.removeItem(REMEMBERED_USERNAME_STORAGE_KEY);
+    }
+  } catch {
+    // Ignore storage quota or access issues
+  }
+}
+
+export function clearRememberedUsername(storage?: Storage): void {
+  try {
+    const s = storage || (typeof window !== 'undefined' ? window.localStorage : undefined);
+    if (!s) return;
+    s.removeItem(REMEMBERED_USERNAME_STORAGE_KEY);
+  } catch {
+    // Ignore
+  }
+}
+
+/**
+ * Checks whether the current runtime environment is local development / test.
+ */
+export function isLocalDevEnvironment(customEnv?: {
+  isDev?: boolean;
+  hostname?: string;
+}): boolean {
+  if (customEnv) {
+    if (customEnv.isDev !== undefined) return customEnv.isDev;
+    if (customEnv.hostname) {
+      const h = customEnv.hostname.toLowerCase();
+      return h === 'localhost' || h === '127.0.0.1' || h === '0.0.0.0' || h === '::1';
+    }
+  }
+
+  if (typeof process !== 'undefined' && process.env?.NODE_ENV === 'test') {
+    return true;
+  }
+
+  try {
+    const env = (import.meta as unknown as { env: Record<string, string | boolean | undefined> })?.env;
+    if (env?.DEV === true || env?.MODE === 'development') {
+      return true;
+    }
+  } catch {
+    // import.meta not available in non-ESM
+  }
+
+  if (typeof window !== 'undefined' && window.location) {
+    const hostname = window.location.hostname.toLowerCase();
+    return (
+      hostname === 'localhost' ||
+      hostname === '127.0.0.1' ||
+      hostname === '0.0.0.0' ||
+      hostname === '::1'
+    );
+  }
+
+  return false;
+}
+
+/**
+ * Validates Administrator login credentials.
+ * Enforces strict environment separation for local dev credentials (admin/admin):
+ * - In local development / test: Allows admin/admin to grant local development administrator access.
+ * - In production: Strictly rejects admin/admin with a clear security rejection error.
+ */
+export function validateAdminLogin(
+  identifier: string,
+  pass: string,
+  envOverride?: { isDev?: boolean; hostname?: string }
+): {
+  isLocalDevAttempt: boolean;
+  allowedInCurrentEnv: boolean;
+  error?: string;
+} {
+  const normIdentifier = normalizeUsername(identifier);
+  const isDevCreds = normIdentifier === 'admin' && pass === 'admin';
+
+  if (!isDevCreds) {
+    return {
+      isLocalDevAttempt: false,
+      allowedInCurrentEnv: true, // proceed to real Firebase authentication
+    };
+  }
+
+  const isDev = isLocalDevEnvironment(envOverride);
+  if (isDev) {
+    return {
+      isLocalDevAttempt: true,
+      allowedInCurrentEnv: true,
+    };
+  }
+
+  return {
+    isLocalDevAttempt: true,
+    allowedInCurrentEnv: false,
+    error:
+      'Local development credentials (admin / admin) are strictly prohibited in production. Please sign in using your verified Firebase Administrator credentials.',
+  };
+}
+
 export interface CrossAppAuthStatus {
   sharesSession: boolean;
   requiresDedicatedLogin: boolean;
@@ -153,8 +449,6 @@ export interface CrossAppAuthStatus {
 }
 
 export function evaluateCrossAppAuth(): CrossAppAuthStatus {
-  // The deployed app is on 'orion-9.ayushprakash0021.workers.dev'
-  // Web storage (IndexedDB/localStorage) and first-party cookies are partition-isolated by origin.
   return {
     sharesSession: false,
     requiresDedicatedLogin: true,

@@ -43,8 +43,8 @@ export const AuthModal: React.FC = () => {
             subtitle="Provision your operator credentials and get started."
             defaultExpanded={true}
             showSocial={activeConfig.authSettings.allowGoogleAuth}
-            onSubmit={async ({ name, email, password }) => {
-              return await signup(name, email, password);
+            onSubmit={async ({ name, username, email, password, terms }) => {
+              return await signup(name, username, email, password, terms);
             }}
             onGoogleSignIn={loginWithGoogle}
             onNavigateLogin={() => openAuthModal('login')}
@@ -56,10 +56,10 @@ export const AuthModal: React.FC = () => {
             defaultExpanded={true}
             showSocial={activeConfig.authSettings.allowGoogleAuth}
             showForgot={activeConfig.authSettings.allowPasswordReset}
-            onSubmit={async ({ email, password, remember }) => {
-              return await login(email, password, remember);
+            onSubmit={async ({ identifier, email, password, remember }) => {
+              return await login(identifier || email || '', password, remember);
             }}
-            onForgotPassword={(email) => resetPassword(email)}
+            onForgotPassword={(identifier) => resetPassword(identifier)}
             onGoogleSignIn={loginWithGoogle}
             onNavigateSignup={() => openAuthModal('signup')}
           />
