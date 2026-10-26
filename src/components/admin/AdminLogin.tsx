@@ -55,7 +55,7 @@ export function AdminLogin({ onNavigate }: AdminLoginProps) {
   const currentConfig = getActiveFirebaseConfig();
 
   const handleFillDevCredentials = () => {
-    setIdentifier('admn@orion');
+    setIdentifier('admin@orion');
     setPassword('admin');
     setError(null);
   };
@@ -215,11 +215,11 @@ export function AdminLogin({ onNavigate }: AdminLoginProps) {
                   onClick={handleFillDevCredentials}
                   className="px-2.5 py-1 rounded-md bg-[#294D6B] text-white text-[11px] font-semibold hover:bg-[#101820] transition-colors cursor-pointer"
                 >
-                  Auto-fill (admn@orion / admin)
+                  Auto-fill (admin@orion / admin)
                 </button>
               </div>
               <p className="text-[11.5px] leading-relaxed text-[#566575]">
-                Login ID: <code className="font-mono font-bold text-[#111827]">admn@orion</code> · Password:{' '}
+                Login ID: <code className="font-mono font-bold text-[#111827]">admin@orion</code> · Password:{' '}
                 <code className="font-mono font-bold text-[#111827]">admin</code>. Pre-configured for direct access to the Orion-9 Admin Console.
               </p>
             </div>
@@ -350,7 +350,7 @@ export function AdminLogin({ onNavigate }: AdminLoginProps) {
                       disabled={loading}
                       value={identifier}
                       onChange={(e) => setIdentifier(e.target.value)}
-                      placeholder="admn@orion or admin@company.com"
+                      placeholder="admin@orion or admin@company.com"
                       className="w-full pl-10 pr-4 py-3 rounded-xl bg-[#F8FAFC] border border-[#CBD5E1] text-sm text-[#070B19] placeholder-[#64748B] focus:outline-none focus:border-[#0284C7] focus:bg-white transition-colors disabled:opacity-60"
                     />
                   </div>

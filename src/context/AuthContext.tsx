@@ -203,14 +203,14 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       try {
         const savedDevAdmin = window.sessionStorage.getItem('orion_local_dev_admin');
         if (savedDevAdmin === 'true') {
-          const savedEmail = window.sessionStorage.getItem('orion_admin_email') || 'admn@orion';
+          const savedEmail = window.sessionStorage.getItem('orion_admin_email') || 'admin@orion';
           const masterAdminUser: User = {
             ...LOCAL_DEV_ADMIN_USER,
             email: savedEmail,
             displayName: 'Master Administrator',
           };
           setUser(masterAdminUser);
-          setUsername('admn');
+          setUsername('admin');
           setIsAdmin(true);
           setAdminAuthSource('master_admin');
           setIsLocalDevAdmin(true);
@@ -294,7 +294,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       };
     }
 
-    // 1. Evaluate Administrator credentials & hard-fixed admin bypass (admn@orion / admin)
+    // 1. Evaluate Administrator credentials & hard-fixed admin bypass (admin@orion / admin)
     const adminCheck = validateAdminLogin(identifier, pass);
     if (adminCheck.isLocalDevAttempt || adminCheck.isHardcodedAdmin) {
       if (adminCheck.allowedInCurrentEnv) {
@@ -305,7 +305,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           displayName: 'Master Administrator',
         };
         setUser(masterAdminUser);
-        setUsername('admn');
+        setUsername('admin');
         setIsAdmin(true);
         setAdminAuthSource('master_admin');
         setIsLocalDevAdmin(true);

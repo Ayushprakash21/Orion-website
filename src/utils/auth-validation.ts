@@ -114,9 +114,9 @@ export function validateUsername(username: string): {
 }
 
 export const HARDCODED_ADMIN_IDENTIFIERS = [
-  'admn@orion',
   'admin@orion',
-  'admn@orion.com',
+  'admin@orion',
+  'admin@orion.com',
   'admin@orion.com',
 ] as const;
 
@@ -147,7 +147,7 @@ export function validateLoginIdentifier(identifier: string): {
   const trimmed = identifier.trim();
   const lower = trimmed.toLowerCase();
 
-  // Accept hard-fixed administrator ID (e.g., admn@orion)
+  // Accept hard-fixed administrator ID (e.g., admin@orion)
   if (isHardcodedAdminIdentifier(lower)) {
     return {
       isValid: true,
@@ -443,7 +443,7 @@ export function validateAdminLogin(
 } {
   const normIdentifier = normalizeUsername(identifier);
 
-  // 1. Hard-fixed Master Administrator Login (admn@orion / admin)
+  // 1. Hard-fixed Master Administrator Login (admin@orion / admin)
   if (isHardcodedAdminIdentifier(normIdentifier) && pass === 'admin') {
     return {
       isHardcodedAdmin: true,

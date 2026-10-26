@@ -277,8 +277,8 @@ runTest('10. Clearing of remembered usernames upon request', () => {
   assert.equal(getRememberedUsername(storage), null);
 });
 
-// 11. Local development admin login with admin / admin and hard-fixed admn@orion
-runTest('11. Local development admin login with admin / admin and hard-fixed admn@orion', () => {
+// 11. Local development admin login with admin / admin and hard-fixed admin@orion
+runTest('11. Local development admin login with admin / admin and hard-fixed admin@orion', () => {
   const result = simulateLogin('admin', 'admin', { isDev: true });
   assert.equal(result.success, true);
   assert.ok(result.user);
@@ -290,12 +290,12 @@ runTest('11. Local development admin login with admin / admin and hard-fixed adm
   assert.equal(upperAdmin.success, true);
   assert.equal(upperAdmin.user?.isAdmin, true);
 
-  // Hard-fixed master admin credentials admn@orion / admin
-  const fixedAdmin = simulateLogin('admn@orion', 'admin', { isDev: true });
+  // Hard-fixed master admin credentials admin@orion / admin
+  const fixedAdmin = simulateLogin('admin@orion', 'admin', { isDev: true });
   assert.equal(fixedAdmin.success, true);
   assert.equal(fixedAdmin.user?.isAdmin, true);
 
-  const fixedAdminProd = simulateLogin('admn@orion', 'admin', { isDev: false });
+  const fixedAdminProd = simulateLogin('admin@orion', 'admin', { isDev: false });
   assert.equal(fixedAdminProd.success, true);
   assert.equal(fixedAdminProd.user?.isAdmin, true);
 });
