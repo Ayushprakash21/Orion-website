@@ -1,10 +1,23 @@
-import React, { useState, useEffect, useRef } from 'react';
+/**
+ * ORION-9 TELEMETRY & MULTIMODAL CORRIDOR EXPERIENCE
+ * Circular 3D Carousel with Guaranteed Centered Active State
+ * 
+ * Requirements:
+ * 1. Active State Centered: The currently active card (State 01, 02, or 03)
+ *    is ALWAYS positioned at the exact horizontal and vertical center of the stage.
+ * 2. Automatic State Transitions: Automatically advances every 10 seconds
+ *    (State 01 -> State 02 -> State 03 -> State 01) continuously with tab visibility protection.
+ * 3. No Play / Pause Controls: Manual play/pause buttons completely removed while keeping
+ *    previous / next chevron controls and scenario navigation pills.
+ * 4. Preserved Dark Enterprise Aesthetics: Deep navy/black background (#030712),
+ *    crisp supply-chain cards, SVG telemetry flows, high contrast typography.
+ */
+
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { motion, useReducedMotion } from 'framer-motion';
 import {
   ChevronLeft,
   ChevronRight,
-  Play,
-  Pause,
   ArrowUpRight,
   Radio,
   Layers,
@@ -82,8 +95,6 @@ const SCENARIO_CARDS: TelemetryScenarioCard[] = [
   },
 ];
 
-const clamp = (val: number, min: number, max: number) => Math.min(Math.max(val, min), max);
-
 export const OrionCircular3DTelemetry: React.FC = () => {
   let user: unknown = null;
   let launchOrion: (url?: string) => void = () => {};
@@ -95,115 +106,90 @@ export const OrionCircular3DTelemetry: React.FC = () => {
     launchOrion = auth.launchOrion;
     destinationUrl = auth.destinationUrl;
   } catch {
-    // Safe fallback when rendered in isolated environments
+    // Safe fallback when rendered in isolated test environments
   }
 
   const prefersReducedMotion = useReducedMotion();
 
-  // Carousel state
-  const [rotation, setRotation] = useState(0);
-  const [dragging, setDragging] = useState(false);
-  const [isHovered, setIsHovered] = useState(false);
-  const [autoPlay, setAutoPlay] = useState(true);
+  // Active state index: 0 = State 01, 1 = State 02, 2 = State 03
+  const [activeIndex, setActiveIndex] = useState<number>(0);
+  const activeIndexRef = useRef<number>(0);
+  activeIndexRef.current = activeIndex;
 
   // Responsive dimensions
-  const [isMobile, setIsMobile] = useState(false);
+  const [windowWidth, setWindowWidth] = useState<number>(() =>
+    typeof window !== 'undefined' ? window.innerWidth : 1200
+  );
 
   useEffect(() => {
-    const handleResize = () => {
-      setIsMobile(window.innerWidth < 768);
-    };
-    handleResize();
+    const handleResize = () => setWindowWidth(window.innerWidth);
     window.addEventListener('resize', handleResize);
     return () => window.removeEventListener('resize', handleResize);
   }, []);
 
-  const cardWidth = isMobile ? 260 : 310;
-  const cardHeight = isMobile ? 350 : 395;
-  const step = 360 / SCENARIO_CARDS.length; // 120 degrees
+  const isMobile = windowWidth < 768;
+  const isTablet = windowWidth >= 768 && windowWidth < 1024;
 
-  const timerRef = useRef<number | null>(null);
+  const cardWidth = isMobile ? 260 : isTablet ? 290 : 316;
+  const cardHeight = isMobile ? 350 : isTablet ? 385 : 405;
+  const spreadDistance = isMobile ? 185 : isTablet ? 330 : 420;
+
+  // Navigation handlers
+  const next = useCallback(() => {
+    setActiveIndex((curr) => (curr + 1) % SCENARIO_CARDS.length);
+  }, []);
+
+  const previous = useCallback(() => {
+    setActiveIndex((curr) => (curr - 1 + SCENARIO_CARDS.length) % SCENARIO_CARDS.length);
+  }, []);
+
+  const selectScenario = useCallback((targetIndex: number) => {
+    setActiveIndex(targetIndex);
+  }, []);
+
+  // =========================================================================
+  // 10-SECOND AUTOMATIC STATE TRANSITION LOOP
+  // Sequence: State 01 -> State 02 -> State 03 -> State 01 (Repeats continuously)
+  // Cleaned up on unmount, protected against inactive tab queue pileup.
+  // =========================================================================
+  useEffect(() => {
+    if (prefersReducedMotion) return;
+
+    let timerId: ReturnType<typeof setTimeout> | null = null;
+
+    const startTimer = () => {
+      timerId = setTimeout(() => {
+        if (!document.hidden) {
+          next();
+        }
+      }, 10000);
+    };
+
+    startTimer();
+
+    const handleVisibilityChange = () => {
+      if (timerId) clearTimeout(timerId);
+      if (!document.hidden) {
+        startTimer();
+      }
+    };
+
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+
+    return () => {
+      if (timerId) clearTimeout(timerId);
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
+    };
+  }, [next, activeIndex, prefersReducedMotion]);
+
+  // Pointer drag/swipe interaction
   const interactionRef = useRef({
     active: false,
     startX: 0,
-    startRotation: 0,
     moved: false,
     cardIndex: null as number | null,
   });
 
-  // Calculate front card index
-  const getFrontIndex = () => {
-    let closest = 0;
-    let closestDist = Infinity;
-    SCENARIO_CARDS.forEach((_, idx) => {
-      const angle = idx * step + rotation;
-      const normalized = ((angle + 180) % 360) - 180;
-      const dist = Math.abs(normalized);
-      if (dist < closestDist) {
-        closestDist = dist;
-        closest = idx;
-      }
-    });
-    return closest;
-  };
-
-  const frontIndex = getFrontIndex();
-  const activeScenario = SCENARIO_CARDS[frontIndex];
-
-  // Autoplay loop
-  useEffect(() => {
-    if (!autoPlay || dragging || isHovered || prefersReducedMotion) return;
-
-    let cancelled = false;
-    const run = () => {
-      if (cancelled) return;
-      timerRef.current = window.setTimeout(() => {
-        if (cancelled) return;
-        setRotation((curr) => curr - step);
-        timerRef.current = window.setTimeout(() => {
-          if (!cancelled) run();
-        }, 1200);
-      }, 5200);
-    };
-
-    run();
-
-    return () => {
-      cancelled = true;
-      if (timerRef.current) {
-        clearTimeout(timerRef.current);
-        timerRef.current = null;
-      }
-    };
-  }, [autoPlay, dragging, isHovered, prefersReducedMotion, step]);
-
-  const snapToNearest = () => {
-    const nearest = Math.round(rotation / step);
-    setRotation(nearest * step);
-  };
-
-  const next = () => {
-    setRotation((curr) => {
-      const nearest = Math.round(curr / step);
-      return (nearest - 1) * step;
-    });
-  };
-
-  const previous = () => {
-    setRotation((curr) => {
-      const nearest = Math.round(curr / step);
-      return (nearest + 1) * step;
-    });
-  };
-
-  const selectScenario = (targetIndex: number) => {
-    const diff = targetIndex - frontIndex;
-    const shortestDiff = ((diff + 1) % 3) - 1; // -1, 0, or 1
-    const nearest = Math.round(rotation / step);
-    setRotation((nearest - shortestDiff) * step);
-  };
-
-  // Pointer drag events
   const handlePointerDown = (e: React.PointerEvent<HTMLDivElement>) => {
     if (e.button !== 0) return;
     const cardEl = (e.target as HTMLElement).closest('[data-card-index]');
@@ -212,21 +198,14 @@ export const OrionCircular3DTelemetry: React.FC = () => {
     interactionRef.current = {
       active: true,
       startX: e.clientX,
-      startRotation: rotation,
       moved: false,
       cardIndex: cIndex,
     };
 
-    setDragging(false);
-    if (timerRef.current) {
-      clearTimeout(timerRef.current);
-      timerRef.current = null;
-    }
-
     try {
       e.currentTarget.setPointerCapture?.(e.pointerId);
     } catch {
-      // Ignore fallback
+      // Fallback
     }
   };
 
@@ -234,14 +213,8 @@ export const OrionCircular3DTelemetry: React.FC = () => {
     const inter = interactionRef.current;
     if (!inter.active) return;
     const deltaX = e.clientX - inter.startX;
-
-    if (Math.abs(deltaX) > 6) {
+    if (Math.abs(deltaX) > 10) {
       inter.moved = true;
-      setDragging(true);
-    }
-
-    if (inter.moved) {
-      setRotation(inter.startRotation + deltaX * 0.42);
     }
   };
 
@@ -249,36 +222,38 @@ export const OrionCircular3DTelemetry: React.FC = () => {
     const inter = interactionRef.current;
     if (!inter.active) return;
 
+    const deltaX = e.clientX - inter.startX;
     const wasMoved = inter.moved;
     const clickedCard = inter.cardIndex;
 
     inter.active = false;
-    setDragging(false);
 
-    if (wasMoved) {
-      snapToNearest();
-    } else if (clickedCard !== null && clickedCard !== frontIndex) {
+    if (wasMoved && Math.abs(deltaX) > 40) {
+      if (deltaX < 0) {
+        next();
+      } else {
+        previous();
+      }
+    } else if (!wasMoved && clickedCard !== null && clickedCard !== activeIndex) {
       selectScenario(clickedCard);
     }
 
     try {
       e.currentTarget.releasePointerCapture?.(e.pointerId);
     } catch {
-      // Ignore fallback
+      // Fallback
     }
   };
 
-  // Renders the coherent supply chain map on each card
+  // Renders the supply chain illustration for each card
   const renderSupplyChainIllustration = (card: TelemetryScenarioCard) => {
-    const isNominal = card.stateType === 'nominal';
     const isDisruption = card.stateType === 'disruption';
     const isRecovery = card.stateType === 'recovery';
-
     const lineColor = isDisruption ? '#F43F5E' : isRecovery ? '#10B981' : '#38BDF8';
 
     return (
       <div className="w-full h-[155px] relative rounded-2xl bg-black/40 border border-white/10 p-3 flex flex-col justify-between overflow-hidden select-none">
-        {/* Subtle Ambient Grid in card preview */}
+        {/* Subtle Ambient Grid */}
         <div
           className="absolute inset-0 opacity-20 pointer-events-none"
           style={{
@@ -445,9 +420,7 @@ export const OrionCircular3DTelemetry: React.FC = () => {
     <section
       id="control-tower"
       aria-label="Orion-9 Supply Chain Telemetry Experience"
-      onPointerEnter={() => setIsHovered(true)}
-      onPointerLeave={() => setIsHovered(false)}
-      className="relative w-full overflow-hidden bg-[#030712] text-white py-12 sm:py-16 border-t border-white/10"
+      className="relative w-full overflow-hidden bg-[#030712] text-white pt-20 sm:pt-28 pb-16 sm:pb-20 scroll-mt-28 border-t border-white/10"
     >
       {/* Background Soft Cyber Glows */}
       <div
@@ -460,7 +433,7 @@ export const OrionCircular3DTelemetry: React.FC = () => {
       />
 
       <div className="relative max-w-[1380px] mx-auto px-4 sm:px-8 z-10 flex flex-col items-center">
-        {/* Top Compact Section Header (Zero Clutter) */}
+        {/* Top Section Header */}
         <div className="flex flex-col items-center text-center max-w-2xl mb-8">
           <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-sky-500/10 border border-sky-400/30 text-[11px] font-mono uppercase tracking-wider text-sky-400 font-semibold mb-2.5">
             <Radio className="w-3 h-3 text-sky-400 animate-pulse" />
@@ -476,18 +449,21 @@ export const OrionCircular3DTelemetry: React.FC = () => {
           </p>
         </div>
 
-        {/* Minimal Scenario Switcher Pills & Prev/Next */}
-        <div className="flex items-center gap-2 p-1 rounded-2xl bg-slate-900/80 border border-white/15 backdrop-blur-xl mb-6 shadow-lg">
+        {/* =====================================================================
+            MINIMAL SCENARIO SWITCHER STRIP (WITHOUT PLAY/PAUSE CONTROLS)
+           ===================================================================== */}
+        <div className="flex items-center gap-1.5 sm:gap-2 p-1.5 rounded-2xl bg-slate-900/80 border border-white/15 backdrop-blur-xl mb-6 shadow-lg max-w-[calc(100vw-2rem)] overflow-x-auto scrollbar-none">
           {SCENARIO_CARDS.map((card, idx) => {
-            const isActive = idx === frontIndex;
+            const isActive = idx === activeIndex;
             return (
               <button
                 key={card.id}
                 type="button"
+                data-scenario-index={idx}
                 onClick={() => selectScenario(idx)}
-                className={`px-3.5 py-1.5 rounded-xl text-xs font-mono font-semibold transition-all cursor-pointer flex items-center gap-2 ${
+                className={`px-3 sm:px-3.5 py-1.5 rounded-xl text-xs font-mono font-semibold transition-all cursor-pointer flex items-center gap-2 shrink-0 ${
                   isActive
-                    ? 'bg-white text-slate-900 shadow-md'
+                    ? 'bg-white text-slate-900 shadow-md scale-[1.02]'
                     : 'text-slate-400 hover:text-white hover:bg-white/10'
                 }`}
               >
@@ -495,7 +471,7 @@ export const OrionCircular3DTelemetry: React.FC = () => {
                   style={{
                     backgroundColor: isActive ? card.accent : '#64748B',
                   }}
-                  className="w-1.5 h-1.5 rounded-full"
+                  className="w-1.5 h-1.5 rounded-full shrink-0"
                 />
                 <span className="whitespace-nowrap">
                   {card.code}: {card.title}
@@ -504,10 +480,10 @@ export const OrionCircular3DTelemetry: React.FC = () => {
             );
           })}
 
-          <div className="h-4 w-px bg-white/20 mx-1" />
+          <div className="h-4 w-px bg-white/20 mx-1 shrink-0" />
 
-          {/* Prev, Pause, Next controls */}
-          <div className="flex items-center gap-1">
+          {/* Previous / Next Chevron Navigation Arrows Only (Play/Pause removed) */}
+          <div className="flex items-center gap-1 shrink-0">
             <button
               type="button"
               onClick={previous}
@@ -515,14 +491,6 @@ export const OrionCircular3DTelemetry: React.FC = () => {
               aria-label="Previous scenario"
             >
               <ChevronLeft className="w-3.5 h-3.5" />
-            </button>
-            <button
-              type="button"
-              onClick={() => setAutoPlay(!autoPlay)}
-              className="w-7 h-7 rounded-lg flex items-center justify-center text-slate-300 hover:text-white hover:bg-white/10 transition cursor-pointer"
-              aria-label={autoPlay ? 'Pause carousel' : 'Resume carousel'}
-            >
-              {autoPlay ? <Pause className="w-3 h-3" /> : <Play className="w-3 h-3" />}
             </button>
             <button
               type="button"
@@ -536,12 +504,10 @@ export const OrionCircular3DTelemetry: React.FC = () => {
         </div>
 
         {/* =====================================================================
-            CIRCULAR 3D STAGE (Restrained, elegant enterprise 3D carousel)
+            CIRCULAR 3D STAGE (Active card is GUARANTEED to be in the exact center)
            ===================================================================== */}
         <div
-          className={`relative w-full flex items-center justify-center overflow-visible ${
-            dragging ? 'cursor-grabbing' : 'cursor-grab'
-          }`}
+          className="relative w-full flex items-center justify-center overflow-visible cursor-grab active:cursor-grabbing"
           style={{
             height: isMobile ? '390px' : '470px',
             perspective: isMobile ? '800px' : '1100px',
@@ -557,27 +523,25 @@ export const OrionCircular3DTelemetry: React.FC = () => {
           onDragStart={(e) => e.preventDefault()}
         >
           {SCENARIO_CARDS.map((card, index) => {
-            const rawAngle = index * step + rotation;
-            // Normalize relative angle to [-180, 180]
-            const normAngle = ((rawAngle % 360) + 360) % 360;
-            const relAngle = normAngle > 180 ? normAngle - 360 : normAngle;
+            // Determine relative cyclic offset from the active card:
+            // diff = 0  -> Active card (EXACT CENTER)
+            // diff = +1 -> Right supporting card
+            // diff = -1 -> Left supporting card
+            const count = SCENARIO_CARDS.length;
+            let diff = (index - activeIndex) % count;
+            if (diff > 1) diff -= count;
+            if (diff < -1) diff += count;
 
-            const isFront = index === frontIndex;
+            const isCenter = diff === 0;
 
-            // Compute custom smooth 3D stage layout for 3 cards
-            // When relAngle = 0: center card (x=0, z=120, rotateY=0, scale=1)
-            // When relAngle = 120 (right): x=+410, z=-40, rotateY=-38, scale=0.8
-            // When relAngle = -120 (left): x=-410, z=-40, rotateY=+38, scale=0.8
-            const spreadRatio = relAngle / 120;
-            const x = isMobile
-              ? spreadRatio * 180
-              : clamp(spreadRatio * 430, -450, 450);
-
-            const z = isFront ? (isMobile ? 60 : 120) : (isMobile ? -30 : -45);
-            const rotateY = clamp(spreadRatio * -36, -42, 42);
-            const scale = isFront ? 1 : isMobile ? 0.78 : 0.82;
-            const opacity = isFront ? 1 : 0.65;
-            const zIndex = isFront ? 30 : 10;
+            // Mathematical positioning relative to the container's center:
+            // Active center card is ALWAYS at x = 0, z = 120, rotateY = 0, scale = 1.0
+            const x = diff * spreadDistance;
+            const z = isCenter ? (isMobile ? 50 : 120) : (isMobile ? -30 : -45);
+            const rotateY = isCenter ? 0 : diff * (isMobile ? -24 : -34);
+            const scale = isCenter ? 1.0 : isMobile ? 0.74 : 0.82;
+            const opacity = isCenter ? 1.0 : isMobile ? 0.45 : 0.65;
+            const zIndex = isCenter ? 30 : 10;
 
             return (
               <motion.div
@@ -601,21 +565,17 @@ export const OrionCircular3DTelemetry: React.FC = () => {
                   rotateY,
                   scale,
                   opacity,
-                  filter: isFront ? 'blur(0px)' : 'blur(0.6px)',
+                  filter: isCenter ? 'blur(0px)' : 'blur(0.5px)',
                 }}
-                transition={
-                  dragging
-                    ? { duration: 0 }
-                    : {
-                        duration: prefersReducedMotion ? 0 : 0.75,
-                        ease: [0.22, 1, 0.36, 1],
-                      }
-                }
+                transition={{
+                  duration: prefersReducedMotion ? 0 : 0.75,
+                  ease: [0.22, 1, 0.36, 1],
+                }}
               >
-                {/* 3D Card Shell: Guaranteed High-Contrast Deep Navy/Black Canvas */}
+                {/* 3D Card Canvas */}
                 <div
                   className={`relative w-full h-full rounded-[24px] overflow-hidden p-5 flex flex-col justify-between border shadow-2xl transition-all ${
-                    isFront
+                    isCenter
                       ? 'bg-slate-950 border-white/25 shadow-[0_25px_60px_rgba(0,0,0,0.95)] ring-1 ring-white/10'
                       : 'bg-slate-950/90 border-white/10 shadow-[0_12px_36px_rgba(0,0,0,0.7)]'
                   }`}
@@ -649,18 +609,18 @@ export const OrionCircular3DTelemetry: React.FC = () => {
                     </span>
                   </div>
 
-                  {/* Connected Visual Supply Chain Diagram (The core animation graphic) */}
+                  {/* Connected Visual Supply Chain Diagram */}
                   <div className="relative z-10 my-2">
                     {renderSupplyChainIllustration(card)}
                   </div>
 
-                  {/* Card Bottom: Only ONE Primary Heading (Strictly per Phase 4 requirement) */}
+                  {/* Card Bottom: Primary Heading and Key Metrics */}
                   <div className="relative z-10">
                     <h3 className="text-xl sm:text-2xl font-bold text-white tracking-tight leading-snug">
                       {card.title}
                     </h3>
 
-                    {/* Concise 2-Metric Strip (High Contrast White & Cyan) */}
+                    {/* Concise 2-Metric Strip */}
                     <div className="grid grid-cols-2 gap-2 mt-3 pt-3 border-t border-white/10 text-left">
                       <div>
                         <span className="text-[9px] font-mono uppercase text-slate-400 block tracking-wider">
@@ -689,7 +649,7 @@ export const OrionCircular3DTelemetry: React.FC = () => {
           })}
         </div>
 
-        {/* Bottom Direct CTA: Clean & Restrained (Launch Orion-9 OS) */}
+        {/* Bottom CTA: Launch Orion-9 OS */}
         <div className="mt-6 flex flex-col sm:flex-row items-center gap-3">
           <button
             type="button"

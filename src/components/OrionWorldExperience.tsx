@@ -14,7 +14,10 @@
  *    - 05 Multimodal Logistics (Canal Port, Elevated Highway, Air-Cargo Hub)
  *    - 06 Regional Retail Distribution
  *    - 07 Customer Destination & SLA Verification
- * 4. Continuous path-based motion (NO JUMPING or coordinate resets):
+ * 4. Compact, proportional layout:
+ *    - ~30% reduced card footprint so the 3D supply-chain landscape remains front and center.
+ *    - No clutter or floating intelligence engine cards on the homepage.
+ * 5. Continuous path-based motion (NO JUMPING or coordinate resets):
  *    - Cargo ships along deepwater canal
  *    - Freight trucks along elevated highway
  *    - Hub trucks docking at warehouse bays
@@ -25,19 +28,12 @@
  *    - Optical QC laser scanner
  *    - Gantry crane container hoists
  *    - Rotating wind turbines on ridge
- * 5. Orion-9 Intelligence Demonstration (Simulated Demonstration):
- *    - Interactive control widget allowing user to toggle:
- *      [Nominal Flow], [Simulate Supplier Delay], [Autonomous Bypass Recovery]
- *    - Amber warning beacon & alert conduit pulse at supplier node
- *    - Emerald-green bypass corridor lights up with express air-cargo flight
- *    - Downstream SLA protected & verified recovery
  */
 
 import React, { useEffect, useRef, useState, useCallback } from 'react';
 import * as THREE from 'three';
 import {
   SUPPLY_CHAIN_7_STAGES,
-  WORLD_PROCESS_STEPS,
   evaluateWorldScrollState,
   evaluateHeroIntroSequence,
   clamp01,
@@ -55,18 +51,7 @@ import {
 } from '../utils/end-to-end-supply-chain-craft';
 import { useSiteConfig } from '../context/SiteConfigContext';
 import { OrionHeroBrandLockup } from './OrionLogo';
-import {
-  AlertTriangle,
-  CheckCircle2,
-  RefreshCw,
-  ShieldCheck,
-  ArrowRight,
-  ChevronRight,
-  Play,
-  Pause,
-} from 'lucide-react';
-
-export type IntelligenceDemoMode = 'nominal' | 'delay' | 'recovery';
+import { ArrowRight } from 'lucide-react';
 
 export const OrionWorldExperience: React.FC = () => {
   const { activeConfig } = useSiteConfig();
@@ -78,16 +63,6 @@ export const OrionWorldExperience: React.FC = () => {
   const smoothedScrollRef = useRef<number>(0);
   const [hudState, setHudState] = useState(() => evaluateWorldScrollState(0));
   const lastHudUpdateRef = useRef<number>(0);
-
-  // Orion-9 Intelligence Simulation State
-  const [demoMode, setDemoMode] = useState<IntelligenceDemoMode>('nominal');
-  const demoModeRef = useRef<IntelligenceDemoMode>('nominal');
-  demoModeRef.current = demoMode;
-
-  // Auto-tour or manual autoplay through 7 stages
-  const [autoTour, setAutoTour] = useState<boolean>(false);
-  const autoTourRef = useRef<boolean>(false);
-  autoTourRef.current = autoTour;
 
   // 5-Stage Hero Logo Intro State (Preserves initial 3.8s reveal & ambient loop)
   const [introState, setIntroState] = useState(() => {
@@ -320,11 +295,8 @@ export const OrionWorldExperience: React.FC = () => {
       // =======================================================================
       // 1. CONTINUOUS VEHICLE KINEMATICS (NO JUMPING OR RESET COORD TELEPORTATION)
       // =======================================================================
-      const currentMode = demoModeRef.current;
-
       // Maritime Vessel 1: Continuous canal transit with smooth wrapping
-      const ship1Speed = currentMode === 'delay' ? 0.35 : 1.15;
-      worldRig.ship1.position.x = -42 + ((elapsed * ship1Speed) % 48);
+      worldRig.ship1.position.x = -42 + ((elapsed * 1.15) % 48);
 
       // Maritime Vessel 2: Continuous canal transit eastbound
       worldRig.ship2.position.x = 52 + ((elapsed * 1.0) % 46);
@@ -353,56 +325,19 @@ export const OrionWorldExperience: React.FC = () => {
       worldRig.cargoJet.position.x = 12 + ((elapsed * 3.4) % 80);
       worldRig.cargoJet.position.y = 11.2 + Math.sin(elapsed * 1.3) * 0.35;
 
-      // =======================================================================
-      // 2. ORION-9 INTELLIGENCE SIMULATION DYNAMICS (DELAY & AUTONOMOUS RECOVERY)
-      // =======================================================================
+      // Ensure Disruption & Bypass Rigs remain safely dormant
       const dRig = worldRig.disruptionRig;
-
-      if (currentMode === 'nominal') {
-        dRig.warningBeacon.visible = false;
-        dRig.warningLight.intensity = 0;
-        dRig.bypassConduit.visible = false;
-        dRig.bypassGlowLight.intensity = 0;
-        worldRig.bypassAircraft.visible = false;
-        worldRig.redTube1Mat.color.setHex(0xff3b30);
-        worldRig.redTube1Mat.emissive.setHex(0xff3b30);
-        worldRig.redTube1Mat.emissiveIntensity = 1.35;
-      } else if (currentMode === 'delay') {
-        // Supplier bottleneck alert: pulsating amber beacon and warning conduit
-        dRig.warningBeacon.visible = true;
-        const pulse = 0.5 + 0.5 * Math.sin(elapsed * 6.5);
-        dRig.warningLight.intensity = 1.8 + pulse * 1.5;
-        dRig.bypassConduit.visible = false;
-        dRig.bypassGlowLight.intensity = 0;
-        worldRig.bypassAircraft.visible = false;
-        worldRig.redTube1Mat.color.setHex(0xf59e0b);
-        worldRig.redTube1Mat.emissive.setHex(0xf59e0b);
-        worldRig.redTube1Mat.emissiveIntensity = 1.6 + pulse * 1.2;
-      } else if (currentMode === 'recovery') {
-        // Autonomous bypass active: emerald conduit illuminated & bypass aircraft airborne
-        dRig.warningBeacon.visible = false;
-        dRig.warningLight.intensity = 0;
-        dRig.bypassConduit.visible = true;
-        const recoveryPulse = 0.6 + 0.4 * Math.sin(elapsed * 4.8);
-        dRig.bypassGlowLight.intensity = 2.2 + recoveryPulse * 0.8;
-        worldRig.bypassConduitMat.emissiveIntensity = 1.4 + recoveryPulse * 0.6;
-
-        worldRig.bypassAircraft.visible = true;
-        const bypassT = (elapsed * 0.18) % 1.0;
-        worldRig.bypassAircraft.position.set(
-          lerpScalar(-14, 68, bypassT),
-          9.5 + Math.sin(bypassT * Math.PI) * 1.8,
-          -12
-        );
-        worldRig.bypassAircraft.rotation.y = Math.PI / 2;
-
-        worldRig.redTube1Mat.color.setHex(0x10b981);
-        worldRig.redTube1Mat.emissive.setHex(0x10b981);
-        worldRig.redTube1Mat.emissiveIntensity = 1.2;
-      }
+      dRig.warningBeacon.visible = false;
+      dRig.warningLight.intensity = 0;
+      dRig.bypassConduit.visible = false;
+      dRig.bypassGlowLight.intensity = 0;
+      worldRig.bypassAircraft.visible = false;
+      worldRig.redTube1Mat.color.setHex(0xff3b30);
+      worldRig.redTube1Mat.emissive.setHex(0xff3b30);
+      worldRig.redTube1Mat.emissiveIntensity = 1.35;
 
       // =======================================================================
-      // 3. FACILITY MACHINERY, ROBOTICS & WORKER PROCEDURAL DYNAMICS
+      // 2. FACILITY MACHINERY, ROBOTICS & PROCEDURAL DYNAMICS
       // =======================================================================
       // Wind Turbines Rotation
       for (let i = 0; i < worldRig.turbineRotors.length; i++) {
@@ -543,120 +478,34 @@ export const OrionWorldExperience: React.FC = () => {
         </div>
 
         {/* ==========================================================================
-            2. ORION-9 INTELLIGENCE DEMONSTRATION WIDGET (TOP-RIGHT SIMULATED CONTROLS)
+            2. BOTTOM-LEFT 7-STAGE PROCESS HUD (COMPACT, RESTRAINED & BALANCED)
            ========================================================================== */}
         <div
           style={{
             opacity: hudState.processHudOpacity,
             pointerEvents: hudState.processHudOpacity > 0.2 ? 'auto' : 'none',
           }}
-          className="absolute top-20 sm:top-24 right-4 sm:right-8 z-20 transition-all duration-300 max-w-[340px]"
+          className="absolute bottom-5 sm:bottom-7 left-4 sm:left-8 z-20 w-[calc(100%-2rem)] max-w-[340px] sm:max-w-[365px] transition-all duration-300"
         >
-          <div className="p-3 sm:p-3.5 rounded-2xl bg-white/92 border border-[#B8D7ED]/80 backdrop-blur-xl shadow-lg">
-            <div className="flex items-center justify-between gap-2 mb-2">
-              <div className="flex items-center gap-1.5 text-[11px] font-mono font-bold tracking-wider text-[#0284C7]">
-                <ShieldCheck className="w-3.5 h-3.5" />
-                <span>ORION-9 INTELLIGENCE ENGINE</span>
-              </div>
-              <span className="text-[10px] font-mono text-slate-500 bg-slate-100 px-1.5 py-0.5 rounded">
-                SIMULATION
-              </span>
-            </div>
-
-            {/* Mode Trigger Buttons */}
-            <div className="grid grid-cols-3 gap-1.5 mb-2.5">
-              <button
-                type="button"
-                data-mode="nominal"
-                onClick={() => setDemoMode('nominal')}
-                className={`py-1.5 px-2 rounded-lg text-[10px] font-mono font-semibold transition cursor-pointer flex flex-col items-center justify-center gap-0.5 ${
-                  demoMode === 'nominal'
-                    ? 'bg-[#081326] text-white shadow-xs'
-                    : 'bg-slate-100 text-slate-600 hover:bg-slate-200/80'
-                }`}
-              >
-                <span>Nominal</span>
-                <span className="text-[9px] opacity-75">Corridors OK</span>
-              </button>
-
-              <button
-                type="button"
-                data-mode="delay"
-                onClick={() => setDemoMode('delay')}
-                className={`py-1.5 px-2 rounded-lg text-[10px] font-mono font-semibold transition cursor-pointer flex flex-col items-center justify-center gap-0.5 ${
-                  demoMode === 'delay'
-                    ? 'bg-amber-600 text-white shadow-xs'
-                    : 'bg-amber-50 text-amber-800 border border-amber-200/60 hover:bg-amber-100/70'
-                }`}
-              >
-                <span>Simulate Delay</span>
-                <span className="text-[9px] opacity-75">Amber Beacon</span>
-              </button>
-
-              <button
-                type="button"
-                data-mode="recovery"
-                onClick={() => setDemoMode('recovery')}
-                className={`py-1.5 px-2 rounded-lg text-[10px] font-mono font-semibold transition cursor-pointer flex flex-col items-center justify-center gap-0.5 ${
-                  demoMode === 'recovery'
-                    ? 'bg-emerald-600 text-white shadow-xs'
-                    : 'bg-emerald-50 text-emerald-800 border border-emerald-200/60 hover:bg-emerald-100/70'
-                }`}
-              >
-                <span>Autonomous</span>
-                <span className="text-[9px] opacity-75">Air Bypass</span>
-              </button>
-            </div>
-
-            {/* Live Operational Status Line */}
-            <div className="text-[10px] font-mono flex items-center gap-1.5 pt-1.5 border-t border-slate-200/70 text-slate-600">
-              <span
-                className={`w-1.5 h-1.5 rounded-full shrink-0 ${
-                  demoMode === 'nominal'
-                    ? 'bg-[#0284C7]'
-                    : demoMode === 'delay'
-                    ? 'bg-amber-500 animate-pulse'
-                    : 'bg-emerald-500'
-                }`}
-              />
-              <span className="truncate">
-                {demoMode === 'nominal' && 'Corridors nominal · 42.8K sig/s'}
-                {demoMode === 'delay' && 'Alert: Ingestion buffer delay flagged'}
-                {demoMode === 'recovery' && 'Bypass active · 99.8% SLA protected'}
-              </span>
-            </div>
-          </div>
-        </div>
-
-        {/* ==========================================================================
-            3. BOTTOM-LEFT 7-STAGE PROCESS HUD (MATCHES REFERENCE SCREENSHOT 4)
-           ========================================================================== */}
-        <div
-          style={{
-            opacity: hudState.processHudOpacity,
-            pointerEvents: hudState.processHudOpacity > 0.2 ? 'auto' : 'none',
-          }}
-          className="absolute bottom-6 sm:bottom-10 left-4 sm:left-10 z-20 w-[calc(100%-2rem)] max-w-[480px] transition-all duration-300"
-        >
-          {/* Main Liquid-Glass Stage Card */}
-          <div className="bg-white/96 border border-[#C8DFEE] rounded-2xl p-4 sm:p-5 shadow-[0_12px_36px_rgba(7,11,25,0.08)] mb-3 backdrop-blur-md">
-            <div className="flex items-start gap-3 sm:gap-3.5">
-              <span className="w-7 h-7 sm:w-8 sm:h-8 rounded-lg bg-[#070B19] text-white font-mono text-xs sm:text-sm font-semibold flex items-center justify-center shrink-0 mt-0.5 shadow-xs">
+          {/* Main Liquid-Glass Stage Card — 25-35% more compact to avoid dominating the 3D scene */}
+          <div className="bg-white/94 border border-[#C8DFEE]/90 rounded-xl p-3 sm:p-3.5 shadow-[0_8px_24px_rgba(7,11,25,0.06)] mb-2 backdrop-blur-md">
+            <div className="flex items-start gap-2.5">
+              <span className="w-6 h-6 sm:w-6.5 sm:h-6.5 rounded-md bg-[#070B19] text-white font-mono text-[11px] sm:text-xs font-semibold flex items-center justify-center shrink-0 mt-0.5 shadow-xs">
                 {activeStage.number}
               </span>
-              <div className="space-y-1.5 sm:space-y-2 flex-1 min-w-0">
-                <div className="flex items-center gap-2">
-                  <span className="text-[10px] sm:text-[11px] font-mono font-bold tracking-wider text-[#0284C7] uppercase">
+              <div className="space-y-1 flex-1 min-w-0">
+                <div className="flex items-center gap-1.5">
+                  <span className="text-[9px] sm:text-[9.5px] font-mono font-bold tracking-wider text-[#0284C7] uppercase">
                     STAGE {activeStage.number} / 07 · {activeStage.stageName}
                   </span>
                 </div>
-                <h2 className="font-editorial text-lg sm:text-2xl font-bold tracking-[-0.015em] text-[#070B19] leading-tight">
+                <h2 className="font-editorial text-base sm:text-lg font-bold tracking-[-0.015em] text-[#070B19] leading-snug">
                   {activeStage.title}
                 </h2>
-                <p className="text-xs sm:text-sm text-[#334155] leading-relaxed">
+                <p className="text-[11px] sm:text-xs text-[#334155] leading-relaxed">
                   {activeStage.description}
                 </p>
-                <div className="pt-1 flex items-center gap-2 text-[11px] font-mono text-[#0284C7] font-semibold">
+                <div className="pt-0.5 flex items-center gap-1.5 text-[10px] font-mono text-[#0284C7] font-semibold">
                   <span className="w-1.5 h-1.5 rounded-full bg-[#0284C7] animate-pulse" />
                   <span>{activeStage.telemetryTag}</span>
                 </div>
@@ -664,8 +513,8 @@ export const OrionWorldExperience: React.FC = () => {
             </div>
           </div>
 
-          {/* 7-Stage Interactive Pill Navigation (01 to 07) */}
-          <div className="flex items-center gap-1.5 p-1.5 rounded-xl bg-white/90 border border-[#B8D7ED]/80 backdrop-blur-md shadow-md overflow-x-auto scrollbar-none">
+          {/* 7-Stage Interactive Pill Navigation (01 to 07) — Compact */}
+          <div className="flex items-center gap-1 p-1 rounded-lg bg-white/90 border border-[#B8D7ED]/80 backdrop-blur-md shadow-xs overflow-x-auto scrollbar-none">
             {SUPPLY_CHAIN_7_STAGES.map((st, idx) => {
               const isCurrent = idx === hudState.activeStage7Index;
               return (
@@ -674,14 +523,14 @@ export const OrionWorldExperience: React.FC = () => {
                   type="button"
                   onClick={() => scrollToNormalizedProgress(st.scrollTarget)}
                   aria-label={`Jump to stage ${st.number}: ${st.title}`}
-                  className={`px-2.5 py-1 rounded-lg text-[11px] font-mono font-semibold transition cursor-pointer flex items-center gap-1 shrink-0 ${
+                  className={`px-2 py-0.5 rounded-md text-[10px] font-mono font-semibold transition cursor-pointer flex items-center gap-1 shrink-0 ${
                     isCurrent
-                      ? 'bg-[#070B19] text-white shadow-xs scale-[1.03]'
+                      ? 'bg-[#070B19] text-white shadow-xs'
                       : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100'
                   }`}
                 >
                   <span
-                    className={`w-1.5 h-1.5 rounded-full shrink-0 ${
+                    className={`w-1 h-1 rounded-full shrink-0 ${
                       isCurrent ? 'bg-[#38BDF8]' : 'bg-slate-400'
                     }`}
                   />
