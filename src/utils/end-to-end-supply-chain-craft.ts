@@ -1,23 +1,46 @@
 /**
- * ORION-9 MASTER ANIMATION — END-TO-END INTELLIGENT SUPPLY CHAIN
- * 3D Procedural Craft & Industrial Digital Twin Geometry
+ * ORION-9 MASTER ANIMATION — RECOMPOSED 7-STAGE INDUSTRIAL SUPPLY CHAIN DIGITAL TWIN
  * 
- * Builds an authentic, cinematic, connected 3D representation spanning:
- * 1. Raw Material Origins (Mining, Agriculture, Material Extraction)
- * 2. Supplier & Component Network (Tier-1/Tier-2 Precision Foundries & Plants)
- * 3. Intelligent Manufacturing (Smart Factory, Robotic Arms, Automated QC)
- * 4. Warehousing & Inventory (ASRS High-Bay Racks, Automated Sorting, AGVs)
- * 5. Multimodal Global Distribution (Sea Port, Air Cargo, Rail & Highway)
- * 6. Retail & End Customer (Distribution, Retail Store, Enterprise Delivery)
- * 7. Orion-9 Intelligence Engine (Neural Graph, Real-Time Sensor Conduits)
- * 8. Predictive Disruption & Automated Stochastic Bypass (Simulated Event)
- * 9. Panoramic Global Reveal
+ * Perfectly proportioned architectural miniatures, compact horizontal span (X: -32 to +32),
+ * continuous closed-loop path motion (ZERO teleportation / jumping), and clear stage identification.
+ * 
+ * Supply Chain Journey:
+ * Stage 1: Raw Materials (Excavation terraces, ore hopper, bulk conveyor)
+ * Stage 2: Supplier (Precision foundries, filtration stacks, parts staging)
+ * Stage 3: Factory (Smart manufacturing plant, articulated robotic arms, optical QC scan line)
+ * Stage 4: Warehouse (High-bay ASRS rack tower, pallet staging, indoor forklift)
+ * Stage 5: Multimodal Distribution Hub (Deepwater canal berth, container ship, gantry crane)
+ * Stage 6: Retailer (Commercial storefront, delivery bay, customer parking)
+ * Stage 7: End Customer (Enterprise client campus, verified proof-of-delivery point)
  */
 
 import * as THREE from 'three';
 
+export interface PathVehicle {
+  group: THREE.Group;
+  curve: THREE.CatmullRomCurve3;
+  speed: number;
+  offset: number;
+  currentT: number;
+}
+
+export interface WorkerFigure {
+  group: THREE.Group;
+  baseY: number;
+  phase: number;
+}
+
 export interface Scene3DRig {
   rootGroup: THREE.Group;
+  // Vehicles on continuous closed loops
+  truck1: PathVehicle;
+  truck2: PathVehicle;
+  deliveryVan: PathVehicle;
+  containerShip: PathVehicle;
+  cargoJet: PathVehicle;
+  bypassAircraft: PathVehicle;
+  forklift: PathVehicle;
+  // Internal machinery
   roboticArms: {
     base: THREE.Group;
     upperArm: THREE.Group;
@@ -27,23 +50,22 @@ export interface Scene3DRig {
   }[];
   qcScannerMesh: THREE.Mesh;
   asrsCarriers: { mesh: THREE.Mesh; startY: number; targetY: number; speed: number }[];
-  agvVehicles: { group: THREE.Group; pathX: number; minZ: number; maxZ: number; speed: number }[];
   conveyorItems: { mesh: THREE.Mesh; startX: number; endX: number; z: number; y: number }[];
   craneTrolleys: { group: THREE.Group; baseZ: number; phase: number }[];
-  turbineRotors: THREE.Group[];
-  haulTrucks: { group: THREE.Group; startX: number; endX: number; z: number; speed: number }[];
-  deliveryVans: { group: THREE.Group; startZ: number; endZ: number; x: number; speed: number }[];
-  cargoJet: THREE.Group;
-  containerShips: THREE.Group[];
-  freightTrucks: THREE.Group[];
-  trainCars: THREE.Group[];
-  intelligencePulses: THREE.Mesh[];
+  workers: WorkerFigure[];
+  // Status beacons
+  statusBeacons: {
+    supplier: THREE.Mesh;
+    factory: THREE.Mesh;
+    warehouse: THREE.Mesh;
+    port: THREE.Mesh;
+    customer: THREE.Mesh;
+  };
   disruptionRig: {
-    supplierWarningBeacon: THREE.Mesh;
-    bottleneckFlowMesh: THREE.Mesh;
-    bypassCorridorMesh: THREE.Mesh;
+    chokepointBeacon: THREE.Mesh;
+    chokepointCorridor: THREE.Mesh;
+    bypassCorridor: THREE.Mesh;
     bypassGlowLight: THREE.PointLight;
-    factoryStatusBeacon: THREE.Mesh;
   };
 }
 
@@ -55,59 +77,49 @@ export function buildEndToEndSupplyChainWorld(isSoftwareGl: boolean): Scene3DRig
   // =========================================================================
   const whiteArchMat = new THREE.MeshStandardMaterial({
     color: 0xffffff,
-    roughness: 0.62,
+    roughness: 0.45,
     metalness: 0.08,
   });
-  const iceSlateMat = new THREE.MeshStandardMaterial({
-    color: 0xcbe2f2,
-    roughness: 0.45,
-    metalness: 0.15,
+  const navyPlinthMat = new THREE.MeshStandardMaterial({
+    color: 0x0f2744,
+    roughness: 0.35,
+    metalness: 0.35,
   });
   const steelBlueMat = new THREE.MeshStandardMaterial({
-    color: 0x3b6e96,
-    roughness: 0.36,
-    metalness: 0.35,
+    color: 0x2563eb,
+    roughness: 0.35,
+    metalness: 0.25,
   });
-  const darkNavyMat = new THREE.MeshStandardMaterial({
-    color: 0x0b1930,
-    roughness: 0.32,
-    metalness: 0.45,
-  });
-  const glassBlueMat = new THREE.MeshStandardMaterial({
-    color: 0x98c4e4,
-    roughness: 0.18,
-    metalness: 0.35,
-    transparent: true,
-    opacity: 0.85,
-  });
-  const roadSurfaceMat = new THREE.MeshStandardMaterial({
-    color: 0xd0e6f5,
-    roughness: 0.78,
-    metalness: 0.05,
-  });
-  const runwaySurfaceMat = new THREE.MeshStandardMaterial({
-    color: 0xc2dced,
-    roughness: 0.65,
-    metalness: 0.08,
-  });
-  const archEdgeMat = new THREE.LineBasicMaterial({
-    color: 0xa6c7df,
-    transparent: true,
-    opacity: 0.55,
-  });
-  const quarryTerraceMat = new THREE.MeshStandardMaterial({
-    color: 0xb9cee0,
-    roughness: 0.92,
-    metalness: 0.05,
-  });
-  const oreStockpileMat = new THREE.MeshStandardMaterial({
-    color: 0x7391a8,
-    roughness: 0.95,
+  const iceSlateMat = new THREE.MeshStandardMaterial({
+    color: 0xc8dded,
+    roughness: 0.45,
     metalness: 0.12,
   });
-  const cyanEmissiveMat = new THREE.MeshStandardMaterial({
-    color: 0x0099ff,
-    emissive: new THREE.Color(0x0088ff),
+  const glassBlueMat = new THREE.MeshStandardMaterial({
+    color: 0x93c5fd,
+    roughness: 0.12,
+    metalness: 0.25,
+    transparent: true,
+    opacity: 0.8,
+  });
+  const asphaltRoadMat = new THREE.MeshStandardMaterial({
+    color: 0xb4cce0,
+    roughness: 0.82,
+    metalness: 0.05,
+  });
+  const waterCanalMat = new THREE.MeshStandardMaterial({
+    color: 0x60a5fa,
+    roughness: 0.18,
+    metalness: 0.35,
+  });
+  const archEdgeMat = new THREE.LineBasicMaterial({
+    color: 0x7dd3fc,
+    transparent: true,
+    opacity: 0.65,
+  });
+  const cyanGlowMat = new THREE.MeshStandardMaterial({
+    color: 0x0284c7,
+    emissive: new THREE.Color(0x0284c7),
     emissiveIntensity: 1.4,
     roughness: 0.2,
     metalness: 0.1,
@@ -115,540 +127,811 @@ export function buildEndToEndSupplyChainWorld(isSoftwareGl: boolean): Scene3DRig
   const amberWarningMat = new THREE.MeshStandardMaterial({
     color: 0xf59e0b,
     emissive: new THREE.Color(0xf59e0b),
-    emissiveIntensity: 1.5,
+    emissiveIntensity: 1.6,
     roughness: 0.25,
     metalness: 0.1,
   });
   const greenVerifiedMat = new THREE.MeshStandardMaterial({
     color: 0x10b981,
     emissive: new THREE.Color(0x10b981),
-    emissiveIntensity: 1.4,
+    emissiveIntensity: 1.5,
     roughness: 0.2,
     metalness: 0.1,
   });
+  const hiVisYellowMat = new THREE.MeshStandardMaterial({
+    color: 0xfacc15,
+    roughness: 0.5,
+    metalness: 0.1,
+  });
 
-  // Trackers
   const roboticArms: Scene3DRig['roboticArms'] = [];
   const asrsCarriers: Scene3DRig['asrsCarriers'] = [];
-  const agvVehicles: Scene3DRig['agvVehicles'] = [];
   const conveyorItems: Scene3DRig['conveyorItems'] = [];
   const craneTrolleys: Scene3DRig['craneTrolleys'] = [];
-  const turbineRotors: THREE.Group[] = [];
-  const haulTrucks: Scene3DRig['haulTrucks'] = [];
-  const deliveryVans: Scene3DRig['deliveryVans'] = [];
-  const containerShips: THREE.Group[] = [];
-  const freightTrucks: THREE.Group[] = [];
-  const trainCars: THREE.Group[] = [];
-  const intelligencePulses: THREE.Mesh[] = [];
+  const workers: WorkerFigure[] = [];
+
+  const addEdges = (mesh: THREE.Mesh, geo: THREE.BufferGeometry) => {
+    mesh.add(new THREE.LineSegments(new THREE.EdgesGeometry(geo), archEdgeMat));
+  };
+
+  // Helper to create small stylized worker figures (height 0.7)
+  const createWorker = (x: number, y: number, z: number, phase: number, vestColor = 0xfacc15): WorkerFigure => {
+    const group = new THREE.Group();
+    group.position.set(x, y, z);
+
+    const torso = new THREE.Mesh(
+      new THREE.CylinderGeometry(0.1, 0.12, 0.28, 8),
+      new THREE.MeshStandardMaterial({ color: vestColor, roughness: 0.4 })
+    );
+    torso.position.y = 0.28;
+
+    const head = new THREE.Mesh(new THREE.SphereGeometry(0.08, 8, 8), whiteArchMat);
+    head.position.y = 0.5;
+
+    const hat = new THREE.Mesh(new THREE.CylinderGeometry(0.1, 0.11, 0.05, 8), hiVisYellowMat);
+    hat.position.y = 0.55;
+
+    const legs = new THREE.Mesh(new THREE.CylinderGeometry(0.07, 0.07, 0.2, 6), navyPlinthMat);
+    legs.position.y = 0.1;
+
+    group.add(torso, head, hat, legs);
+    rootGroup.add(group);
+
+    const workerObj: WorkerFigure = { group, baseY: y, phase };
+    workers.push(workerObj);
+    return workerObj;
+  };
+
+  // Helper to add a clean, floating stage indicator label pin above each facility
+  const addStageMarker = (parent: THREE.Group, num: string, yPos: number) => {
+    const pin = new THREE.Group();
+    pin.position.set(0, yPos, 0);
+
+    const stem = new THREE.Mesh(new THREE.CylinderGeometry(0.04, 0.04, 0.7, 6), navyPlinthMat);
+    stem.position.y = 0.35;
+
+    const badge = new THREE.Mesh(
+      new THREE.CylinderGeometry(0.38, 0.38, 0.1, 14),
+      navyPlinthMat
+    );
+    badge.position.y = 0.7;
+    badge.rotation.x = Math.PI / 4;
+
+    const ring = new THREE.Mesh(
+      new THREE.RingGeometry(0.24, 0.34, 14),
+      cyanGlowMat
+    );
+    ring.position.set(0, 0.76, 0.06);
+    ring.rotation.x = -Math.PI / 4;
+
+    pin.add(stem, badge, ring);
+    parent.add(pin);
+  };
 
   // =========================================================================
-  // 2. SCENE 1: RAW MATERIAL ORIGINS (X: -110 to -70, Z: -20 to +25)
-  // Stepped Excavation Terraces, Mineral Crushing Plant, Silos & Bulk Railhead
+  // 2. STAGE 1: RAW MATERIALS (X ≈ -31, Z ≈ -3)
+  // Stepped quarry terraces, mineral crushing hopper, silos, elevated truss
   // =========================================================================
-  const rawMaterialsGroup = new THREE.Group();
-  rawMaterialsGroup.position.set(-88, 0, 2);
+  const stage1Group = new THREE.Group();
+  stage1Group.position.set(-31, 0, -3);
 
-  // Stepped circular mining benches (quarry terraces)
-  const terraceRadii = [18, 14, 10, 6];
-  terraceRadii.forEach((r, idx) => {
-    const terraceGeo = new THREE.CylinderGeometry(r - 1.2, r, 0.9, 24);
-    const terrace = new THREE.Mesh(terraceGeo, quarryTerraceMat);
-    terrace.position.set(-6, idx * 0.7 + 0.35, -4);
-    terrace.receiveShadow = !isSoftwareGl;
-    rawMaterialsGroup.add(terrace);
+  // Stepped quarry excavation benches
+  [6.0, 4.6, 3.4, 2.2].forEach((r, idx) => {
+    const bGeo = new THREE.CylinderGeometry(r - 0.45, r, 0.38, 16);
+    const bench = new THREE.Mesh(bGeo, iceSlateMat);
+    bench.position.set(-1.8, idx * 0.32 + 0.16, 0);
+    bench.receiveShadow = !isSoftwareGl;
+    stage1Group.add(bench);
   });
 
-  // Mineral Ore stockpiles
-  const oreGeo1 = new THREE.ConeGeometry(3.6, 2.4, 12);
-  const oreStockpile1 = new THREE.Mesh(oreGeo1, oreStockpileMat);
-  oreStockpile1.position.set(4, 1.2, -6);
-  rawMaterialsGroup.add(oreStockpile1);
+  // Ore Crushing Hopper Facility
+  const hopperGeo = new THREE.BoxGeometry(3.6, 2.4, 2.8);
+  const hopper = new THREE.Mesh(hopperGeo, whiteArchMat);
+  hopper.position.set(3.2, 1.2, 1.8);
+  addEdges(hopper, hopperGeo);
+  stage1Group.add(hopper);
 
-  const oreGeo2 = new THREE.ConeGeometry(2.8, 1.8, 12);
-  const oreStockpile2 = new THREE.Mesh(oreGeo2, oreStockpileMat);
-  oreStockpile2.position.set(8.5, 0.9, -4.5);
-  rawMaterialsGroup.add(oreStockpile2);
-
-  // Primary Mineral Crushing & Refinement Plant
-  const crusherPlantGeo = new THREE.BoxGeometry(8.5, 5.2, 6.4);
-  const crusherPlant = new THREE.Mesh(crusherPlantGeo, whiteArchMat);
-  crusherPlant.position.set(6, 2.6, 6);
-  crusherPlant.add(new THREE.LineSegments(new THREE.EdgesGeometry(crusherPlantGeo), archEdgeMat));
-  rawMaterialsGroup.add(crusherPlant);
+  const hopperBase = new THREE.Mesh(new THREE.BoxGeometry(3.8, 0.28, 3.0), navyPlinthMat);
+  hopperBase.position.set(3.2, 0.14, 1.8);
+  stage1Group.add(hopperBase);
 
   // Twin Bulk Storage Silos
-  const siloGeo = new THREE.CylinderGeometry(1.8, 1.8, 6.2, 16);
-  [-2, 2].forEach((sx) => {
-    const silo = new THREE.Mesh(siloGeo, iceSlateMat);
-    silo.position.set(6 + sx, 3.1, 12);
-    silo.castShadow = !isSoftwareGl;
-    rawMaterialsGroup.add(silo);
+  [-0.9, 0.9].forEach((sx) => {
+    const sGeo = new THREE.CylinderGeometry(0.65, 0.65, 2.8, 12);
+    const silo = new THREE.Mesh(sGeo, iceSlateMat);
+    silo.position.set(3.2 + sx, 1.4, -1.5);
+    stage1Group.add(silo);
   });
 
-  // Elevated Ore Conveyor Gantry linking quarry to crushing plant
-  const conveyorTrussGeo = new THREE.BoxGeometry(14, 0.5, 1.1);
-  const conveyorTruss = new THREE.Mesh(conveyorTrussGeo, steelBlueMat);
-  conveyorTruss.position.set(-0.5, 3.2, 1);
-  conveyorTruss.rotation.z = -0.14;
-  rawMaterialsGroup.add(conveyorTruss);
+  // Elevated Ore Conveyor Gantry
+  const trussGeo = new THREE.BoxGeometry(4.8, 0.22, 0.45);
+  const truss = new THREE.Mesh(trussGeo, steelBlueMat);
+  truss.position.set(0.8, 1.6, 0.8);
+  truss.rotation.z = -0.15;
+  stage1Group.add(truss);
 
-  // Heavy Mineral Haul Truck in quarry
-  const haulTruck = new THREE.Group();
-  const haulCab = new THREE.Mesh(new THREE.BoxGeometry(1.8, 1.4, 1.6), darkNavyMat);
-  haulCab.position.set(-1.0, 1.0, 0);
-  const haulBed = new THREE.Mesh(new THREE.BoxGeometry(2.4, 1.5, 2.0), steelBlueMat);
-  haulBed.position.set(1.0, 1.2, 0);
-  haulTruck.add(haulCab, haulBed);
-  haulTruck.scale.setScalar(0.42);
-  haulTruck.position.set(-4, 0.2, 4);
-  rawMaterialsGroup.add(haulTruck);
-  haulTrucks.push({ group: haulTruck, startX: -14, endX: 2, z: 4, speed: 1.2 });
-
-  rootGroup.add(rawMaterialsGroup);
+  addStageMarker(stage1Group, '01', 2.8);
+  rootGroup.add(stage1Group);
 
   // =========================================================================
-  // 2. SCENE 2: SUPPLIER & COMPONENT NETWORK (X: -60 to -25, Z: -15 to +20)
-  // Precision Fabrication Plant, Foundry, Staging Bays & Parts Outbound
+  // 3. STAGE 2: TIER-1 SUPPLIER FOUNDRY & FAB (X ≈ -21, Z ≈ 4)
+  // Component Foundry Building, Saw-tooth roof, Filtration Stacks, Loading Bay
   // =========================================================================
-  const supplierGroup = new THREE.Group();
-  supplierGroup.position.set(-46, 0, 0);
+  const stage2Group = new THREE.Group();
+  stage2Group.position.set(-21, 0, 4);
 
-  // Component Foundry Building
-  const foundryGeo = new THREE.BoxGeometry(11, 4.4, 7.8);
+  const foundryGeo = new THREE.BoxGeometry(4.8, 2.2, 3.8);
   const foundry = new THREE.Mesh(foundryGeo, whiteArchMat);
-  foundry.position.set(0, 2.2, 4);
-  foundry.add(new THREE.LineSegments(new THREE.EdgesGeometry(foundryGeo), archEdgeMat));
-  supplierGroup.add(foundry);
+  foundry.position.set(0, 1.1, 0);
+  addEdges(foundry, foundryGeo);
+  stage2Group.add(foundry);
 
-  // Industrial Exhaust / Filter Stacks
-  const stackGeo = new THREE.CylinderGeometry(0.35, 0.45, 6.8, 12);
-  [-2.5, 0, 2.5].forEach((stx) => {
+  const foundryPlinth = new THREE.Mesh(new THREE.BoxGeometry(5.0, 0.25, 4.0), navyPlinthMat);
+  foundryPlinth.position.set(0, 0.125, 0);
+  stage2Group.add(foundryPlinth);
+
+  // Filtration stacks
+  [-1.3, 0, 1.3].forEach((stx) => {
+    const stackGeo = new THREE.CylinderGeometry(0.16, 0.22, 3.2, 10);
     const stack = new THREE.Mesh(stackGeo, steelBlueMat);
-    stack.position.set(stx, 4.2, 1.2);
-    supplierGroup.add(stack);
+    stack.position.set(stx, 2.4, -1.0);
+    stage2Group.add(stack);
   });
 
-  // High-Tech Component Staging Bay
-  const stagingBayGeo = new THREE.BoxGeometry(8.2, 3.2, 5.4);
-  const stagingBay = new THREE.Mesh(stagingBayGeo, iceSlateMat);
-  stagingBay.position.set(-2, 1.6, -5.5);
-  stagingBay.add(new THREE.LineSegments(new THREE.EdgesGeometry(stagingBayGeo), archEdgeMat));
-  supplierGroup.add(stagingBay);
+  // Component staging dock
+  const suppDockGeo = new THREE.BoxGeometry(3.6, 1.2, 1.8);
+  const suppDock = new THREE.Mesh(suppDockGeo, iceSlateMat);
+  suppDock.position.set(-0.4, 0.6, 2.4);
+  addEdges(suppDock, suppDockGeo);
+  stage2Group.add(suppDock);
 
-  // Glass observation gallery
-  const galleryGeo = new THREE.BoxGeometry(6.4, 1.1, 0.3);
-  const gallery = new THREE.Mesh(galleryGeo, glassBlueMat);
-  gallery.position.set(0, 3.2, 7.95);
-  supplierGroup.add(gallery);
+  const suppBeacon = new THREE.Mesh(
+    new THREE.CylinderGeometry(0.3, 0.3, 0.14, 12),
+    cyanGlowMat
+  );
+  suppBeacon.position.set(0, 2.3, 0);
+  stage2Group.add(suppBeacon);
 
-  rootGroup.add(supplierGroup);
+  addStageMarker(stage2Group, '02', 2.8);
+  rootGroup.add(stage2Group);
 
   // =========================================================================
-  // 3. SCENE 3: INTELLIGENT MANUFACTURING (X: -15 to +18, Z: -10 to +18)
-  // Smart Factory, 6-Axis Robotic Arms, Automated QC Optical Scanner
+  // 4. STAGE 3: SMART FACTORY & AUTOMATED ASSEMBLY (X ≈ -10, Z ≈ -3)
+  // Modern smart manufacturing pavilion, robotic arms, optical QC scanner
   // =========================================================================
-  const factoryGroup = new THREE.Group();
-  factoryGroup.position.set(0, 0, 0);
+  const stage3Group = new THREE.Group();
+  stage3Group.position.set(-10, 0, -3);
 
-  // Transparent / Cutaway Smart Factory Building
-  const factoryMainGeo = new THREE.BoxGeometry(18, 5.6, 12);
+  const factoryMainGeo = new THREE.BoxGeometry(6.2, 2.6, 4.6);
   const factoryMain = new THREE.Mesh(factoryMainGeo, whiteArchMat);
-  factoryMain.position.set(0, 2.8, 0);
-  factoryMain.add(new THREE.LineSegments(new THREE.EdgesGeometry(factoryMainGeo), archEdgeMat));
-  factoryGroup.add(factoryMain);
+  factoryMain.position.set(0, 1.3, 0);
+  addEdges(factoryMain, factoryMainGeo);
+  stage3Group.add(factoryMain);
 
-  // Front Panorama Glass Cladding
-  const factoryGlassGeo = new THREE.BoxGeometry(17.2, 3.4, 0.2);
+  const factoryPlinth = new THREE.Mesh(new THREE.BoxGeometry(6.4, 0.25, 4.8), navyPlinthMat);
+  factoryPlinth.position.set(0, 0.125, 0);
+  stage3Group.add(factoryPlinth);
+
+  // Front Panorama Glass
+  const factoryGlassGeo = new THREE.BoxGeometry(5.8, 1.6, 0.12);
   const factoryGlass = new THREE.Mesh(factoryGlassGeo, glassBlueMat);
-  factoryGlass.position.set(0, 2.8, 6.05);
-  factoryGroup.add(factoryGlass);
+  factoryGlass.position.set(0, 1.3, 2.32);
+  stage3Group.add(factoryGlass);
 
-  // High-Precision Linear Assembly Conveyor through the factory floor
-  const conveyorBedGeo = new THREE.BoxGeometry(15, 0.35, 1.4);
-  const conveyorBed = new THREE.Mesh(conveyorBedGeo, darkNavyMat);
-  conveyorBed.position.set(0, 0.9, 0);
-  factoryGroup.add(conveyorBed);
+  // Internal Assembly Conveyor Bed
+  const convBedGeo = new THREE.BoxGeometry(5.2, 0.18, 0.7);
+  const convBed = new THREE.Mesh(convBedGeo, navyPlinthMat);
+  convBed.position.set(0, 0.45, 0.5);
+  stage3Group.add(convBed);
 
-  // Articulated 6-Axis Robotic Arms along assembly stations
+  // Articulated 6-Axis Robotic Assembly Arms
   const createRoboticArm = (x: number, z: number, phase: number) => {
     const armBase = new THREE.Group();
-    armBase.position.set(x, 1.08, z);
+    armBase.position.set(x, 0.55, z);
 
-    const pedestal = new THREE.Mesh(new THREE.CylinderGeometry(0.5, 0.65, 0.45, 16), steelBlueMat);
+    const pedestal = new THREE.Mesh(
+      new THREE.CylinderGeometry(0.24, 0.3, 0.22, 10),
+      steelBlueMat
+    );
     armBase.add(pedestal);
 
     const upperArm = new THREE.Group();
-    upperArm.position.set(0, 0.35, 0);
-    const upperLink = new THREE.Mesh(new THREE.BoxGeometry(0.28, 1.6, 0.35), whiteArchMat);
-    upperLink.position.set(0, 0.8, 0);
+    upperArm.position.set(0, 0.16, 0);
+    const upperLink = new THREE.Mesh(new THREE.BoxGeometry(0.14, 0.75, 0.18), whiteArchMat);
+    upperLink.position.set(0, 0.38, 0);
     upperArm.add(upperLink);
 
     const forearm = new THREE.Group();
-    forearm.position.set(0, 1.6, 0);
-    const forearmLink = new THREE.Mesh(new THREE.BoxGeometry(0.24, 1.3, 0.28), steelBlueMat);
-    forearmLink.position.set(0, 0.65, 0);
-    const toolHead = new THREE.Mesh(new THREE.CylinderGeometry(0.08, 0.16, 0.35, 8), darkNavyMat);
-    toolHead.position.set(0, 1.4, 0);
+    forearm.position.set(0, 0.75, 0);
+    const forearmLink = new THREE.Mesh(new THREE.BoxGeometry(0.12, 0.6, 0.15), steelBlueMat);
+    forearmLink.position.set(0, 0.3, 0);
+    const toolHead = new THREE.Mesh(new THREE.CylinderGeometry(0.05, 0.1, 0.2, 8), navyPlinthMat);
+    toolHead.position.set(0, 0.65, 0);
     toolHead.rotation.x = Math.PI / 2;
     forearm.add(forearmLink, toolHead);
 
     upperArm.add(forearm);
     armBase.add(upperArm);
 
-    const sparkLight = new THREE.PointLight(0x38bdf8, 1.5, 3.5);
-    sparkLight.position.set(0, 1.4, 0.3);
+    const sparkLight = new THREE.PointLight(0x38bdf8, 1.2, 2.2);
+    sparkLight.position.set(0, 0.7, 0.15);
     forearm.add(sparkLight);
 
-    factoryGroup.add(armBase);
+    stage3Group.add(armBase);
     roboticArms.push({ base: armBase, upperArm, forearm, sparkLight, phase });
   };
 
-  createRoboticArm(-4.5, 1.6, 0.0);
-  createRoboticArm(-1.2, -1.6, 1.8);
-  createRoboticArm(2.2, 1.6, 3.4);
+  createRoboticArm(-1.4, 1.1, 0.0);
+  createRoboticArm(1.0, 1.1, 2.1);
 
-  // Automated QC Optical Inspection Scanner Arch (Holographic Cyan Scanner)
-  const qcArchGeo = new THREE.BoxGeometry(0.45, 2.6, 2.6);
+  // Optical QC Scanner Arch (Holographic Cyan Laser Line)
+  const qcArchGeo = new THREE.BoxGeometry(0.26, 1.3, 1.3);
   const qcArch = new THREE.Mesh(qcArchGeo, whiteArchMat);
-  qcArch.position.set(4.8, 2.0, 0);
-  qcArch.add(new THREE.LineSegments(new THREE.EdgesGeometry(qcArchGeo), archEdgeMat));
-  factoryGroup.add(qcArch);
+  qcArch.position.set(1.9, 1.0, 0.5);
+  addEdges(qcArch, qcArchGeo);
+  stage3Group.add(qcArch);
 
-  // Holographic scan plane
-  const scanPlaneGeo = new THREE.PlaneGeometry(0.08, 2.1);
-  const scanPlane = new THREE.Mesh(scanPlaneGeo, cyanEmissiveMat);
-  scanPlane.position.set(4.8, 2.0, 0);
+  const scanPlaneGeo = new THREE.PlaneGeometry(0.04, 1.1);
+  const scanPlane = new THREE.Mesh(scanPlaneGeo, cyanGlowMat);
+  scanPlane.position.set(1.9, 1.0, 0.5);
   scanPlane.rotation.y = Math.PI / 2;
-  factoryGroup.add(scanPlane);
+  stage3Group.add(scanPlane);
 
   // Moving Assembly Goods on the conveyor
-  for (let i = 0; i < 5; i++) {
+  for (let i = 0; i < 4; i++) {
     const item = new THREE.Mesh(
-      new THREE.BoxGeometry(0.75, 0.55, 0.65),
-      new THREE.MeshStandardMaterial({ color: 0x0284c7, roughness: 0.3, metalness: 0.3 })
+      new THREE.BoxGeometry(0.4, 0.28, 0.35),
+      new THREE.MeshStandardMaterial({ color: 0x0284c7, roughness: 0.35, metalness: 0.25 })
     );
-    item.position.set(-6 + i * 2.8, 1.35, 0);
-    factoryGroup.add(item);
-    conveyorItems.push({ mesh: item, startX: -6.5, endX: 6.5, z: 0, y: 1.35 });
+    item.position.set(-1.8 + i * 1.2, 0.7, 0.5);
+    stage3Group.add(item);
+    conveyorItems.push({ mesh: item, startX: -2.2, endX: 2.2, z: 0.5, y: 0.7 });
   }
 
-  rootGroup.add(factoryGroup);
+  const factoryBeacon = new THREE.Mesh(
+    new THREE.CylinderGeometry(0.3, 0.3, 0.14, 12),
+    greenVerifiedMat
+  );
+  factoryBeacon.position.set(0, 2.7, 0);
+  stage3Group.add(factoryBeacon);
+
+  createWorker(-9.5, 0, -0.8, 0.5);
+  addStageMarker(stage3Group, '03', 3.0);
+  rootGroup.add(stage3Group);
 
   // =========================================================================
-  // 4. SCENE 4: WAREHOUSING & INVENTORY (X: +26 to +58, Z: -12 to +18)
-  // High-Bay ASRS Storage Racks, Automated AGVs, Sorting Loop
+  // 5. STAGE 4: AUTOMATED WAREHOUSE & ASRS (X ≈ 1, Z ≈ 5)
+  // High-bay rack structure, moving elevator carriage, indoor forklift
   // =========================================================================
-  const warehouseGroup = new THREE.Group();
-  warehouseGroup.position.set(40, 0, 0);
+  const stage4Group = new THREE.Group();
+  stage4Group.position.set(1, 0, 5);
 
-  // ASRS High-Bay Warehouse Structure
-  const asrsWidth = 19;
-  const asrsHeight = 7.4;
-  const asrsDepth = 12.5;
+  const asrsGeo = new THREE.BoxGeometry(5.6, 3.2, 4.2);
+  const asrsBuilding = new THREE.Mesh(asrsGeo, whiteArchMat);
+  asrsBuilding.position.set(0, 1.6, 0);
+  addEdges(asrsBuilding, asrsGeo);
+  stage4Group.add(asrsBuilding);
 
-  const asrsBuildingGeo = new THREE.BoxGeometry(asrsWidth, asrsHeight, asrsDepth);
-  const asrsBuilding = new THREE.Mesh(asrsBuildingGeo, whiteArchMat);
-  asrsBuilding.position.set(0, asrsHeight / 2, 0);
-  asrsBuilding.add(new THREE.LineSegments(new THREE.EdgesGeometry(asrsBuildingGeo), archEdgeMat));
-  warehouseGroup.add(asrsBuilding);
+  const asrsPlinth = new THREE.Mesh(new THREE.BoxGeometry(5.8, 0.25, 4.4), navyPlinthMat);
+  asrsPlinth.position.set(0, 0.125, 0);
+  stage4Group.add(asrsPlinth);
 
-  // Translucent cutaway glass roof & clerestory
-  const asrsGlassGeo = new THREE.BoxGeometry(asrsWidth + 0.1, 1.4, asrsDepth + 0.1);
+  // High-bay glass clerestory
+  const asrsGlassGeo = new THREE.BoxGeometry(5.7, 0.65, 4.3);
   const asrsGlass = new THREE.Mesh(asrsGlassGeo, glassBlueMat);
-  asrsGlass.position.set(0, asrsHeight - 1.2, 0);
-  warehouseGroup.add(asrsGlass);
+  asrsGlass.position.set(0, 2.6, 0);
+  stage4Group.add(asrsGlass);
 
-  // High-Bay Rack Aisles inside
-  const rackUprightGeo = new THREE.BoxGeometry(0.18, 5.2, 0.18);
-  const rackShelfGeo = new THREE.BoxGeometry(12, 0.12, 1.1);
-  [-3.8, 3.8].forEach((rz) => {
-    for (let shelfY = 1.2; shelfY <= 5.0; shelfY += 1.2) {
-      const shelf = new THREE.Mesh(rackShelfGeo, steelBlueMat);
+  // Storage Rack Aisles
+  [-1.3, 1.3].forEach((rz) => {
+    for (let shelfY = 0.6; shelfY <= 2.4; shelfY += 0.65) {
+      const shelf = new THREE.Mesh(
+        new THREE.BoxGeometry(3.8, 0.06, 0.55),
+        steelBlueMat
+      );
       shelf.position.set(0, shelfY, rz);
-      warehouseGroup.add(shelf);
-    }
-    for (let rx = -5.5; rx <= 5.5; rx += 2.2) {
-      const up = new THREE.Mesh(rackUprightGeo, iceSlateMat);
-      up.position.set(rx, 3.2, rz);
-      warehouseGroup.add(up);
+      stage4Group.add(shelf);
     }
   });
 
-  // Animated ASRS Lift Mast & Moving Storage Carrier
-  const mastGeo = new THREE.BoxGeometry(0.35, 5.8, 0.35);
-  const asrsMast = new THREE.Mesh(mastGeo, darkNavyMat);
-  asrsMast.position.set(0, 3.4, 0);
-  warehouseGroup.add(asrsMast);
+  // ASRS Moving Storage Carrier
+  const carrierMesh = new THREE.Mesh(
+    new THREE.BoxGeometry(0.85, 0.15, 0.65),
+    cyanGlowMat
+  );
+  carrierMesh.position.set(0, 1.3, 0);
+  stage4Group.add(carrierMesh);
+  asrsCarriers.push({ mesh: carrierMesh, startY: 0.6, targetY: 2.6, speed: 1.4 });
 
-  const asrsCarrierGeo = new THREE.BoxGeometry(1.6, 0.28, 1.2);
-  const asrsCarrier = new THREE.Mesh(asrsCarrierGeo, cyanEmissiveMat);
-  asrsCarrier.position.set(0, 2.5, 0);
-  warehouseGroup.add(asrsCarrier);
-  asrsCarriers.push({ mesh: asrsCarrier, startY: 1.2, targetY: 5.2, speed: 1.8 });
+  const warehouseBeacon = new THREE.Mesh(
+    new THREE.CylinderGeometry(0.3, 0.3, 0.14, 12),
+    greenVerifiedMat
+  );
+  warehouseBeacon.position.set(0, 3.3, 0);
+  stage4Group.add(warehouseBeacon);
 
-  // Autonomous Guided Vehicles (AGVs) operating on warehouse floor
-  const createAgv = (x: number, z: number, minZ: number, maxZ: number, speed: number) => {
-    const agv = new THREE.Group();
-    agv.position.set(x, 0.18, z);
-    const body = new THREE.Mesh(new THREE.BoxGeometry(1.2, 0.28, 0.8), darkNavyMat);
-    const sensor = new THREE.Mesh(new THREE.BoxGeometry(0.3, 0.15, 0.3), cyanEmissiveMat);
-    sensor.position.set(0.4, 0.2, 0);
-    const pallet = new THREE.Mesh(new THREE.BoxGeometry(0.95, 0.45, 0.7), iceSlateMat);
-    pallet.position.set(0, 0.4, 0);
-    agv.add(body, sensor, pallet);
-    warehouseGroup.add(agv);
-    agvVehicles.push({ group: agv, pathX: x, minZ, maxZ, speed });
-  };
-
-  createAgv(-4.2, 2.0, -3.5, 3.5, 1.4);
-  createAgv(4.2, -1.5, -3.5, 3.5, 1.6);
-
-  rootGroup.add(warehouseGroup);
+  createWorker(2.2, 0, 7.5, 2.1);
+  addStageMarker(stage4Group, '04', 3.6);
+  rootGroup.add(stage4Group);
 
   // =========================================================================
-  // 5. SCENE 5: MULTIMODAL GLOBAL DISTRIBUTION CORRIDOR (X: -70 to +110, Z: 10 to 35)
-  // Deepwater Port Berth, Container Ship, Gantry Cranes, Rail Track, Airport
+  // 6. STAGE 5: MULTIMODAL DISTRIBUTION HUB & PORT (X ≈ 12, Z ≈ -4)
+  // Cross-dock terminal, deepwater canal berth, gantry crane
   // =========================================================================
-  const multimodalGroup = new THREE.Group();
-  multimodalGroup.position.set(20, 0, 18);
+  const stage5Group = new THREE.Group();
+  stage5Group.position.set(12, 0, -4);
+
+  const hubGeo = new THREE.BoxGeometry(5.4, 2.2, 3.8);
+  const hub = new THREE.Mesh(hubGeo, whiteArchMat);
+  hub.position.set(0, 1.1, 0);
+  addEdges(hub, hubGeo);
+  stage5Group.add(hub);
+
+  const hubPlinth = new THREE.Mesh(new THREE.BoxGeometry(5.6, 0.25, 4.0), navyPlinthMat);
+  hubPlinth.position.set(0, 0.125, 0);
+  stage5Group.add(hubPlinth);
+
+  // Cross-dock doors
+  [-1.5, -0.5, 0.5, 1.5].forEach((dx) => {
+    const door = new THREE.Mesh(new THREE.BoxGeometry(0.65, 0.95, 0.06), navyPlinthMat);
+    door.position.set(dx, 0.48, 1.92);
+    stage5Group.add(door);
+  });
 
   // Deepwater Shipping Canal & Concrete Quay
-  const canalGeo = new THREE.PlaneGeometry(190, 14);
+  const canalGeo = new THREE.PlaneGeometry(24, 7.5);
   canalGeo.rotateX(-Math.PI / 2);
-  const canalMat = new THREE.MeshStandardMaterial({
-    color: 0x82b9dc,
-    roughness: 0.18,
-    metalness: 0.32,
-  });
-  const canal = new THREE.Mesh(canalGeo, canalMat);
-  canal.position.set(0, 0.05, 3);
-  multimodalGroup.add(canal);
+  const canal = new THREE.Mesh(canalGeo, waterCanalMat);
+  canal.position.set(0, 0.04, -6.8);
+  stage5Group.add(canal);
 
-  const quayGeo = new THREE.BoxGeometry(190, 0.55, 2.2);
+  const quayGeo = new THREE.BoxGeometry(24, 0.3, 1.4);
   const quay = new THREE.Mesh(quayGeo, whiteArchMat);
-  quay.position.set(0, 0.28, -4.5);
-  multimodalGroup.add(quay);
+  quay.position.set(0, 0.15, -3.1);
+  addEdges(quay, quayGeo);
+  stage5Group.add(quay);
 
-  // Post-Panamax Container Gantry Cranes along quay
-  const createGantryCrane = (x: number, phase: number) => {
-    const crane = new THREE.Group();
-    crane.position.set(x, 0, -4.2);
+  // Gantry Container Crane
+  const craneGroup = new THREE.Group();
+  craneGroup.position.set(0, 0, -3.1);
 
-    const legGeo = new THREE.BoxGeometry(0.4, 7.5, 0.4);
-    [-1.6, 1.6].forEach((lx) => {
-      [-1.1, 1.1].forEach((lz) => {
-        const leg = new THREE.Mesh(legGeo, whiteArchMat);
-        leg.position.set(lx, 3.75, lz);
-        crane.add(leg);
+  const legGeo = new THREE.BoxGeometry(0.2, 3.4, 0.2);
+  [-1.0, 1.0].forEach((lx) => {
+    [-0.55, 0.55].forEach((lz) => {
+      const leg = new THREE.Mesh(legGeo, whiteArchMat);
+      leg.position.set(lx, 1.7, lz);
+      craneGroup.add(leg);
+    });
+  });
+
+  const boomGeo = new THREE.BoxGeometry(0.8, 0.25, 5.0);
+  const boom = new THREE.Mesh(boomGeo, steelBlueMat);
+  boom.position.set(0, 3.4, -1.0);
+  craneGroup.add(boom);
+
+  const trolley = new THREE.Group();
+  trolley.position.set(0, 3.15, -1.0);
+  const hoist = new THREE.Mesh(new THREE.BoxGeometry(0.5, 0.14, 0.5), navyPlinthMat);
+  const cable = new THREE.Mesh(new THREE.CylinderGeometry(0.016, 0.016, 1.1, 6), iceSlateMat);
+  cable.position.y = -0.55;
+  const craneCont = new THREE.Mesh(new THREE.BoxGeometry(0.55, 0.48, 1.1), cyanGlowMat);
+  craneCont.position.y = -1.2;
+  trolley.add(hoist, cable, craneCont);
+  craneGroup.add(trolley);
+  craneTrolleys.push({ group: trolley, baseZ: -1.0, phase: 0 });
+
+  stage5Group.add(craneGroup);
+
+  const portBeacon = new THREE.Mesh(
+    new THREE.CylinderGeometry(0.3, 0.3, 0.14, 12),
+    greenVerifiedMat
+  );
+  portBeacon.position.set(0, 2.3, 0);
+  stage5Group.add(portBeacon);
+
+  addStageMarker(stage5Group, '05', 2.8);
+  rootGroup.add(stage5Group);
+
+  // =========================================================================
+  // 7. STAGE 6: REGIONAL RETAILER (X ≈ 22, Z ≈ 4)
+  // Commercial storefront, retail entrance canopy, delivery bay
+  // =========================================================================
+  const stage6Group = new THREE.Group();
+  stage6Group.position.set(22, 0, 4);
+
+  const retailGeo = new THREE.BoxGeometry(4.4, 2.1, 3.2);
+  const retailStore = new THREE.Mesh(retailGeo, whiteArchMat);
+  retailStore.position.set(0, 1.05, 0);
+  addEdges(retailStore, retailGeo);
+  stage6Group.add(retailStore);
+
+  const retailPlinth = new THREE.Mesh(new THREE.BoxGeometry(4.6, 0.25, 3.4), navyPlinthMat);
+  retailPlinth.position.set(0, 0.125, 0);
+  stage6Group.add(retailPlinth);
+
+  // Storefront glass
+  const retailGlassGeo = new THREE.BoxGeometry(3.8, 1.3, 0.1);
+  const retailGlass = new THREE.Mesh(retailGlassGeo, glassBlueMat);
+  retailGlass.position.set(0, 0.95, 1.62);
+  stage6Group.add(retailGlass);
+
+  // Entrance canopy
+  const canopyGeo = new THREE.BoxGeometry(4.0, 0.12, 0.9);
+  const canopy = new THREE.Mesh(canopyGeo, steelBlueMat);
+  canopy.position.set(0, 1.75, 2.0);
+  stage6Group.add(canopy);
+
+  createWorker(22.6, 0, 5.8, 1.2);
+  addStageMarker(stage6Group, '06', 2.6);
+  rootGroup.add(stage6Group);
+
+  // =========================================================================
+  // 8. STAGE 7: END CUSTOMER DELIVERY (X ≈ 31, Z ≈ -3)
+  // Modern enterprise campus destination, proof-of-delivery point
+  // =========================================================================
+  const stage7Group = new THREE.Group();
+  stage7Group.position.set(31, 0, -3);
+
+  const clientCampusGeo = new THREE.BoxGeometry(4.6, 2.6, 3.6);
+  const clientCampus = new THREE.Mesh(clientCampusGeo, whiteArchMat);
+  clientCampus.position.set(0, 1.3, 0);
+  addEdges(clientCampus, clientCampusGeo);
+  stage7Group.add(clientCampus);
+
+  const campusPlinth = new THREE.Mesh(new THREE.BoxGeometry(4.8, 0.25, 3.8), navyPlinthMat);
+  campusPlinth.position.set(0, 0.125, 0);
+  stage7Group.add(campusPlinth);
+
+  // Proof-of-Delivery Optical Beacon Ring
+  const podRing = new THREE.Mesh(
+    new THREE.RingGeometry(0.5, 0.7, 16),
+    greenVerifiedMat
+  );
+  podRing.rotation.x = -Math.PI / 2;
+  podRing.position.set(0, 0.03, 2.5);
+  stage7Group.add(podRing);
+
+  const customerBeacon = new THREE.Mesh(
+    new THREE.CylinderGeometry(0.3, 0.3, 0.14, 12),
+    greenVerifiedMat
+  );
+  customerBeacon.position.set(0, 2.7, 0);
+  stage7Group.add(customerBeacon);
+
+  addStageMarker(stage7Group, '07', 3.0);
+  rootGroup.add(stage7Group);
+
+  // =========================================================================
+  // 9. CONTINUOUS TRANSPORT TRAJECTORIES (ZERO TELEPORTATION / JUMPING)
+  // =========================================================================
+  // Helper to build a detailed freight truck (Cab + Trailer + Wheels)
+  const createTruckModel = (cabColor = 0x0f2744, trailerColor = 0x2563eb): THREE.Group => {
+    const truck = new THREE.Group();
+    const cab = new THREE.Mesh(
+      new THREE.BoxGeometry(0.75, 0.7, 0.8),
+      new THREE.MeshStandardMaterial({ color: cabColor, roughness: 0.35, metalness: 0.3 })
+    );
+    cab.position.set(0.55, 0.45, 0);
+
+    const windshield = new THREE.Mesh(new THREE.BoxGeometry(0.28, 0.28, 0.7), glassBlueMat);
+    windshield.position.set(0.75, 0.56, 0);
+    cab.add(windshield);
+
+    const trailer = new THREE.Mesh(
+      new THREE.BoxGeometry(1.35, 0.78, 0.8),
+      new THREE.MeshStandardMaterial({ color: trailerColor, roughness: 0.45, metalness: 0.2 })
+    );
+    trailer.position.set(-0.5, 0.5, 0);
+
+    const wheelGeo = new THREE.CylinderGeometry(0.14, 0.14, 0.1, 10);
+    wheelGeo.rotateX(Math.PI / 2);
+    [-0.9, -0.15, 0.55].forEach((wx) => {
+      [-0.4, 0.4].forEach((wz) => {
+        const wheel = new THREE.Mesh(wheelGeo, navyPlinthMat);
+        wheel.position.set(wx, 0.14, wz);
+        truck.add(wheel);
       });
     });
 
-    const boomGeo = new THREE.BoxGeometry(1.5, 0.5, 10.5);
-    const boom = new THREE.Mesh(boomGeo, steelBlueMat);
-    boom.position.set(0, 7.5, 2.8);
-    crane.add(boom);
-
-    const trolleyGroup = new THREE.Group();
-    trolleyGroup.position.set(0, 7.1, 2.5);
-    const hoist = new THREE.Mesh(new THREE.BoxGeometry(1.1, 0.3, 1.1), darkNavyMat);
-    const cable = new THREE.Mesh(new THREE.CylinderGeometry(0.04, 0.04, 2.6, 6), iceSlateMat);
-    cable.position.y = -1.3;
-    const container = new THREE.Mesh(new THREE.BoxGeometry(1.1, 0.9, 2.2), cyanEmissiveMat);
-    container.position.y = -2.7;
-    trolleyGroup.add(hoist, cable, container);
-    crane.add(trolleyGroup);
-
-    craneTrolleys.push({ group: trolleyGroup, baseZ: 2.8, phase });
-    multimodalGroup.add(crane);
+    truck.add(cab, trailer);
+    truck.scale.setScalar(0.72);
+    return truck;
   };
 
-  createGantryCrane(-42, 0.0);
-  createGantryCrane(-18, 1.8);
-  createGantryCrane(26, 3.2);
+  // Helper to build an electric delivery van
+  const createDeliveryVanModel = (): THREE.Group => {
+    const van = new THREE.Group();
+    const body = new THREE.Mesh(new THREE.BoxGeometry(1.5, 0.72, 0.72), whiteArchMat);
+    body.position.set(0, 0.45, 0);
 
-  // Large Container Ship Berthed
-  const shipGroup = new THREE.Group();
-  const hullGeo = new THREE.BoxGeometry(22, 2.2, 5.2);
-  const hull = new THREE.Mesh(hullGeo, darkNavyMat);
-  hull.position.set(0, 0.8, 4.2);
-  shipGroup.add(hull);
+    const stripe = new THREE.Mesh(new THREE.BoxGeometry(1.52, 0.12, 0.74), cyanGlowMat);
+    stripe.position.set(0, 0.42, 0);
 
-  // Container Stacks on ship deck
-  const cColors = [0x0284c7, 0xffffff, 0xcbe2f2, 0x0b1930];
-  for (let cx = -8; cx <= 8; cx += 2.6) {
-    for (let h = 0; h < 3; h++) {
-      const cBox = new THREE.Mesh(
-        new THREE.BoxGeometry(2.3, 0.85, 4.2),
-        new THREE.MeshStandardMaterial({ color: cColors[(Math.abs(cx) + h) % 4] })
-      );
-      cBox.position.set(cx, 2.2 + h * 0.9, 4.2);
-      shipGroup.add(cBox);
+    const wheelGeo = new THREE.CylinderGeometry(0.13, 0.13, 0.08, 10);
+    wheelGeo.rotateX(Math.PI / 2);
+    [-0.45, 0.45].forEach((wx) => {
+      [-0.38, 0.38].forEach((wz) => {
+        const wheel = new THREE.Mesh(wheelGeo, navyPlinthMat);
+        wheel.position.set(wx, 0.13, wz);
+        van.add(wheel);
+      });
+    });
+
+    van.add(body, stripe);
+    van.scale.setScalar(0.72);
+    return van;
+  };
+
+  // Helper to build a container ship
+  const createShipModel = (): THREE.Group => {
+    const ship = new THREE.Group();
+    const hullGeo = new THREE.BoxGeometry(5.2, 0.95, 1.5);
+    const hull = new THREE.Mesh(hullGeo, navyPlinthMat);
+    hull.position.y = 0.48;
+    ship.add(hull);
+
+    const bowGeo = new THREE.ConeGeometry(0.75, 1.2, 4);
+    bowGeo.rotateZ(-Math.PI / 2);
+    const bow = new THREE.Mesh(bowGeo, navyPlinthMat);
+    bow.position.set(3.2, 0.48, 0);
+    ship.add(bow);
+
+    const bridgeGeo = new THREE.BoxGeometry(0.95, 1.2, 1.2);
+    const bridge = new THREE.Mesh(bridgeGeo, whiteArchMat);
+    bridge.position.set(-1.5, 1.2, 0);
+    ship.add(bridge);
+
+    const colPalette = [0x0284c7, 0xffffff, 0xcbe2f2, 0x10b981];
+    for (let cx = -0.7; cx <= 1.8; cx += 0.8) {
+      for (let ch = 0; ch < 2; ch++) {
+        const cMesh = new THREE.Mesh(
+          new THREE.BoxGeometry(0.72, 0.38, 1.2),
+          new THREE.MeshStandardMaterial({ color: colPalette[(Math.floor(cx * 2) + ch) % 4] })
+        );
+        cMesh.position.set(cx, 1.05 + ch * 0.4, 0);
+        ship.add(cMesh);
+      }
     }
-  }
-  shipGroup.position.set(-15, 0, 0);
-  multimodalGroup.add(shipGroup);
-  containerShips.push(shipGroup);
 
-  // Freight Rail Track alongside quay
-  const railBedGeo = new THREE.BoxGeometry(190, 0.12, 1.8);
-  const railBed = new THREE.Mesh(railBedGeo, roadSurfaceMat);
-  railBed.position.set(0, 0.12, -7.5);
-  multimodalGroup.add(railBed);
+    ship.scale.setScalar(0.8);
+    return ship;
+  };
 
-  const trainEngine = new THREE.Group();
-  const locGeo = new THREE.BoxGeometry(5.2, 1.8, 1.4);
-  const loc = new THREE.Mesh(locGeo, steelBlueMat);
-  loc.position.y = 1.0;
-  trainEngine.add(loc);
-  trainEngine.position.set(10, 0.15, -7.5);
-  multimodalGroup.add(trainEngine);
-  trainCars.push(trainEngine);
+  // Helper to build a cargo aircraft
+  const createAircraftModel = (isBypass = false): THREE.Group => {
+    const jet = new THREE.Group();
+    const fuseGeo = new THREE.CylinderGeometry(0.32, 0.38, 3.8, 12);
+    fuseGeo.rotateZ(Math.PI / 2);
+    const fuse = new THREE.Mesh(fuseGeo, whiteArchMat);
+    jet.add(fuse);
 
-  rootGroup.add(multimodalGroup);
+    const wingGeo = new THREE.BoxGeometry(0.68, 0.06, 4.2);
+    const wing = new THREE.Mesh(wingGeo, isBypass ? greenVerifiedMat : steelBlueMat);
+    wing.position.set(0.1, 0, 0);
+    jet.add(wing);
 
-  // =========================================================================
-  // 6. SCENE 6: RETAIL, BUSINESS & END-CUSTOMER FULFILLMENT (X: +72 to +115, Z: -15 to +18)
-  // Micro-Fulfillment Hub, Retail Storefront, Customer Destination
-  // =========================================================================
-  const customerGroup = new THREE.Group();
-  customerGroup.position.set(88, 0, 0);
+    const tailGeo = new THREE.BoxGeometry(0.55, 0.72, 0.06);
+    const tail = new THREE.Mesh(tailGeo, isBypass ? greenVerifiedMat : steelBlueMat);
+    tail.position.set(-1.6, 0.45, 0);
+    jet.add(tail);
 
-  // Modern Retail Storefront / Commercial Hub
-  const storeGeo = new THREE.BoxGeometry(12.5, 4.2, 8.4);
-  const store = new THREE.Mesh(storeGeo, whiteArchMat);
-  store.position.set(0, 2.1, 0);
-  store.add(new THREE.LineSegments(new THREE.EdgesGeometry(storeGeo), archEdgeMat));
-  customerGroup.add(store);
+    jet.scale.setScalar(0.75);
+    return jet;
+  };
 
-  // Retail Storefront Glass Entrance
-  const storeGlassGeo = new THREE.BoxGeometry(10.5, 2.6, 0.18);
-  const storeGlass = new THREE.Mesh(storeGlassGeo, glassBlueMat);
-  storeGlass.position.set(0, 1.8, 4.28);
-  customerGroup.add(storeGlass);
+  // Helper to build a miniature forklift
+  const createForkliftModel = (): THREE.Group => {
+    const fl = new THREE.Group();
+    const chassis = new THREE.Mesh(new THREE.BoxGeometry(0.75, 0.38, 0.55), hiVisYellowMat);
+    chassis.position.y = 0.25;
 
-  // Verified Proof-of-Delivery Optical Beacon on rooftop
-  const podBeaconGeo = new THREE.CylinderGeometry(0.85, 0.85, 0.28, 16);
-  const podBeacon = new THREE.Mesh(podBeaconGeo, greenVerifiedMat);
-  podBeacon.position.set(0, 4.35, 0);
-  customerGroup.add(podBeacon);
+    const cage = new THREE.Mesh(new THREE.BoxGeometry(0.42, 0.5, 0.45), navyPlinthMat);
+    cage.position.set(-0.08, 0.6, 0);
 
-  // Electric Last-Mile Delivery Vans
-  const vanGeo = new THREE.BoxGeometry(2.4, 1.4, 1.3);
-  const van = new THREE.Mesh(vanGeo, iceSlateMat);
-  van.position.set(-6, 0.75, 6.2);
-  customerGroup.add(van);
-  deliveryVans.push({ group: customerGroup, startZ: 2, endZ: 14, x: -6, speed: 1.5 });
+    const mast = new THREE.Mesh(new THREE.BoxGeometry(0.06, 0.72, 0.38), steelBlueMat);
+    mast.position.set(0.38, 0.45, 0);
 
-  rootGroup.add(customerGroup);
+    const pallet = new THREE.Mesh(new THREE.BoxGeometry(0.38, 0.18, 0.38), iceSlateMat);
+    pallet.position.set(0.56, 0.26, 0);
 
-  // =========================================================================
-  // 7. SCENE 7: ORION-9 INTELLIGENCE ENGINE & NEURAL DATA ARCS
-  // Luminous data spline interconnecting: Raw Materials -> Suppliers -> Factory -> Warehouse -> Logistics -> Customer
-  // =========================================================================
-  const graphNodes = [
-    new THREE.Vector3(-88, 3.5, 2),  // Raw Materials
-    new THREE.Vector3(-46, 3.8, 0),  // Suppliers
-    new THREE.Vector3(0, 4.5, 0),    // Smart Factory
-    new THREE.Vector3(40, 5.0, 0),   // Warehouse
-    new THREE.Vector3(68, 4.2, 12),  // Multimodal Port
-    new THREE.Vector3(88, 3.6, 0),   // End Customer
+    fl.add(chassis, cage, mast, pallet);
+    fl.scale.setScalar(0.68);
+    return fl;
+  };
+
+  // -------------------------------------------------------------------------
+  // Path 1: Truck 1 (Raw Materials <-> Supplier <-> Factory) Closed Loop
+  // -------------------------------------------------------------------------
+  const truck1Points = [
+    new THREE.Vector3(-29, 0.1, -1.8),
+    new THREE.Vector3(-24, 0.1, 1.5),
+    new THREE.Vector3(-19, 0.1, 2.5),  // Supplier dock
+    new THREE.Vector3(-14, 0.1, 0.2),
+    new THREE.Vector3(-11, 0.1, -1.6), // Factory dock
+    new THREE.Vector3(-12, 0.1, -5.5), // Bypass service lane
+    new THREE.Vector3(-22, 0.1, -5.5),
+    new THREE.Vector3(-29, 0.1, -4.5),
   ];
+  const truck1Curve = new THREE.CatmullRomCurve3(truck1Points, true);
+  const truck1Mesh = createTruckModel(0x0f2744, 0x2563eb);
+  rootGroup.add(truck1Mesh);
 
-  const mainDataCurve = new THREE.CatmullRomCurve3(graphNodes);
-  const mainDataTubeGeo = new THREE.TubeGeometry(mainDataCurve, 180, 0.22, 10, false);
-  const mainDataTube = new THREE.Mesh(mainDataTubeGeo, cyanEmissiveMat);
-  rootGroup.add(mainDataTube);
+  // -------------------------------------------------------------------------
+  // Path 2: Truck 2 (Factory <-> Warehouse <-> Distribution) Closed Loop
+  // -------------------------------------------------------------------------
+  const truck2Points = [
+    new THREE.Vector3(-8, 0.1, -1.6),
+    new THREE.Vector3(-3, 0.1, 1.4),
+    new THREE.Vector3(1, 0.1, 3.0),    // Warehouse dock
+    new THREE.Vector3(7, 0.1, 0.6),
+    new THREE.Vector3(11, 0.1, -2.0),  // Distribution dock
+    new THREE.Vector3(10, 0.1, -5.2),  // Return lane
+    new THREE.Vector3(0, 0.1, -4.5),
+    new THREE.Vector3(-8, 0.1, -4.0),
+  ];
+  const truck2Curve = new THREE.CatmullRomCurve3(truck2Points, true);
+  const truck2Mesh = createTruckModel(0x0f2744, 0x0284c7);
+  rootGroup.add(truck2Mesh);
 
-  // Floating Pulse Sensor Beacons at each key node
-  graphNodes.forEach((pos) => {
-    const ringGeo = new THREE.RingGeometry(0.9, 1.3, 16);
-    ringGeo.rotateX(-Math.PI / 2);
-    const ring = new THREE.Mesh(ringGeo, cyanEmissiveMat);
-    ring.position.copy(pos);
-    ring.position.y += 1.8;
-    rootGroup.add(ring);
-    intelligencePulses.push(ring);
-  });
+  // -------------------------------------------------------------------------
+  // Path 3: Delivery Van (Distribution <-> Retailer <-> Customer) Closed Loop
+  // -------------------------------------------------------------------------
+  const vanPoints = [
+    new THREE.Vector3(14, 0.1, -2.0),
+    new THREE.Vector3(18, 0.1, 1.2),
+    new THREE.Vector3(22, 0.1, 2.5),   // Retailer dock
+    new THREE.Vector3(27, 0.1, 0.6),
+    new THREE.Vector3(30, 0.1, -1.6),  // Customer drop
+    new THREE.Vector3(30, 0.1, -4.8),  // Return circuit
+    new THREE.Vector3(22, 0.1, -4.8),
+    new THREE.Vector3(14, 0.1, -4.0),
+  ];
+  const vanCurve = new THREE.CatmullRomCurve3(vanPoints, true);
+  const vanMesh = createDeliveryVanModel();
+  rootGroup.add(vanMesh);
+
+  // -------------------------------------------------------------------------
+  // Path 4: Container Ship Maritime Route Closed Loop
+  // -------------------------------------------------------------------------
+  const shipPoints = [
+    new THREE.Vector3(3, 0.12, -8.8),
+    new THREE.Vector3(9, 0.12, -9.0),
+    new THREE.Vector3(14, 0.12, -8.6), // Port approach
+    new THREE.Vector3(19, 0.12, -7.8),
+    new THREE.Vector3(21, 0.12, -9.6), // Basin loop
+    new THREE.Vector3(16, 0.12, -10.4),
+    new THREE.Vector3(9, 0.12, -10.4),
+    new THREE.Vector3(3, 0.12, -9.8),
+  ];
+  const shipCurve = new THREE.CatmullRomCurve3(shipPoints, true);
+  const shipMesh = createShipModel();
+  rootGroup.add(shipMesh);
+
+  // -------------------------------------------------------------------------
+  // Path 5: High-Altitude Cargo Aircraft Sky Circuit Closed Loop
+  // -------------------------------------------------------------------------
+  const airPoints = [
+    new THREE.Vector3(-30, 10.5, -8),
+    new THREE.Vector3(-12, 11.0, -10),
+    new THREE.Vector3(12, 11.0, -10),
+    new THREE.Vector3(30, 10.5, -8),
+    new THREE.Vector3(28, 10.0, -4),
+    new THREE.Vector3(12, 10.2, -5),
+    new THREE.Vector3(-12, 10.2, -5),
+    new THREE.Vector3(-28, 10.0, -4),
+  ];
+  const airCurve = new THREE.CatmullRomCurve3(airPoints, true);
+  const jetMesh = createAircraftModel(false);
+  rootGroup.add(jetMesh);
+
+  // -------------------------------------------------------------------------
+  // Path 6: Scene 03 Autonomous Air-Bypass Corridor
+  // -------------------------------------------------------------------------
+  const bypassPoints = [
+    new THREE.Vector3(-21, 2.0, 3.5),   // Supplier hub ascent
+    new THREE.Vector3(-10, 6.8, -1.5),
+    new THREE.Vector3(2, 7.5, -3.0),    // Cruising altitude
+    new THREE.Vector3(12, 2.5, -2.5),   // Distribution hub descent
+    new THREE.Vector3(6, 4.5, -6.5),    // Return transit circuit
+    new THREE.Vector3(-10, 4.5, -6.5),
+  ];
+  const bypassCurve = new THREE.CatmullRomCurve3(bypassPoints, true);
+  const bypassJetMesh = createAircraftModel(true);
+  bypassJetMesh.visible = false;
+  rootGroup.add(bypassJetMesh);
+
+  // -------------------------------------------------------------------------
+  // Path 7: Indoor Forklift Loop in Warehouse Yard
+  // -------------------------------------------------------------------------
+  const forkliftPoints = [
+    new THREE.Vector3(0.5, 0.1, 6.2),
+    new THREE.Vector3(2.4, 0.1, 6.2),
+    new THREE.Vector3(2.4, 0.1, 7.8),
+    new THREE.Vector3(0.5, 0.1, 7.8),
+  ];
+  const forkliftCurve = new THREE.CatmullRomCurve3(forkliftPoints, true);
+  const forkliftMesh = createForkliftModel();
+  rootGroup.add(forkliftMesh);
+
+  // -------------------------------------------------------------------------
+  // Visual Ground Road Network (Styled Asphalt Ribbons)
+  // -------------------------------------------------------------------------
+  const addStyledRoad = (curve: THREE.CatmullRomCurve3) => {
+    const pts = curve.getPoints(70);
+    const roadGeo = new THREE.BufferGeometry().setFromPoints(pts);
+    const roadLine = new THREE.Line(
+      roadGeo,
+      new THREE.LineBasicMaterial({ color: 0x94a3b8, transparent: true, opacity: 0.6 })
+    );
+    roadLine.position.y = 0.03;
+    rootGroup.add(roadLine);
+  };
+
+  addStyledRoad(truck1Curve);
+  addStyledRoad(truck2Curve);
+  addStyledRoad(vanCurve);
 
   // =========================================================================
-  // 8. SCENE 8: PREDICTIVE DISRUPTION & STOCHASTIC REROUTE RIG (Simulated)
-  // Supplier Bottleneck Warning, Production Buffer Warning, Pareto Bypass Conduit
+  // 10. DISRUPTION & RECOVERY RIG (Scene 02 & Scene 03 elements)
   // =========================================================================
-  // Warning Beacon atop Supplier Node
-  const warningBeaconGeo = new THREE.SphereGeometry(0.75, 16, 12);
-  const supplierWarningBeacon = new THREE.Mesh(warningBeaconGeo, amberWarningMat);
-  supplierWarningBeacon.position.set(-46, 5.8, 0);
-  rootGroup.add(supplierWarningBeacon);
+  const chokepointBeacon = new THREE.Mesh(
+    new THREE.SphereGeometry(0.38, 12, 12),
+    amberWarningMat
+  );
+  chokepointBeacon.position.set(9, 1.8, -9.0);
+  chokepointBeacon.visible = false;
+  rootGroup.add(chokepointBeacon);
 
-  // Bottlenecked Flow Tube (Supplier -> Factory)
-  const bottleneckCurve = new THREE.CatmullRomCurve3([
-    new THREE.Vector3(-46, 2.2, 0),
-    new THREE.Vector3(-23, 2.2, 1.5),
-    new THREE.Vector3(-5, 2.2, 0),
+  const chokeSubCurve = new THREE.CatmullRomCurve3([
+    new THREE.Vector3(6, 0.28, -8.9),
+    new THREE.Vector3(9, 0.28, -9.0),
+    new THREE.Vector3(12, 0.28, -8.8),
   ]);
-  const bottleneckTubeGeo = new THREE.TubeGeometry(bottleneckCurve, 40, 0.18, 8, false);
-  const bottleneckFlowMesh = new THREE.Mesh(bottleneckTubeGeo, amberWarningMat);
-  rootGroup.add(bottleneckFlowMesh);
+  const chokeTube = new THREE.Mesh(
+    new THREE.TubeGeometry(chokeSubCurve, 20, 0.18, 8, false),
+    amberWarningMat
+  );
+  chokeTube.visible = false;
+  rootGroup.add(chokeTube);
 
-  // High-Speed Stochastic Pareto Bypass Conduit (Air-Sea Bypass Corridor)
-  const bypassCurve = new THREE.CatmullRomCurve3([
-    new THREE.Vector3(-46, 3.5, 0),
-    new THREE.Vector3(-30, 8.5, -12),
-    new THREE.Vector3(10, 8.5, -12),
-    new THREE.Vector3(40, 4.2, 0),
-  ]);
-  const bypassTubeGeo = new THREE.TubeGeometry(bypassCurve, 80, 0.26, 10, false);
-  const bypassCorridorMesh = new THREE.Mesh(bypassTubeGeo, cyanEmissiveMat);
-  rootGroup.add(bypassCorridorMesh);
-
-  const bypassGlowLight = new THREE.PointLight(0x0088ff, 2.2, 18);
-  bypassGlowLight.position.set(-10, 8.5, -12);
-  rootGroup.add(bypassGlowLight);
-
-  // Factory Schedule Recovery Beacon
-  const factoryStatusBeacon = new THREE.Mesh(
-    new THREE.CylinderGeometry(0.65, 0.65, 0.22, 16),
+  const bypassConduit = new THREE.Mesh(
+    new THREE.TubeGeometry(bypassCurve, 50, 0.15, 8, true),
     greenVerifiedMat
   );
-  factoryStatusBeacon.position.set(0, 5.85, 0);
-  rootGroup.add(factoryStatusBeacon);
+  bypassConduit.visible = false;
+  rootGroup.add(bypassConduit);
 
-  // =========================================================================
-  // 9. HIGH-ALTITUDE CARGO JET (Overhead Corridor)
-  // =========================================================================
-  const cargoJetGroup = new THREE.Group();
-  const jetBodyGeo = new THREE.CylinderGeometry(0.7, 0.9, 10.5, 12);
-  jetBodyGeo.rotateZ(Math.PI / 2);
-  const jetBody = new THREE.Mesh(jetBodyGeo, whiteArchMat);
-  const jetWingGeo = new THREE.BoxGeometry(1.6, 0.12, 11);
-  const jetWing = new THREE.Mesh(jetWingGeo, steelBlueMat);
-  cargoJetGroup.add(jetBody, jetWing);
-  cargoJetGroup.position.set(0, 16, -18);
-  cargoJetGroup.rotation.y = Math.PI / 2;
-  rootGroup.add(cargoJetGroup);
+  const bypassGlowLight = new THREE.PointLight(0x10b981, 0, 14);
+  bypassGlowLight.position.set(0, 6.5, -2.5);
+  rootGroup.add(bypassGlowLight);
 
   return {
     rootGroup,
+    truck1: { group: truck1Mesh, curve: truck1Curve, speed: 0.038, offset: 0.0, currentT: 0 },
+    truck2: { group: truck2Mesh, curve: truck2Curve, speed: 0.034, offset: 0.35, currentT: 0.35 },
+    deliveryVan: { group: vanMesh, curve: vanCurve, speed: 0.042, offset: 0.65, currentT: 0.65 },
+    containerShip: { group: shipMesh, curve: shipCurve, speed: 0.018, offset: 0.1, currentT: 0.1 },
+    cargoJet: { group: jetMesh, curve: airCurve, speed: 0.045, offset: 0.0, currentT: 0 },
+    bypassAircraft: { group: bypassJetMesh, curve: bypassCurve, speed: 0.052, offset: 0.0, currentT: 0 },
+    forklift: { group: forkliftMesh, curve: forkliftCurve, speed: 0.055, offset: 0.0, currentT: 0 },
     roboticArms,
     qcScannerMesh: scanPlane,
     asrsCarriers,
-    agvVehicles,
     conveyorItems,
     craneTrolleys,
-    turbineRotors,
-    haulTrucks,
-    deliveryVans,
-    cargoJet: cargoJetGroup,
-    containerShips,
-    freightTrucks,
-    trainCars,
-    intelligencePulses,
+    workers,
+    statusBeacons: {
+      supplier: suppBeacon,
+      factory: factoryBeacon,
+      warehouse: warehouseBeacon,
+      port: portBeacon,
+      customer: customerBeacon,
+    },
     disruptionRig: {
-      supplierWarningBeacon,
-      bottleneckFlowMesh,
-      bypassCorridorMesh,
+      chokepointBeacon,
+      chokepointCorridor: chokeTube,
+      bypassCorridor: bypassConduit,
       bypassGlowLight,
-      factoryStatusBeacon,
     },
   };
 }
