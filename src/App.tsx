@@ -20,6 +20,7 @@ import { AdminLogin } from './components/admin/AdminLogin';
 import { AdminConsole } from './components/admin/AdminConsole';
 import { DocsLayout } from './components/docs/DocsLayout';
 import { AboutPage } from './components/about/AboutPage';
+import { initLiquidGlassEngine } from './utils/liquidGlass';
 
 const AppContent: React.FC = () => {
   const { activeConfig } = useSiteConfig();
@@ -30,6 +31,11 @@ const AppContent: React.FC = () => {
   const [downloadModalOpen, setDownloadModalOpen] = useState<boolean>(() => {
     return window.location.pathname.startsWith('/download');
   });
+
+  // Initialize runtime Liquid Glass Material Engine (pointer tracking, reduced capabilities)
+  useEffect(() => {
+    return initLiquidGlassEngine();
+  }, []);
 
   useEffect(() => {
     const handlePopState = () => {

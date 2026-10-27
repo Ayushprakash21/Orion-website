@@ -52,28 +52,54 @@ const ALLOWED_MIME_TYPES = new Set([
 
 const ALLOWED_EXTENSIONS = new Set(['.png', '.jpg', '.jpeg', '.webp', '.svg']);
 
+function isOriginAllowed(origin: string, env: Env): boolean {
+  if (!origin) return false;
+  const lower = origin.toLowerCase().trim();
+
+  // 1. Allow all localhost, loopback, and local network development origins
+  if (
+    lower.startsWith('http://localhost') ||
+    lower.startsWith('http://127.0.0.1') ||
+    lower.startsWith('http://[::1]') ||
+    lower.startsWith('http://0.0.0.0') ||
+    /^http:\/\/(10\.|172\.(1[6-9]|2\d|3[01])\.|192\.168\.)/.test(lower)
+  ) {
+    return true;
+  }
+
+  // 2. Allow Cloudflare Workers and Cloudflare Pages origins
+  if (lower.endsWith('.workers.dev') || lower.endsWith('.pages.dev')) {
+    return true;
+  }
+
+  // 3. Allow GitHub Pages origins (e.g. https://ayushprakash21.github.io)
+  if (lower.endsWith('.github.io')) {
+    return true;
+  }
+
+  // 4. Allow Vercel and Netlify preview/production deployments
+  if (lower.endsWith('.vercel.app') || lower.endsWith('.netlify.app')) {
+    return true;
+  }
+
+  // 5. Allow explicitly configured origins in ALLOWED_ORIGINS
+  const rawAllowed = env.ALLOWED_ORIGINS || '';
+  if (rawAllowed) {
+    const list = rawAllowed.split(',').map((o) => o.trim().toLowerCase());
+    if (list.includes(lower)) return true;
+  }
+
+  return false;
+}
+
 function getCorsHeaders(request: Request, env: Env): Headers {
   const headers = new Headers();
   const origin = request.headers.get('Origin');
 
-  const allowedOriginsList = (
-    env.ALLOWED_ORIGINS ||
-    'https://orion9.pages.dev,https://orion-9.ayushprakash0021.workers.dev,http://localhost:3000,http://localhost:5173'
-  )
-    .split(',')
-    .map((o) => o.trim().toLowerCase());
-
   if (origin) {
-    const originLower = origin.toLowerCase();
-    const isAllowed =
-      allowedOriginsList.includes(originLower) ||
-      originLower.endsWith('.workers.dev') ||
-      originLower.endsWith('.pages.dev') ||
-      originLower.includes('localhost:') ||
-      originLower.includes('127.0.0.1:');
-
-    if (isAllowed) {
-      headers.set('Access-Control-Allow-Origin', origin);
+    // Reflect origin to enable browser reading of both successful and error responses
+    headers.set('Access-Control-Allow-Origin', origin);
+    if (isOriginAllowed(origin, env)) {
       headers.set('Access-Control-Allow-Credentials', 'true');
     }
   } else {
@@ -81,11 +107,13 @@ function getCorsHeaders(request: Request, env: Env): Headers {
   }
 
   headers.set('Access-Control-Allow-Methods', 'GET, POST, PUT, OPTIONS');
+  const reqHeaders = request.headers.get('Access-Control-Request-Headers');
   headers.set(
     'Access-Control-Allow-Headers',
-    'Authorization, Content-Type, X-Requested-With, Cache-Control'
+    reqHeaders || 'Authorization, Content-Type, Accept, X-Requested-With, Cache-Control, Origin'
   );
   headers.set('Access-Control-Max-Age', '86400');
+  headers.set('Vary', 'Origin');
   return headers;
 }
 
@@ -106,13 +134,15 @@ function extractFileExtension(fileName: string): string {
 
 export default {
   async fetch(request: Request, env: Env): Promise<Response> {
-    const url = new URL(request.url);
     const corsHeaders = getCorsHeaders(request, env);
 
-    // 1. Handle CORS Preflight
-    if (request.method === 'OPTIONS') {
-      return new Response(null, { status: 204, headers: corsHeaders });
-    }
+    try {
+      const url = new URL(request.url);
+
+      // 1. Handle CORS Preflight
+      if (request.method === 'OPTIONS') {
+        return new Response(null, { status: 204, headers: corsHeaders });
+      }
 
     // 2. Health & Status check endpoint
     if (url.pathname === '/api/r2-status' || url.pathname === '/health') {
@@ -136,48 +166,83 @@ export default {
       );
     }
 
-    // 3. Public Asset CDN Delivery Route: /cdn/*, /branding/logos/*, or /branding/creator/*
-    // Enables direct, zero-configuration public streaming of stored logos & creator assets even before a custom domain is attached
+    // 3. Public Asset CDN Delivery Route: /cdn/*, /branding/logos/*, /branding/creator/*, or /downloads/*
+    // Enables direct, zero-configuration public streaming of stored logos, creator assets, and workstation binaries
     if (
       request.method === 'GET' &&
       (url.pathname.startsWith('/cdn/') ||
         url.pathname.startsWith('/branding/logos/') ||
-        url.pathname.startsWith('/branding/creator/'))
+        url.pathname.startsWith('/branding/creator/') ||
+        url.pathname.startsWith('/downloads/') ||
+        url.pathname.startsWith('/releases/'))
     ) {
       if (!env.BRAND_ASSETS) {
-        return new Response('Cloudflare R2 bucket binding is not configured.', {
-          status: 503,
-          headers: corsHeaders,
-        });
+        return jsonResponse(
+          { error: 'Cloudflare R2 bucket binding is not configured.', code: 'r2_binding_missing' },
+          503,
+          corsHeaders
+        );
       }
 
       let key = url.pathname.replace(/^\/cdn\//, '');
       if (key.startsWith('/')) key = key.slice(1);
 
-      // Security Guard: Prevent directory traversal & restrict strictly to public branding/logos/ and branding/creator/
-      if (
-        key.includes('..') ||
-        key.includes('\\') ||
-        (!key.startsWith('branding/logos/') && !key.startsWith('branding/creator/'))
-      ) {
-        return new Response('Access denied: Invalid or unauthorized asset path.', {
-          status: 403,
-          headers: corsHeaders,
-        });
+      // Security Guard: Prevent directory traversal
+      if (key.includes('..') || key.includes('\\')) {
+        return jsonResponse(
+          { error: 'Access denied: Invalid or unauthorized asset path.', code: 'invalid_path' },
+          403,
+          corsHeaders
+        );
       }
 
-      const object = await env.BRAND_ASSETS.get(key);
-      if (!object) {
-        return new Response('Asset not found.', { status: 404, headers: corsHeaders });
+      // Check allowed prefixes
+      const isAllowed =
+        key.startsWith('branding/logos/') ||
+        key.startsWith('branding/creator/') ||
+        key.startsWith('downloads/') ||
+        key.startsWith('releases/');
+
+      if (!isAllowed) {
+        return jsonResponse(
+          { error: 'Access denied: Path not permitted.', code: 'forbidden' },
+          403,
+          corsHeaders
+        );
       }
+
+      let object = await env.BRAND_ASSETS.get(key);
+      // Fallback check for releases prefix
+      if (!object && key.startsWith('downloads/')) {
+        const altKey = key.replace(/^downloads\//, 'releases/');
+        object = await env.BRAND_ASSETS.get(altKey);
+      }
+
+      if (!object) {
+        const filename = key.split('/').pop() || 'artifact';
+        return jsonResponse(
+          {
+            error: `Release artifact "${filename}" not found in storage.`,
+            code: 'artifact_not_found',
+            status: 404,
+          },
+          404,
+          corsHeaders
+        );
+      }
+
+      const filename = key.split('/').pop() || 'installer';
+      const ext = extractFileExtension(filename);
+      let inferredType = object.httpMetadata?.contentType || 'application/octet-stream';
+      if (ext === '.exe') inferredType = 'application/vnd.microsoft.portable-executable';
+      else if (ext === '.msi') inferredType = 'application/x-msi';
+      else if (ext === '.dmg') inferredType = 'application/x-apple-diskimage';
 
       const responseHeaders = new Headers(corsHeaders);
       responseHeaders.set('Access-Control-Allow-Origin', '*');
       responseHeaders.set('X-Content-Type-Options', 'nosniff');
-      responseHeaders.set(
-        'Content-Type',
-        object.httpMetadata?.contentType || 'application/octet-stream'
-      );
+      responseHeaders.set('Content-Type', inferredType);
+      responseHeaders.set('Content-Disposition', `attachment; filename="${filename}"`);
       responseHeaders.set(
         'Cache-Control',
         object.httpMetadata?.cacheControl || 'public, max-age=31536000, immutable'
@@ -223,9 +288,13 @@ export default {
         );
       }
 
+      const origin = (request.headers.get('Origin') || '').toLowerCase();
       const isLocalDevOrigin =
-        request.headers.get('Origin')?.includes('localhost') ||
-        request.headers.get('Origin')?.includes('127.0.0.1');
+        origin.startsWith('http://localhost') ||
+        origin.startsWith('http://127.0.0.1') ||
+        origin.startsWith('http://[::1]') ||
+        origin.startsWith('http://0.0.0.0') ||
+        /^http:\/\/(10\.|172\.(1[6-9]|2\d|3[01])\.|192\.168\.)/.test(origin);
 
       const authResult = await verifyFirebaseAdminToken(
         authHeader,
@@ -386,13 +455,24 @@ export default {
       );
     }
 
-    // 404 for unmatched routes
-    return jsonResponse(
-      {
-        error: 'Route not found. Valid routes: POST /api/upload-logo, GET /api/r2-status, GET /cdn/*',
-      },
-      404,
-      corsHeaders
-    );
+      // 404 for unmatched routes
+      return jsonResponse(
+        {
+          error: 'Route not found. Valid routes: POST /api/upload-logo, GET /api/r2-status, GET /cdn/*',
+        },
+        404,
+        corsHeaders
+      );
+    } catch (unhandledErr: unknown) {
+      console.error('[R2 Worker] Uncaught handler error:', unhandledErr);
+      return jsonResponse(
+        {
+          error: `Cloudflare R2 worker internal error: ${(unhandledErr as Error).message || 'Unknown error'}`,
+          code: 'worker_exception',
+        },
+        500,
+        corsHeaders
+      );
+    }
   },
 };

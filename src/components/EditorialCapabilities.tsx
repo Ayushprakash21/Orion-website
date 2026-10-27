@@ -232,7 +232,7 @@ export const EditorialCapabilities: React.FC = () => {
           {capabilities.map((item, index) => (
             <div
               key={item.id}
-              className="liquid-glass-card rounded-3xl p-7 flex flex-col justify-between group hover:shadow-xl transition-all duration-300"
+              className="liquid-glass-card liquid-glass-interactive rounded-3xl p-7 flex flex-col justify-between group hover:shadow-xl transition-all duration-300"
             >
               <div>
                 <div

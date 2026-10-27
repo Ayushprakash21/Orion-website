@@ -10,7 +10,7 @@ bucket_name = "orion9-brand-assets"
 
 [vars]
 FIREBASE_PROJECT_ID = "orion9-dev-db-2026"
-ALLOWED_ORIGINS = "https://orion9.pages.dev,https://orion-9.ayushprakash0021.workers.dev,http://localhost:3000,http://localhost:5173"
+ALLOWED_ORIGINS = "https://orion9.pages.dev,https://orion-9.pages.dev,https://orion-website.pages.dev,https://orion-9.ayushprakash0021.workers.dev,https://ayushprakash21.github.io,http://localhost:3000,http://localhost:5173,http://localhost,http://127.0.0.1"
 # Optional: Specify a public delivery custom domain (e.g. "https://brand-assets.orion-9.com" or "https://pub-<hash>.r2.dev")
 # If left empty, the Worker automatically serves assets publicly via https://<worker-domain>/cdn/branding/logos/...
 R2_PUBLIC_BASE_URL = ""

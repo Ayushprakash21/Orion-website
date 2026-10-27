@@ -84,7 +84,7 @@ function loadStoredBundle(key: string, fallback: SiteConfigurationBundle): SiteC
       seo: { ...fallback.seo, ...(parsed.seo || {}) },
       authSettings: { ...fallback.authSettings, ...(parsed.authSettings || {}) },
       mediaLibrary: parsed.mediaLibrary || fallback.mediaLibrary,
-      desktopReleases: parsed.desktopReleases || fallback.desktopReleases || [],
+      desktopReleases: Array.isArray(parsed.desktopReleases) && parsed.desktopReleases.length > 0 ? parsed.desktopReleases : fallback.desktopReleases || [],
       creatorProfile: normalizeCreatorProfileConfig(parsed.creatorProfile || fallback.creatorProfile),
     };
   } catch {
@@ -178,6 +178,8 @@ export function SiteConfigProvider({ children }: { children: React.ReactNode }) 
                 ? normalizeBrandingConfig({ ...(DEFAULT_SITE_CONFIG.branding), ...docData })
                 : sec === 'creatorProfile'
                 ? normalizeCreatorProfileConfig({ ...(DEFAULT_SITE_CONFIG.creatorProfile), ...docData })
+                : sec === 'desktopReleases'
+                ? (Array.isArray(docData.items) ? docData.items : (Array.isArray(docData) ? docData : DEFAULT_SITE_CONFIG.desktopReleases))
                 : {
                     ...(DEFAULT_SITE_CONFIG[sec] as object),
                     ...docData,

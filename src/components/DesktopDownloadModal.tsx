@@ -5,6 +5,11 @@ import { DEFAULT_DESKTOP_RELEASES } from '../data/defaultSiteConfig';
 import { DesktopPlatform, DesktopReleaseRecord } from '../types/cms';
 import { OrionNovaDownloadButton } from './OrionNovaDownloadButton';
 import {
+  downloadDesktopInstaller,
+  validateReleaseForDownload,
+  DesktopDownloadError,
+} from '../services/downloadService';
+import {
   Download,
   ShieldCheck,
   CheckCircle2,
@@ -138,58 +143,36 @@ export const DesktopDownloadModal: React.FC<DesktopDownloadModalProps> = ({
       return;
     }
 
+    if (isDownloading) return;
+
     setDownloadError(null);
     setDownloadSuccess(false);
 
-    // Security check: Never download disabled or retired releases
-    if (activeRelease.status === 'disabled' || activeRelease.status === 'retired') {
-      setDownloadError(
-        `Release v${activeRelease.version} (${activeRelease.platform}) has been ${activeRelease.status} by administrators and is unavailable for distribution.`
-      );
+    // Pre-flight lifecycle verification
+    const validation = validateReleaseForDownload(
+      activeRelease,
+      user?.email === 'admin@orion9.local' ? 'admin' : undefined
+    );
+    if (!validation.allowed) {
+      setDownloadError(validation.error || 'Distribution is restricted.');
       return;
     }
 
     setIsDownloading(true);
 
     try {
-      const response = await fetch(activeRelease.downloadUrl, {
-        method: 'GET',
-        headers: {
-          Accept:
-            'application/octet-stream, application/vnd.microsoft.portable-executable, application/x-apple-diskimage, */*',
-        },
-      });
-
-      // Defect protection: Verify we did not receive an HTML SPA fallback redirect!
-      const contentType = response.headers.get('content-type') || '';
-      if (contentType.includes('text/html')) {
-        throw new Error(
-          `Binary streaming error: Endpoint returned HTML fallback (${contentType}) instead of authentic desktop installer binary.`
-        );
+      const result = await downloadDesktopInstaller(activeRelease);
+      if (result.success) {
+        activeRelease.downloadCount = (activeRelease.downloadCount || 0) + 1;
+        setDownloadSuccess(true);
       }
-
-      if (!response.ok) {
-        throw new Error(
-          `HTTP download failed: Server responded with status ${response.status} ${response.statusText}`
-        );
-      }
-
-      const blob = await response.blob();
-      const url = window.URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      a.style.display = 'none';
-      a.href = url;
-      a.download = activeRelease.filename;
-      document.body.appendChild(a);
-      a.click();
-      window.URL.revokeObjectURL(url);
-      document.body.removeChild(a);
-
-      // Increment local telemetry
-      activeRelease.downloadCount = (activeRelease.downloadCount || 0) + 1;
-      setDownloadSuccess(true);
     } catch (err: unknown) {
-      const message = err instanceof Error ? err.message : 'Unknown download failure';
+      const message =
+        err instanceof DesktopDownloadError
+          ? err.message
+          : err instanceof Error
+          ? err.message
+          : 'Unknown download failure';
       setDownloadError(message);
       throw err;
     } finally {
@@ -213,7 +196,7 @@ export const DesktopDownloadModal: React.FC<DesktopDownloadModalProps> = ({
       onClick={onClose}
     >
       <div
-        className="relative w-[calc(100vw-24px)] sm:w-full max-w-lg lg:max-w-xl max-h-[calc(100dvh-28px)] sm:max-h-[88vh] liquid-glass-elevated border border-[var(--glass-border)] rounded-2xl sm:rounded-3xl shadow-2xl overflow-hidden flex flex-col text-[var(--orion-text-primary)] animate-in zoom-in-95 duration-200 my-auto"
+        className="relative w-[calc(100vw-24px)] sm:w-full max-w-lg lg:max-w-xl max-h-[calc(100dvh-28px)] sm:max-h-[88vh] liquid-glass-elevated liquid-glass-interactive border border-[var(--glass-border)] rounded-2xl sm:rounded-3xl shadow-2xl overflow-hidden flex flex-col text-[var(--orion-text-primary)] animate-in zoom-in-95 duration-200 my-auto"
         onClick={(e) => e.stopPropagation()}
       >
         {/* macOS Window Header Bar */}
@@ -454,7 +437,7 @@ export const DesktopDownloadModal: React.FC<DesktopDownloadModalProps> = ({
                 isAuthenticated={isAuthenticated}
                 onDownload={handleAuthenticatedDownload}
                 onNavigateAuth={handleNavigateAuth}
-                disabled={activeRelease.status === 'disabled' || activeRelease.status === 'retired'}
+                disabled={activeRelease.status === 'disabled' || activeRelease.status === 'retired' || isDownloading}
               />
             </div>
 

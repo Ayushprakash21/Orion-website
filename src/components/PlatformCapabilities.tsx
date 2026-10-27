@@ -153,7 +153,7 @@ export const PlatformCapabilities: React.FC = () => {
               <div
                 key={cap.id}
                 onClick={() => setSelectedCapability(cap)}
-                className={`relative rounded-3xl p-7 transition-all cursor-pointer border flex flex-col justify-between ${
+                className={`relative rounded-3xl p-7 transition-all cursor-pointer border flex flex-col justify-between liquid-glass-interactive ${
                   isSelected
                     ? 'liquid-glass-elevated border-2 border-[var(--orion-accent)] shadow-xl ring-2 ring-[var(--orion-accent)]/20'
                     : 'liquid-glass-card hover:border-[var(--glass-border-highlight)]'
@@ -211,7 +211,7 @@ export const PlatformCapabilities: React.FC = () => {
         </div>
 
         {/* Interactive Capability Architecture Inspector */}
-        <div className="mt-12 rounded-3xl liquid-glass-elevated border border-[var(--glass-border)] p-6 sm:p-8 shadow-2xl">
+        <div className="mt-12 rounded-3xl liquid-glass-elevated liquid-glass-interactive border border-[var(--glass-border)] p-6 sm:p-8 shadow-2xl">
           <div className="flex flex-wrap items-center justify-between gap-4 pb-6 border-b border-[var(--glass-border-subtle)]">
             <div className="flex items-center gap-3">
               <Layers className="w-5 h-5 text-[#f5f5f5]" />

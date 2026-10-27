@@ -450,7 +450,7 @@ export const OrionCircular3DTelemetry: React.FC = () => {
         {/* =====================================================================
             MINIMAL SCENARIO SWITCHER STRIP (WITHOUT PLAY/PAUSE CONTROLS)
            ===================================================================== */}
-        <div className="flex items-center gap-1.5 sm:gap-2 p-1.5 rounded-2xl bg-slate-900/80 border border-white/15 backdrop-blur-xl mb-6 shadow-lg max-w-[calc(100vw-2rem)] overflow-x-auto scrollbar-none">
+        <div className="flex items-center gap-1.5 sm:gap-2 p-1.5 rounded-2xl liquid-glass-clear mb-6 shadow-lg max-w-[calc(100vw-2rem)] overflow-x-auto scrollbar-none">
           {SCENARIO_CARDS.map((card, idx) => {
             const isActive = idx === activeIndex;
             return (
@@ -461,8 +461,8 @@ export const OrionCircular3DTelemetry: React.FC = () => {
                 onClick={() => selectScenario(idx)}
                 className={`px-3 sm:px-3.5 py-1.5 rounded-xl text-xs font-mono font-semibold transition-all cursor-pointer flex items-center gap-2 shrink-0 ${
                   isActive
-                    ? 'bg-white text-slate-900 shadow-md scale-[1.02]'
-                    : 'text-slate-400 hover:text-white hover:bg-white/10'
+                    ? 'bg-white text-slate-900 shadow-md scale-[1.02] dark:bg-white dark:text-slate-900'
+                    : 'text-[var(--orion-text-secondary)] hover:text-[var(--orion-text-primary)] hover:bg-white/20 dark:hover:bg-white/10'
                 }`}
               >
                 <span
@@ -548,12 +548,12 @@ export const OrionCircular3DTelemetry: React.FC = () => {
                   ease: [0.22, 1, 0.36, 1],
                 }}
               >
-                {/* 3D Card Canvas */}
+                {/* 3D Card Canvas with Liquid Glass Material Engine */}
                 <div
-                  className={`relative w-full h-full rounded-[24px] overflow-hidden p-5 flex flex-col justify-between border shadow-2xl transition-all ${
+                  className={`relative w-full h-full rounded-[24px] overflow-hidden p-5 flex flex-col justify-between border transition-all ${
                     isCenter
-                      ? 'bg-slate-950 border-white/25 shadow-[0_25px_60px_rgba(0,0,0,0.95)] ring-1 ring-white/10'
-                      : 'bg-slate-950/90 border-white/10 shadow-[0_12px_36px_rgba(0,0,0,0.7)]'
+                      ? 'liquid-glass-elevated liquid-glass-interactive shadow-[0_25px_60px_rgba(0,0,0,0.95)] ring-1 ring-white/10'
+                      : 'liquid-glass-card shadow-[0_12px_36px_rgba(0,0,0,0.7)]'
                   }`}
                   style={{
                     backgroundColor: '#070E1A',

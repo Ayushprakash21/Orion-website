@@ -310,7 +310,7 @@ export const DesktopTourDemo: React.FC<{ onNavigate?: (path: string) => void }> 
           </div>
 
           {/* Simulated Dynamic Island Pill */}
-          <div className="flex items-center gap-1.5 px-3 py-0.5 rounded-full bg-black/60 border border-white/15 text-[10px] text-cyan-300 shadow-inner">
+          <div className="flex items-center gap-1.5 px-3 py-0.5 rounded-full liquid-glass-clear text-[10px] text-cyan-300 shadow-inner">
             <span className="w-1.5 h-1.5 rounded-full bg-emerald-400" />
             <span>Nominal · 42.8k sig/s</span>
           </div>
@@ -330,10 +330,10 @@ export const DesktopTourDemo: React.FC<{ onNavigate?: (path: string) => void }> 
               animate={prefersReduced ? { opacity: 1 } : { opacity: 1, scale: 1, y: 0 }}
               exit={prefersReduced ? { opacity: 0 } : { opacity: 0, scale: 0.95, y: -10 }}
               transition={{ duration: 0.35, ease: [0.16, 1, 0.3, 1] }}
-              className="w-full max-w-xl rounded-2xl border border-white/15 bg-[#0F172A]/95 shadow-[0_20px_60px_rgba(0,0,0,0.6)] backdrop-blur-md overflow-hidden"
+              className="w-full max-w-xl rounded-2xl liquid-glass-elevated liquid-glass-interactive shadow-[0_20px_60px_rgba(0,0,0,0.6)] overflow-hidden"
             >
               {/* Window Titlebar */}
-              <div className="flex items-center justify-between px-4 py-2.5 border-b border-white/10 bg-[#0A101D]/80">
+              <div className="flex items-center justify-between px-4 py-2.5 border-b border-[var(--glass-border-subtle)] bg-white/20 dark:bg-black/40">
                 <div className="flex items-center gap-2">
                   <span className="w-2.5 h-2.5 rounded-full bg-rose-500/80" />
                   <span className="w-2.5 h-2.5 rounded-full bg-amber-500/80" />
@@ -378,8 +378,8 @@ export const DesktopTourDemo: React.FC<{ onNavigate?: (path: string) => void }> 
           </div>
         </div>
 
-        {/* Bottom Simulated Dock */}
-        <div className="absolute bottom-2.5 left-1/2 -translate-x-1/2 px-3 py-1.5 rounded-2xl bg-black/60 border border-white/15 flex items-center gap-2.5 backdrop-blur-md z-10 shadow-lg">
+        {/* Bottom Simulated Dock with Role A Clear Glass */}
+        <div className="absolute bottom-2.5 left-1/2 -translate-x-1/2 px-3 py-1.5 rounded-2xl liquid-glass-clear flex items-center gap-2.5 z-10 shadow-lg">
           {TOUR_STEPS.map((st, i) => {
             const isCur = i === currentStepIndex;
             return (

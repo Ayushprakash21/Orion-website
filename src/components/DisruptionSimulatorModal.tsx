@@ -60,7 +60,7 @@ export const DisruptionSimulatorModal: React.FC<DisruptionSimulatorModalProps> =
       aria-modal="true"
       aria-labelledby="disruption-modal-title"
     >
-      <div className="relative w-full max-w-4xl liquid-glass-elevated border border-[var(--glass-border)] rounded-3xl shadow-2xl p-6 sm:p-8 max-h-[92vh] overflow-y-auto text-[var(--orion-text-primary)]">
+      <div className="relative w-full max-w-4xl liquid-glass-elevated liquid-glass-interactive border border-[var(--glass-border)] rounded-3xl shadow-2xl p-6 sm:p-8 max-h-[92vh] overflow-y-auto text-[var(--orion-text-primary)]">
         {/* macOS Traffic Lights Header & Close */}
         <div className="flex items-center justify-between pb-5 mb-5 border-b border-[var(--glass-border-subtle)]">
           <div className="flex items-center gap-2">

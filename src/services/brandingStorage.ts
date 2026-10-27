@@ -43,7 +43,7 @@ export function getR2UploadEndpoint(): string {
   if (typeof window !== 'undefined') {
     try {
       const stored = window.localStorage.getItem(RUNTIME_R2_ENDPOINT_KEY);
-      if (stored?.trim()) {
+      if (stored?.trim() && (stored.startsWith('https://') || stored.startsWith('http://'))) {
         return stored.trim();
       }
     } catch {
@@ -312,7 +312,26 @@ export function classifyStorageError(storageErr: unknown): string {
   }
 
   if (
+    status === 400 ||
+    errCode === 'unsupported_format' ||
+    errCode === 'invalid_form_data' ||
+    combined.includes('unsupported file format') ||
+    combined.includes('unsupported format')
+  ) {
+    return 'Invalid file: Unsupported file format. Please upload a valid SVG, PNG, WebP, or JPG image.';
+  }
+
+  if (errCode === 'invalid_svg' || combined.includes('sanitization')) {
+    return 'Invalid SVG file: Security sanitization failed. Please verify the SVG does not contain executable scripts.';
+  }
+
+  if (errCode === 'missing_file' || combined.includes('no valid image file')) {
+    return 'Invalid upload request: No valid image file was provided in the upload payload.';
+  }
+
+  if (
     status === 404 ||
+    status === 503 ||
     errCode === 'r2_binding_missing' ||
     errCode === 'storage/bucket-not-found' ||
     combined.includes('bucket') ||
@@ -320,6 +339,47 @@ export function classifyStorageError(storageErr: unknown): string {
     combined.includes('not found')
   ) {
     return `Cloudflare R2 bucket "${DEFAULT_R2_BUCKET}" or upload worker is unavailable. Please check the Cloudflare Worker deployment.`;
+  }
+
+  if (
+    errCode === 'r2_write_failed' ||
+    combined.includes('r2 write error') ||
+    combined.includes('r2 storage error')
+  ) {
+    return `Cloudflare R2 storage error: Failed to write asset to bucket "${DEFAULT_R2_BUCKET}". Please verify R2 bucket permissions.`;
+  }
+
+  if (
+    status === 500 ||
+    status === 502 ||
+    errCode === 'worker_exception' ||
+    combined.includes('worker internal error') ||
+    combined.includes('worker internal exception') ||
+    combined.includes('error 1101')
+  ) {
+    return 'Backend service error: The Cloudflare R2 upload worker encountered an internal error. Please check worker logs and try again.';
+  }
+
+  if (
+    errCode === 'cors_or_network_failure' ||
+    combined.includes('cors') ||
+    combined.includes('network or cors')
+  ) {
+    return 'Network or CORS failure: Unable to reach Cloudflare R2 upload worker. Please check your internet connection and verify CORS origin permissions.';
+  }
+
+  if (
+    errCode === 'network_offline' ||
+    (typeof window !== 'undefined' && typeof navigator !== 'undefined' && navigator.onLine === false)
+  ) {
+    return 'Network failure: Your device is currently offline. Please check your internet connection and try again.';
+  }
+
+  if (
+    errCode === 'upload_timeout' ||
+    combined.includes('timed out')
+  ) {
+    return 'Network timeout: Upload request to Cloudflare R2 timed out. Please check your internet connection and try again.';
   }
 
   if (
@@ -450,6 +510,7 @@ export async function uploadBrandingLogoAsset(
               } else {
                 reject({
                   status: xhr.status,
+                  code: parsed.code,
                   message: parsed.error || 'Server did not return a valid asset URL.',
                 });
               }
@@ -458,24 +519,44 @@ export async function uploadBrandingLogoAsset(
             }
           } else {
             let errorMsg = `HTTP ${xhr.status}`;
+            let errorCode: string | undefined;
             try {
               const parsed = JSON.parse(xhr.responseText);
               if (parsed.error) errorMsg = parsed.error;
+              if (parsed.code) errorCode = parsed.code;
             } catch {
               // Ignore parse error
             }
-            reject({ status: xhr.status, message: errorMsg });
+            reject({ status: xhr.status, code: errorCode, message: errorMsg });
           }
         };
 
         xhr.onerror = () => {
-          reject({ code: 'network_error', message: 'Network connection failed during R2 upload.' });
+          const isOffline = typeof navigator !== 'undefined' && !navigator.onLine;
+          if (isOffline) {
+            reject({
+              code: 'network_offline',
+              status: 0,
+              message: 'Network offline: Your device is not connected to the internet.',
+            });
+          } else {
+            reject({
+              code: 'cors_or_network_failure',
+              status: 0,
+              message: `Network or CORS error: Unable to reach Cloudflare R2 upload worker at ${endpoint}. This may be caused by a CORS restriction, firewall, or ad-blocker.`,
+            });
+          }
         };
 
         xhr.ontimeout = () => {
-          reject({ code: 'network_error', message: 'Upload request to Cloudflare R2 timed out.' });
+          reject({
+            code: 'upload_timeout',
+            status: 408,
+            message: 'Upload request to Cloudflare R2 timed out after 30 seconds. Please try again.',
+          });
         };
 
+        xhr.timeout = 30000;
         xhr.send(formData);
         return;
       }
@@ -494,16 +575,27 @@ export async function uploadBrandingLogoAsset(
             if (onProgress) onProgress(100);
             if (!res.ok) {
               let msg = `HTTP ${res.status}`;
+              let code: string | undefined;
               try {
                 const errData = await res.json();
                 if (errData.error) msg = errData.error;
+                if (errData.code) code = errData.code;
               } catch {}
-              return reject({ status: res.status, message: msg });
+              return reject({ status: res.status, code, message: msg });
             }
             const data = await res.json();
             resolve(data);
           })
-          .catch((err) => reject({ code: 'network_error', message: err.message }));
+          .catch((err) => {
+            const isOffline = typeof navigator !== 'undefined' && !navigator.onLine;
+            reject({
+              code: isOffline ? 'network_offline' : 'cors_or_network_failure',
+              status: 0,
+              message: isOffline
+                ? 'Network offline: Your device is not connected to the internet.'
+                : `Network or CORS error: ${err.message}`,
+            });
+          });
         return;
       }
 

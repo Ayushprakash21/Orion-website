@@ -131,7 +131,7 @@ export const Navbar: React.FC<NavbarProps> = ({ onNavigate, onOpenDownload }) =>
 
           {/* Zone 2: Center macOS Translucent Nav Pill */}
           <nav
-            className="hidden lg:flex items-center gap-1.5 px-3 py-1.5 rounded-full liquid-glass-subtle"
+            className="hidden lg:flex items-center gap-1.5 px-3 py-1.5 rounded-full liquid-glass-clear"
             aria-label="Primary Navigation"
           >
             {navLinks.map((item) => (

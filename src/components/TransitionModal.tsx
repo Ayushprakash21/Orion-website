@@ -13,7 +13,7 @@ export const TransitionModal: React.FC = () => {
       role="alertdialog"
       aria-live="assertive"
     >
-      <div className="relative w-full max-w-lg liquid-glass-elevated border border-[var(--glass-border)] rounded-3xl shadow-2xl p-6 sm:p-8 space-y-6 text-center text-[var(--orion-text-primary)]">
+      <div className="relative w-full max-w-lg liquid-glass-elevated liquid-glass-interactive border border-[var(--glass-border)] rounded-3xl shadow-2xl p-6 sm:p-8 space-y-6 text-center text-[var(--orion-text-primary)]">
         <div className="w-14 h-14 rounded-2xl bg-gradient-to-tr from-[#0284C7] to-[#38BDF8] mx-auto flex items-center justify-center text-white shadow-lg shadow-sky-500/20">
           <Loader2 className="w-7 h-7 animate-spin text-white" />
         </div>

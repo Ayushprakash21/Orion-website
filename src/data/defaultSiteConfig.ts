@@ -38,7 +38,7 @@ export const DEFAULT_DESKTOP_RELEASES: DesktopReleaseRecord[] = [
     status: 'published',
     filename: 'Orion-9-Setup.msi',
     sizeBytes: 31117312,
-    sha256: '35d4855010fe340b9c4b23b1f576754eeec36ee0cbbce4fb448cb372e211b49c',
+    sha256: '35d4855010fe340b9c4b23b1f576754eeec36ee0cbcce4fb448cb372e211b49c',
     downloadUrl: '/downloads/Orion-9-Setup.msi',
     channel: 'stable',
     isLatest: false,
