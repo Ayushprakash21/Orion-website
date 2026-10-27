@@ -25,12 +25,14 @@ import {
   UploadCloud,
   Check,
   Sparkles,
+  Cloud,
 } from 'lucide-react';
 import { BrandingConfig, LogoPlacementConfig } from '../../types/cms';
-import { uploadBrandingLogoAsset } from '../../services/brandingStorage';
+import { uploadBrandingLogoAsset, DEFAULT_R2_BUCKET } from '../../services/brandingStorage';
 import { OrionLogo } from '../OrionLogo';
 import { DEFAULT_LOGO_PLACEMENT_CONFIG } from '../../data/defaultSiteConfig';
 import { useSiteConfig } from '../../context/SiteConfigContext';
+import { useAuth } from '../../context/AuthContext';
 
 interface LogoManagementSectionProps {
   brandingForm: BrandingConfig;
@@ -57,7 +59,8 @@ export const LogoManagementSection: React.FC<LogoManagementSectionProps> = ({
 
   const fileInputRef = useRef<HTMLInputElement | null>(null);
 
-  // Canonical shared logo resolution
+  // Authentication & Canonical shared logo resolution
+  const { user } = useAuth();
   const { publishedConfig } = useSiteConfig();
   const sharedConfig = brandingForm.sharedLogoConfig;
   const isCustom = Boolean(
@@ -89,10 +92,12 @@ export const LogoManagementSection: React.FC<LogoManagementSectionProps> = ({
     setUploadError(null);
 
     try {
+      const token = user ? await user.getIdToken() : undefined;
       const metadata = await uploadBrandingLogoAsset(
         'shared',
         file,
-        (pct) => setUploadProgress(pct)
+        (pct) => setUploadProgress(pct),
+        token
       );
 
       // Create new canonical LogoPlacementConfig
@@ -212,9 +217,9 @@ export const LogoManagementSection: React.FC<LogoManagementSectionProps> = ({
         <div className="p-3.5 rounded-xl bg-[#F0F9FF] border border-[#BAE6FD] text-xs text-[#0369A1] flex items-start gap-2.5">
           <Info className="w-4 h-4 shrink-0 mt-0.5 text-[#0284C7]" />
           <div className="space-y-0.5">
-            <span className="font-semibold block text-[#0C4A6E]">Unified Static Propagation:</span>
+            <span className="font-semibold block text-[#0C4A6E]">Cloudflare R2 Storage &amp; Unified Static Propagation:</span>
             <span>
-              Uploading a logo here automatically synchronizes the header, login/signup/reset pages, and footer with one shared asset reference.
+              Uploading a logo here securely stores the asset in Cloudflare R2 bucket <code className="px-1.5 py-0.5 rounded bg-[#E0F2FE] font-mono text-[#0369A1]">{DEFAULT_R2_BUCKET}</code> and synchronizes the header, login/signup/reset pages, and footer with one shared CDN asset reference.
               The large 3D animated hero centerpiece on the homepage remains completely autonomous and unaffected.
             </span>
           </div>
@@ -231,7 +236,8 @@ export const LogoManagementSection: React.FC<LogoManagementSectionProps> = ({
                 <h3 className="font-bold text-lg text-[#111827]">Website Brand Logo</h3>
                 {isUploading ? (
                   <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] font-mono font-bold bg-[#FEF3C7] text-[#92400E] border border-[#FDE68A] animate-pulse">
-                    UPLOADING TO STORAGE...
+                    <Cloud className="w-3 h-3 text-[#D97706]" />
+                    UPLOADING TO CLOUDFLARE R2...
                   </span>
                 ) : isPublishedLive ? (
                   <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] font-mono font-bold bg-[#DCFCE7] text-[#166534] border border-[#BBF7D0]">
@@ -377,7 +383,10 @@ export const LogoManagementSection: React.FC<LogoManagementSectionProps> = ({
           {isUploading && (
             <div className="space-y-1.5 pt-1">
               <div className="flex items-center justify-between text-xs text-[#0284C7] font-mono">
-                <span>Uploading brand asset...</span>
+                <span className="flex items-center gap-1.5">
+                  <Cloud className="w-3.5 h-3.5 text-[#0284C7] animate-bounce" />
+                  Uploading brand asset to Cloudflare R2 ({DEFAULT_R2_BUCKET})...
+                </span>
                 <span>{uploadProgress}%</span>
               </div>
               <div className="w-full bg-[#E2E8F0] h-2 rounded-full overflow-hidden">

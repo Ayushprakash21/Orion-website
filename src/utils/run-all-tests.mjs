@@ -1400,21 +1400,24 @@ runTest('54. P0 SVG sanitization strips scripts, foreignObject, and inline handl
   assert.ok(!result.sanitized.includes('javascript:'));
 });
 
-runTest('55. P0 Firebase Storage unprovisioned bucket and permission errors surface actionable guidance', () => {
-  const bucketError = { code: 'storage/bucket-not-found', message: 'The specified bucket does not exist.' };
+runTest('55. P0 Cloudflare R2 unauthenticated, unauthorized, and bucket errors surface actionable guidance', () => {
+  const bucketError = { status: 404, message: 'Endpoint or bucket not found' };
   const bucketMsg = classifyStorageError(bucketError);
-  assert.ok(bucketMsg.includes('Firebase Storage bucket is not provisioned or does not exist'));
-  assert.ok(bucketMsg.includes('Firebase Console > Build > Storage'));
-  assert.ok(bucketMsg.includes('orion9-dev-db-2026'));
+  assert.ok(bucketMsg.includes('Cloudflare R2 bucket'));
+  assert.ok(bucketMsg.includes('orion9-brand-assets'));
 
-  const unauthError = { code: 'storage/unauthorized', message: 'User does not have permission.' };
+  const unauthError = { status: 403, message: 'Permission denied' };
   const unauthMsg = classifyStorageError(unauthError);
   assert.ok(unauthMsg.includes('Permission denied'));
-  assert.ok(unauthMsg.includes('authenticated as an administrator'));
+  assert.ok(unauthMsg.includes('administrator'));
+
+  const unauthenticatedError = { status: 401, message: 'Unauthenticated' };
+  const unauthenticatedMsg = classifyStorageError(unauthenticatedError);
+  assert.ok(unauthenticatedMsg.includes('Authentication required'));
 });
 
 runTest('56. P0 Network failure during upload surfaces explicit connectivity error', () => {
-  const networkError = { code: 'storage/retry-limit-exceeded', message: 'Max retry limit reached' };
+  const networkError = { code: 'network_error', message: 'Failed to fetch' };
   const networkMsg = classifyStorageError(networkError);
   assert.ok(networkMsg.includes('Network failure'));
   assert.ok(networkMsg.includes('check your internet connection'));
@@ -1422,13 +1425,13 @@ runTest('56. P0 Network failure during upload surfaces explicit connectivity err
 
 runTest('57. P0 Upload failure throws error and NEVER returns a Base64 fallback URL', () => {
   const uploadFn = () => {
-    const error = new Error('Upload rejected');
+    const error = new Error('Cloudflare R2 write error: 500');
     if (error) {
-      throw new Error('Firebase Storage upload failed: Upload rejected');
+      throw new Error('Cloudflare R2 upload failed: Cloudflare R2 write error: 500');
     }
     return { url: 'data:image/png;base64,silent_fallback' };
   };
-  assert.throws(() => uploadFn(), /Firebase Storage upload failed/);
+  assert.throws(() => uploadFn(), /Cloudflare R2 upload failed/);
 });
 
 runTest('58. P0 Unauthenticated save draft rejected before write', () => {

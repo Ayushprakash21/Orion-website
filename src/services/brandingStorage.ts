@@ -1,11 +1,15 @@
 /**
- * ORION-9 BRANDING ASSET STORAGE & VALIDATION SERVICE
- * Manages client-side validation, sanitization of SVG assets, dimensions measurement,
- * and upload to Firebase Storage (with local fallback).
+ * ORION-9 CLOUDFLARE R2 BRANDING ASSET STORAGE & VALIDATION SERVICE
+ *
+ * Manages client-side validation, SVG security sanitization, dimension measurement,
+ * and authenticated upload to Cloudflare R2 bucket `orion9-brand-assets`
+ * via the Orion-9 Cloudflare R2 Upload Worker.
+ *
+ * Enforces Firebase Authentication ID token RBAC, file size <= 5 MB, and strict MIME type checks.
+ * NEVER silently falls back to Base64 or unverified storage.
  */
 
-import { getFirebaseStorageInstance } from './firebase.ts';
-import { ref, uploadBytesResumable, getDownloadURL } from 'firebase/storage';
+import { initializeFirebase } from './firebase.ts';
 import type { LogoPlacementMetadata } from '../types/cms.ts';
 
 export interface FileValidationResult {
@@ -15,6 +19,48 @@ export interface FileValidationResult {
   fileType?: string;
   sizeBytes?: number;
   sanitizedContent?: string;
+}
+
+/**
+ * Cloudflare R2 Storage Configuration Constants
+ */
+export const DEFAULT_R2_BUCKET = 'orion9-brand-assets';
+export const RUNTIME_R2_ENDPOINT_KEY = 'orion9_r2_upload_endpoint';
+export const DEFAULT_R2_WORKER_ENDPOINT =
+  'https://orion9-r2-brand-uploader.ayushprakash0021.workers.dev/api/upload-logo';
+
+/**
+ * Resolves the active Cloudflare R2 upload endpoint from environment, runtime localStorage, or default worker.
+ */
+export function getR2UploadEndpoint(): string {
+  const env =
+    (import.meta as unknown as { env?: Record<string, string | undefined> })?.env || {};
+  const envEndpoint = env.VITE_R2_UPLOAD_ENDPOINT?.trim();
+  if (envEndpoint) {
+    return envEndpoint;
+  }
+
+  if (typeof window !== 'undefined') {
+    try {
+      const stored = window.localStorage.getItem(RUNTIME_R2_ENDPOINT_KEY);
+      if (stored?.trim()) {
+        return stored.trim();
+      }
+    } catch {
+      // Ignore localStorage errors
+    }
+  }
+
+  return DEFAULT_R2_WORKER_ENDPOINT;
+}
+
+export function setRuntimeR2UploadEndpoint(endpoint: string | null): void {
+  if (typeof window === 'undefined') return;
+  if (!endpoint || !endpoint.trim()) {
+    window.localStorage.removeItem(RUNTIME_R2_ENDPOINT_KEY);
+  } else {
+    window.localStorage.setItem(RUNTIME_R2_ENDPOINT_KEY, endpoint.trim());
+  }
 }
 
 /**
@@ -35,14 +81,17 @@ export const MAX_LOGO_FILE_SIZE_BYTES = 5 * 1024 * 1024; // 5 MB
 /**
  * Safely sanitizes raw SVG strings by stripping dangerous tags, scripts, and event handlers.
  */
-export function sanitizeSvg(svgText: string): { sanitized: string; isClean: boolean; warnings: string[] } {
+export function sanitizeSvg(svgText: string): {
+  sanitized: string;
+  isClean: boolean;
+  warnings: string[];
+} {
   const warnings: string[] = [];
 
   if (!svgText || typeof svgText !== 'string') {
     return { sanitized: '', isClean: false, warnings: ['Empty SVG content'] };
   }
 
-  // Check if it's fundamentally an SVG document
   if (!/<svg\b[^>]*>/i.test(svgText)) {
     return { sanitized: '', isClean: false, warnings: ['Invalid SVG: missing <svg> root element'] };
   }
@@ -55,7 +104,7 @@ export function sanitizeSvg(svgText: string): { sanitized: string; isClean: bool
     warnings.push('Embedded <script> tags were stripped');
   }
 
-  // 2. Strip dangerous inline tags (<foreignObject>, <iframe>, <object>, <embed>, <applet>, <meta>, <link>)
+  // 2. Strip dangerous inline tags
   const dangerousTags = ['foreignObject', 'iframe', 'object', 'embed', 'applet', 'meta', 'link'];
   for (const tag of dangerousTags) {
     const regex = new RegExp(`<${tag}\\b[^>]*>([\\s\\S]*?<\\/${tag}>)?`, 'gi');
@@ -65,15 +114,16 @@ export function sanitizeSvg(svgText: string): { sanitized: string; isClean: bool
     }
   }
 
-  // 3. Strip all on* attributes (onload, onerror, onclick, onmouseover, etc.)
+  // 3. Strip all on* attributes
   const onAttrRegex = /\s+on[a-z]+=(?:"[^"]*"|'[^']*'|[^\s>]+)/gi;
   if (onAttrRegex.test(cleaned)) {
     cleaned = cleaned.replace(onAttrRegex, '');
     warnings.push('Interactive event listener attributes (on*) were stripped');
   }
 
-  // 4. Strip javascript:, vbscript:, data:text/html from href and xlink:href
-  const dangerousProtocols = /(href|xlink:href)\s*=\s*(?:"javascript:[^"]*"|'javascript:[^']*'|"vbscript:[^"]*"|'vbscript:[^']*'|"data:text\/html[^"]*"|'data:text\/html[^']*')/gi;
+  // 4. Strip dangerous protocols from href and xlink:href
+  const dangerousProtocols =
+    /(href|xlink:href)\s*=\s*(?:"javascript:[^"]*"|'javascript:[^']*'|"vbscript:[^"]*"|'vbscript:[^']*'|"data:text\/html[^"]*"|'data:text\/html[^']*')/gi;
   if (dangerousProtocols.test(cleaned)) {
     cleaned = cleaned.replace(dangerousProtocols, '$1=""');
     warnings.push('Malicious protocol links (javascript:, vbscript:) were neutralized');
@@ -96,14 +146,17 @@ export function measureImageDimensions(file: File | Blob): Promise<string> {
       return;
     }
 
-    const isSvg = file.type === 'image/svg+xml' || (file instanceof File && file.name.endsWith('.svg'));
+    const isSvg =
+      file.type === 'image/svg+xml' || (file instanceof File && file.name.endsWith('.svg'));
 
     if (isSvg && file instanceof File) {
       const reader = new FileReader();
       reader.onload = () => {
         try {
           const text = reader.result as string;
-          const viewBoxMatch = text.match(/viewBox=["']\s*[\d.]+\s+[\d.]+\s+([\d.]+)\s+([\d.]+)\s*["']/i);
+          const viewBoxMatch = text.match(
+            /viewBox=["']\s*[\d.]+\s+[\d.]+\s+([\d.]+)\s+([\d.]+)\s*["']/i
+          );
           if (viewBoxMatch && viewBoxMatch[1] && viewBoxMatch[2]) {
             const w = Math.round(parseFloat(viewBoxMatch[1]));
             const h = Math.round(parseFloat(viewBoxMatch[2]));
@@ -118,7 +171,9 @@ export function measureImageDimensions(file: File | Blob): Promise<string> {
             resolve(`${w} × ${h} px`);
             return;
           }
-        } catch {}
+        } catch {
+          // Fallback to vector
+        }
         resolve('Vector (Scalable)');
       };
       reader.onerror = () => resolve('Vector (Scalable)');
@@ -158,7 +213,7 @@ export async function validateLogoFile(file: File): Promise<FileValidationResult
 
   // 2. Format / extension check
   const ext = file.name.slice(file.name.lastIndexOf('.')).toLowerCase();
-  const mimeType = file.type.toLowerCase();
+  const mimeType = (file.type || '').toLowerCase();
   const isAllowedExt = ALLOWED_LOGO_EXTENSIONS.includes(ext);
   const isAllowedMime = ALLOWED_LOGO_MIME_TYPES.includes(mimeType) || !mimeType;
 
@@ -174,7 +229,7 @@ export async function validateLogoFile(file: File): Promise<FileValidationResult
   // 3. SVG sanitization check
   if (ext === '.svg' || mimeType === 'image/svg+xml') {
     const rawSvg = await file.text();
-    const { sanitized, warnings } = sanitizeSvg(rawSvg);
+    const { sanitized } = sanitizeSvg(rawSvg);
     return {
       valid: true,
       dimensions,
@@ -193,65 +248,83 @@ export async function validateLogoFile(file: File): Promise<FileValidationResult
 }
 
 /**
- * Classifies Firebase Storage errors into actionable, explicit user-facing messages.
+ * Classifies Cloudflare R2 & Storage errors into actionable, explicit user-facing messages.
  */
 export function classifyStorageError(storageErr: unknown): string {
   const errCode = (storageErr as { code?: string })?.code;
   const errMsg = (storageErr as Error)?.message || '';
-  const serverResponse =
-    (storageErr as { customData?: { serverResponse?: string } })?.customData?.serverResponse || '';
-  const combined = `${errCode || ''} ${errMsg} ${serverResponse}`.toLowerCase();
+  const status = (storageErr as { status?: number })?.status;
+  const combined = `${errCode || ''} ${errMsg} ${status || ''}`.toLowerCase();
 
   if (
-    errCode === 'storage/bucket-not-found' ||
-    errCode === 'storage/project-not-found' ||
-    combined.includes('bucket-not-found') ||
-    combined.includes('bucket does not exist') ||
-    combined.includes('the specified bucket does not exist')
+    status === 401 ||
+    errCode === 'unauthenticated' ||
+    combined.includes('unauthenticated') ||
+    combined.includes('sign in')
   ) {
-    return 'Firebase Storage bucket is not provisioned or does not exist. Please navigate to Firebase Console > Build > Storage for project "orion9-dev-db-2026" and click "Get Started" to initialize the bucket.';
+    return 'Authentication required: You must be signed in as an administrator to upload assets.';
   }
 
   if (
-    errCode === 'storage/unauthorized' ||
+    status === 403 ||
+    errCode === 'unauthorized' ||
     combined.includes('permission') ||
     combined.includes('unauthorized') ||
     combined.includes('access denied')
   ) {
-    return 'Permission denied: You do not have permission to upload brand assets to Firebase Storage. Please ensure you are authenticated as an administrator.';
-  }
-
-  if (errCode === 'storage/quota-exceeded' || combined.includes('quota')) {
-    return 'Firebase Storage quota exceeded. Please contact your system administrator.';
-  }
-
-  if (errCode === 'storage/unauthenticated' || combined.includes('unauthenticated')) {
-    return 'Authentication required: You must be signed in to upload assets.';
+    return 'Permission denied: You do not have permission to upload brand assets to Cloudflare R2. Please ensure you are authenticated as an administrator.';
   }
 
   if (
+    status === 413 ||
+    errCode === 'file_too_large' ||
+    combined.includes('file size') ||
+    combined.includes('too large')
+  ) {
+    return 'File size exceeds maximum allowed size of 5 MB.';
+  }
+
+  if (
+    status === 404 ||
+    errCode === 'r2_binding_missing' ||
+    errCode === 'storage/bucket-not-found' ||
+    combined.includes('bucket') ||
+    combined.includes('endpoint or bucket') ||
+    combined.includes('not found')
+  ) {
+    return `Cloudflare R2 bucket "${DEFAULT_R2_BUCKET}" or upload worker is unavailable. Please check the Cloudflare Worker deployment.`;
+  }
+
+  if (
+    errCode === 'network_error' ||
     errCode === 'storage/retry-limit-exceeded' ||
     combined.includes('network') ||
     combined.includes('offline') ||
     combined.includes('timeout') ||
     combined.includes('failed to fetch')
   ) {
-    return 'Network failure: Unable to upload logo to Firebase Storage. Please check your internet connection and try again.';
+    return 'Network failure: Unable to upload logo to Cloudflare R2. Please check your internet connection and try again.';
   }
 
-  return `Firebase Storage upload failed: ${errMsg || 'Unknown storage error.'}`;
+  if (combined.includes('not configured')) {
+    return 'Cloudflare R2 upload endpoint is not configured. Please set VITE_R2_UPLOAD_ENDPOINT or verify worker deployment.';
+  }
+
+  return `Cloudflare R2 upload failed: ${errMsg || 'Unknown storage error.'}`;
 }
 
 /**
- * Uploads a validated logo file to Firebase Storage under branding/logos/
- * and returns the permanent cloud download URL.
- * NEVER silently falls back to Base64 on upload failure.
+ * Uploads a validated logo file to Cloudflare R2 under branding/logos/
+ * via the authenticated Orion-9 R2 worker endpoint and returns the permanent public download URL.
+ * NEVER silently falls back to Base64 or Firebase Storage on failure.
  */
 export async function uploadBrandingLogoAsset(
   placement: 'header' | 'auth' | 'footer' | 'default' | 'shared',
   file: File,
-  onProgress?: (progressPct: number) => void
+  onProgress?: (progressPct: number) => void,
+  explicitAuthToken?: string
 ): Promise<LogoPlacementMetadata> {
+  // 1. Client-side file validation
   const validation = await validateLogoFile(file);
   if (!validation.valid) {
     throw new Error(validation.error || 'Invalid logo file.');
@@ -261,67 +334,155 @@ export async function uploadBrandingLogoAsset(
   const fileType = validation.fileType || file.type || 'image/png';
   const sizeBytes = validation.sizeBytes || file.size;
 
-  const storage = getFirebaseStorageInstance();
-  if (!storage) {
+  // 2. Authentication: obtain Firebase ID token
+  let token = explicitAuthToken;
+  if (!token) {
+    const { auth } = initializeFirebase();
+    const currentUser = auth?.currentUser;
+    if (currentUser) {
+      try {
+        token = await currentUser.getIdToken();
+      } catch (tokenErr) {
+        console.error('[BrandingStorage] Failed to retrieve Firebase ID token:', tokenErr);
+      }
+    }
+  }
+
+  if (!token) {
     throw new Error(
-      'Firebase Storage is not configured. Cloud persistence requires an active Firebase Storage bucket.'
+      'Authentication required: You must be signed in as an administrator to upload assets.'
     );
   }
 
+  // 3. Resolve upload endpoint
+  const endpoint = getR2UploadEndpoint();
+  if (!endpoint) {
+    throw new Error(
+      'Cloudflare R2 upload endpoint is not configured. Please configure VITE_R2_UPLOAD_ENDPOINT.'
+    );
+  }
+
+  // 4. Construct FormData payload
+  const formData = new FormData();
+  let payloadBlob: Blob = file;
+  if (validation.sanitizedContent) {
+    payloadBlob = new Blob([validation.sanitizedContent], { type: 'image/svg+xml' });
+  }
+
+  formData.append('file', payloadBlob, file.name);
+  formData.append('placement', placement);
+  formData.append('dimensions', dimensions);
+
+  // 5. Execute authenticated upload
   try {
-    const cleanFileName = file.name.replace(/[^a-zA-Z0-9._-]/g, '_');
-    const storagePath = `branding/logos/${placement}_${Date.now()}_${cleanFileName}`;
-    const fileRef = ref(storage, storagePath);
+    const result = await new Promise<{
+      url: string;
+      dimensions?: string;
+      fileType?: string;
+      sizeBytes?: number;
+      uploadedAt?: string;
+    }>((resolve, reject) => {
+      // Browser environment with XMLHttpRequest for upload progress tracking
+      if (typeof XMLHttpRequest !== 'undefined') {
+        const xhr = new XMLHttpRequest();
+        xhr.open('POST', endpoint);
+        xhr.setRequestHeader('Authorization', `Bearer ${token}`);
+        xhr.setRequestHeader('Accept', 'application/json');
 
-    let payload: Blob = file;
-    if (validation.sanitizedContent) {
-      payload = new Blob([validation.sanitizedContent], { type: 'image/svg+xml' });
-    }
-
-    const uploadTask = uploadBytesResumable(fileRef, payload, {
-      contentType: fileType,
-      customMetadata: {
-        placement,
-        dimensions,
-        originalName: file.name,
-        uploadedAt: new Date().toISOString(),
-      },
-    });
-
-    await new Promise<void>((resolve, reject) => {
-      uploadTask.on(
-        'state_changed',
-        (snapshot) => {
-          const pct = Math.round((snapshot.bytesTransferred / snapshot.totalBytes) * 100);
-          if (onProgress) onProgress(pct);
-        },
-        (error) => {
-          console.error('[BrandingStorage] Firebase Storage upload error:', error);
-          reject(error);
-        },
-        () => {
-          if (onProgress) onProgress(100);
-          resolve();
+        if (xhr.upload && onProgress) {
+          xhr.upload.onprogress = (evt) => {
+            if (evt.lengthComputable && evt.total > 0) {
+              const pct = Math.round((evt.loaded / evt.total) * 100);
+              onProgress(pct);
+            }
+          };
         }
-      );
+
+        xhr.onload = () => {
+          if (onProgress) onProgress(100);
+          if (xhr.status >= 200 && xhr.status < 300) {
+            try {
+              const parsed = JSON.parse(xhr.responseText);
+              if (parsed.success && parsed.url) {
+                resolve(parsed);
+              } else {
+                reject({
+                  status: xhr.status,
+                  message: parsed.error || 'Server did not return a valid asset URL.',
+                });
+              }
+            } catch {
+              reject({ status: xhr.status, message: 'Invalid JSON response from R2 worker.' });
+            }
+          } else {
+            let errorMsg = `HTTP ${xhr.status}`;
+            try {
+              const parsed = JSON.parse(xhr.responseText);
+              if (parsed.error) errorMsg = parsed.error;
+            } catch {
+              // Ignore parse error
+            }
+            reject({ status: xhr.status, message: errorMsg });
+          }
+        };
+
+        xhr.onerror = () => {
+          reject({ code: 'network_error', message: 'Network connection failed during R2 upload.' });
+        };
+
+        xhr.ontimeout = () => {
+          reject({ code: 'network_error', message: 'Upload request to Cloudflare R2 timed out.' });
+        };
+
+        xhr.send(formData);
+        return;
+      }
+
+      // Fallback for non-browser Node.js environments (tests)
+      if (typeof fetch !== 'undefined') {
+        fetch(endpoint, {
+          method: 'POST',
+          headers: {
+            Authorization: `Bearer ${token}`,
+            Accept: 'application/json',
+          },
+          body: formData,
+        })
+          .then(async (res) => {
+            if (onProgress) onProgress(100);
+            if (!res.ok) {
+              let msg = `HTTP ${res.status}`;
+              try {
+                const errData = await res.json();
+                if (errData.error) msg = errData.error;
+              } catch {}
+              return reject({ status: res.status, message: msg });
+            }
+            const data = await res.json();
+            resolve(data);
+          })
+          .catch((err) => reject({ code: 'network_error', message: err.message }));
+        return;
+      }
+
+      reject(new Error('No HTTP transport available.'));
     });
 
-    const downloadUrl = await getDownloadURL(fileRef);
-    if (!downloadUrl || typeof downloadUrl !== 'string' || !downloadUrl.startsWith('http')) {
-      throw new Error('Failed to obtain a permanent download URL from Firebase Storage.');
+    if (!result.url || typeof result.url !== 'string' || (!result.url.startsWith('http') && !result.url.startsWith('/'))) {
+      throw new Error('Failed to obtain a permanent Cloudflare R2 URL.');
     }
 
     return {
-      url: downloadUrl,
-      dimensions,
-      fileType,
-      sizeBytes,
-      uploadedAt: new Date().toISOString(),
+      url: result.url,
+      dimensions: result.dimensions || dimensions,
+      fileType: result.fileType || fileType,
+      sizeBytes: result.sizeBytes || sizeBytes,
+      uploadedAt: result.uploadedAt || new Date().toISOString(),
       originalFilename: file.name,
     };
-  } catch (storageErr: unknown) {
-    console.error('[BrandingStorage] Cloud storage upload failed:', storageErr);
-    const userMessage = classifyStorageError(storageErr);
+  } catch (err: unknown) {
+    console.error('[BrandingStorage] Cloudflare R2 upload failed:', err);
+    const userMessage = classifyStorageError(err);
     throw new Error(userMessage);
   }
 }
