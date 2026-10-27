@@ -3,6 +3,7 @@ import assert from 'node:assert/strict';
 import {
   validateLogoFile,
   sanitizeSvg,
+  classifyStorageError,
   MAX_LOGO_FILE_SIZE_BYTES,
   ALLOWED_LOGO_EXTENSIONS,
   ALLOWED_LOGO_MIME_TYPES,
@@ -90,22 +91,26 @@ describe('P0 Bug Fix: Branding Logo Upload & Cloud Persistence Test Suite', () =
     assert.ok(!result.sanitized.includes('javascript:'));
   });
 
-  // 5. Firebase Storage permission denied surfaces explicit error
-  it('5. Firebase Storage permission denied surfaces explicit user-facing error', () => {
+  // 5. Firebase Storage unprovisioned bucket detection surfaces exact Console action
+  it('5a. Firebase Storage unprovisioned bucket surfaces actionable Console instructions', () => {
+    const bucketNotFoundError = {
+      code: 'storage/bucket-not-found',
+      message: 'The specified bucket does not exist.',
+    };
+    const msg = classifyStorageError(bucketNotFoundError);
+    assert.match(msg, /Firebase Storage bucket is not provisioned or does not exist/i);
+    assert.match(msg, /Firebase Console > Build > Storage for project "orion9-dev-db-2026"/i);
+    assert.match(msg, /Get Started/i);
+  });
+
+  // 5b. Firebase Storage permission denied surfaces explicit error
+  it('5b. Firebase Storage permission denied surfaces explicit user-facing error', () => {
     const storageError = {
       code: 'storage/unauthorized',
       message: 'User does not have permission to access this object.',
     };
-
-    let userFacingMessage = '';
-    const errCode = storageError.code;
-    const errMsg = storageError.message;
-    if (errCode === 'storage/unauthorized' || errMsg.toLowerCase().includes('permission')) {
-      userFacingMessage =
-        'Permission denied: You do not have permission to upload brand assets to Firebase Storage. Please ensure you are authenticated as an administrator.';
-    }
-
-    assert.match(userFacingMessage, /Permission denied: You do not have permission to upload brand assets/);
+    const msg = classifyStorageError(storageError);
+    assert.match(msg, /Permission denied: You do not have permission to upload brand assets/);
   });
 
   // 6. Network failure during upload surfaces explicit error
@@ -114,15 +119,8 @@ describe('P0 Bug Fix: Branding Logo Upload & Cloud Persistence Test Suite', () =
       code: 'storage/retry-limit-exceeded',
       message: 'Max retry limit exceeded.',
     };
-
-    let userFacingMessage = '';
-    const errCode = networkError.code;
-    if (errCode === 'storage/retry-limit-exceeded') {
-      userFacingMessage =
-        'Network failure: Unable to upload logo to Firebase Storage. Please check your internet connection and try again.';
-    }
-
-    assert.match(userFacingMessage, /Network failure: Unable to upload logo/);
+    const msg = classifyStorageError(networkError);
+    assert.match(msg, /Network failure: Unable to upload logo/);
   });
 
   // 7. Upload does NOT silently fall back to Base64 on failure

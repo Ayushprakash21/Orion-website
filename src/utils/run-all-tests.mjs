@@ -13,6 +13,7 @@ import {
 } from '../data/defaultSiteConfig.ts';
 import {
   sanitizeSvg,
+  classifyStorageError,
   ALLOWED_LOGO_EXTENSIONS,
   ALLOWED_LOGO_MIME_TYPES,
   MAX_LOGO_FILE_SIZE_BYTES,
@@ -1399,24 +1400,24 @@ runTest('54. P0 SVG sanitization strips scripts, foreignObject, and inline handl
   assert.ok(!result.sanitized.includes('javascript:'));
 });
 
-runTest('55. P0 Firebase Storage permission denied surfaces explicit admin auth error', () => {
-  const errCode = 'storage/unauthorized';
-  let message = '';
-  if (errCode === 'storage/unauthorized') {
-    message = 'Permission denied: You do not have permission to upload brand assets to Firebase Storage. Please ensure you are authenticated as an administrator.';
-  }
-  assert.ok(message.includes('Permission denied'));
-  assert.ok(message.includes('authenticated as an administrator'));
+runTest('55. P0 Firebase Storage unprovisioned bucket and permission errors surface actionable guidance', () => {
+  const bucketError = { code: 'storage/bucket-not-found', message: 'The specified bucket does not exist.' };
+  const bucketMsg = classifyStorageError(bucketError);
+  assert.ok(bucketMsg.includes('Firebase Storage bucket is not provisioned or does not exist'));
+  assert.ok(bucketMsg.includes('Firebase Console > Build > Storage'));
+  assert.ok(bucketMsg.includes('orion9-dev-db-2026'));
+
+  const unauthError = { code: 'storage/unauthorized', message: 'User does not have permission.' };
+  const unauthMsg = classifyStorageError(unauthError);
+  assert.ok(unauthMsg.includes('Permission denied'));
+  assert.ok(unauthMsg.includes('authenticated as an administrator'));
 });
 
 runTest('56. P0 Network failure during upload surfaces explicit connectivity error', () => {
-  const errCode = 'storage/retry-limit-exceeded';
-  let message = '';
-  if (errCode === 'storage/retry-limit-exceeded') {
-    message = 'Network failure: Unable to upload logo to Firebase Storage. Please check your internet connection and try again.';
-  }
-  assert.ok(message.includes('Network failure'));
-  assert.ok(message.includes('check your internet connection'));
+  const networkError = { code: 'storage/retry-limit-exceeded', message: 'Max retry limit reached' };
+  const networkMsg = classifyStorageError(networkError);
+  assert.ok(networkMsg.includes('Network failure'));
+  assert.ok(networkMsg.includes('check your internet connection'));
 });
 
 runTest('57. P0 Upload failure throws error and NEVER returns a Base64 fallback URL', () => {

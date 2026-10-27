@@ -84,11 +84,23 @@ export function getFirebaseConfig(): FirebaseClientConfig | null {
       if (raw) {
         const parsed = JSON.parse(raw) as FirebaseClientConfig;
         if (parsed.apiKey && parsed.projectId) {
+          const cleanProjectId = parsed.projectId.trim();
+          let bucket = parsed.storageBucket?.trim();
+          // Safeguard: Normalize or reject invalid or cross-project bucket overrides in localStorage
+          if (
+            !bucket ||
+            (!bucket.includes(cleanProjectId) &&
+             !bucket.endsWith('.firebasestorage.app') &&
+             !bucket.endsWith('.appspot.com'))
+          ) {
+            bucket = `${cleanProjectId}.firebasestorage.app`;
+          }
+
           return {
             apiKey: parsed.apiKey.trim(),
-            authDomain: parsed.authDomain?.trim() || `${parsed.projectId.trim()}.firebaseapp.com`,
-            projectId: parsed.projectId.trim(),
-            storageBucket: parsed.storageBucket?.trim() || `${parsed.projectId.trim()}.firebasestorage.app`,
+            authDomain: parsed.authDomain?.trim() || `${cleanProjectId}.firebaseapp.com`,
+            projectId: cleanProjectId,
+            storageBucket: bucket,
             messagingSenderId: parsed.messagingSenderId?.trim(),
             appId: parsed.appId?.trim(),
             firestoreDatabaseId: parsed.firestoreDatabaseId?.trim(),
@@ -129,6 +141,14 @@ let auth: Auth | null = null;
 let db: Firestore | null = null;
 let storage: FirebaseStorage | null = null;
 
+function resolveBucketUrl(config?: FirebaseClientConfig | null): string | undefined {
+  const bucket =
+    config?.storageBucket?.trim() ||
+    (config?.projectId ? `${config.projectId.trim()}.firebasestorage.app` : undefined);
+  if (!bucket) return undefined;
+  return `gs://${bucket.replace(/^gs:\/\//, '')}`;
+}
+
 export function initializeFirebase(): {
   app: FirebaseApp | null;
   auth: Auth | null;
@@ -136,14 +156,17 @@ export function initializeFirebase(): {
   storage: FirebaseStorage | null;
   isConfigured: boolean;
 } {
+  const config = getFirebaseConfig();
+
   if (auth && app && db) {
     if (!storage) {
-      try { storage = getStorage(app); } catch {}
+      try {
+        const bucketUrl = resolveBucketUrl(config);
+        storage = bucketUrl ? getStorage(app, bucketUrl) : getStorage(app);
+      } catch {}
     }
     return { app, auth, db, storage, isConfigured: true };
   }
-
-  const config = getFirebaseConfig();
 
   if (!config || !config.apiKey || !config.projectId) {
     return { app: null, auth: null, db: null, storage: null, isConfigured: false };
@@ -157,7 +180,10 @@ export function initializeFirebase(): {
     }
     auth = getAuth(app);
     db = config.firestoreDatabaseId ? getFirestore(app, config.firestoreDatabaseId) : getFirestore(app);
-    try { storage = getStorage(app); } catch {}
+    try {
+      const bucketUrl = resolveBucketUrl(config);
+      storage = bucketUrl ? getStorage(app, bucketUrl) : getStorage(app);
+    } catch {}
     return { app, auth, db, storage, isConfigured: true };
   } catch (err) {
     console.warn('[Orion-9 Firebase] Failed to initialize Firebase SDK:', err);
@@ -171,7 +197,9 @@ export function getFirebaseStorageInstance(): FirebaseStorage | null {
   if (s) return s;
   if (app) {
     try {
-      storage = getStorage(app);
+      const config = getFirebaseConfig();
+      const bucketUrl = resolveBucketUrl(config);
+      storage = bucketUrl ? getStorage(app, bucketUrl) : getStorage(app);
       return storage;
     } catch {
       return null;

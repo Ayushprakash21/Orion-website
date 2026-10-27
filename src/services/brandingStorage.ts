@@ -193,6 +193,56 @@ export async function validateLogoFile(file: File): Promise<FileValidationResult
 }
 
 /**
+ * Classifies Firebase Storage errors into actionable, explicit user-facing messages.
+ */
+export function classifyStorageError(storageErr: unknown): string {
+  const errCode = (storageErr as { code?: string })?.code;
+  const errMsg = (storageErr as Error)?.message || '';
+  const serverResponse =
+    (storageErr as { customData?: { serverResponse?: string } })?.customData?.serverResponse || '';
+  const combined = `${errCode || ''} ${errMsg} ${serverResponse}`.toLowerCase();
+
+  if (
+    errCode === 'storage/bucket-not-found' ||
+    errCode === 'storage/project-not-found' ||
+    combined.includes('bucket-not-found') ||
+    combined.includes('bucket does not exist') ||
+    combined.includes('the specified bucket does not exist')
+  ) {
+    return 'Firebase Storage bucket is not provisioned or does not exist. Please navigate to Firebase Console > Build > Storage for project "orion9-dev-db-2026" and click "Get Started" to initialize the bucket.';
+  }
+
+  if (
+    errCode === 'storage/unauthorized' ||
+    combined.includes('permission') ||
+    combined.includes('unauthorized') ||
+    combined.includes('access denied')
+  ) {
+    return 'Permission denied: You do not have permission to upload brand assets to Firebase Storage. Please ensure you are authenticated as an administrator.';
+  }
+
+  if (errCode === 'storage/quota-exceeded' || combined.includes('quota')) {
+    return 'Firebase Storage quota exceeded. Please contact your system administrator.';
+  }
+
+  if (errCode === 'storage/unauthenticated' || combined.includes('unauthenticated')) {
+    return 'Authentication required: You must be signed in to upload assets.';
+  }
+
+  if (
+    errCode === 'storage/retry-limit-exceeded' ||
+    combined.includes('network') ||
+    combined.includes('offline') ||
+    combined.includes('timeout') ||
+    combined.includes('failed to fetch')
+  ) {
+    return 'Network failure: Unable to upload logo to Firebase Storage. Please check your internet connection and try again.';
+  }
+
+  return `Firebase Storage upload failed: ${errMsg || 'Unknown storage error.'}`;
+}
+
+/**
  * Uploads a validated logo file to Firebase Storage under branding/logos/
  * and returns the permanent cloud download URL.
  * NEVER silently falls back to Base64 on upload failure.
@@ -271,31 +321,7 @@ export async function uploadBrandingLogoAsset(
     };
   } catch (storageErr: unknown) {
     console.error('[BrandingStorage] Cloud storage upload failed:', storageErr);
-    const errCode = (storageErr as { code?: string })?.code;
-    const errMsg = (storageErr as Error)?.message || '';
-
-    if (errCode === 'storage/unauthorized' || errMsg.toLowerCase().includes('permission') || errMsg.toLowerCase().includes('unauthorized')) {
-      throw new Error(
-        'Permission denied: You do not have permission to upload brand assets to Firebase Storage. Please ensure you are authenticated as an administrator.'
-      );
-    }
-    if (errCode === 'storage/quota-exceeded' || errMsg.toLowerCase().includes('quota')) {
-      throw new Error('Firebase Storage quota exceeded. Please contact your system administrator.');
-    }
-    if (
-      errCode === 'storage/retry-limit-exceeded' ||
-      errMsg.toLowerCase().includes('network') ||
-      errMsg.toLowerCase().includes('offline') ||
-      errMsg.toLowerCase().includes('timeout')
-    ) {
-      throw new Error(
-        'Network failure: Unable to upload logo to Firebase Storage. Please check your internet connection and try again.'
-      );
-    }
-    if (errCode === 'storage/unauthenticated' || errMsg.toLowerCase().includes('unauthenticated')) {
-      throw new Error('Authentication required: You must be signed in to upload assets.');
-    }
-
-    throw new Error(`Firebase Storage upload failed: ${errMsg || 'Unknown storage error.'}`);
+    const userMessage = classifyStorageError(storageErr);
+    throw new Error(userMessage);
   }
 }
