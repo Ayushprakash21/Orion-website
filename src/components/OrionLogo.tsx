@@ -209,7 +209,7 @@ export const OrionHeroBrandLockup: React.FC<OrionHeroBrandLockupProps> = ({
          ========================================================================== */}
       <div
         data-testid="orion-hero-animated-logo"
-        className="relative w-[250px] sm:w-[275px] md:w-[290px] lg:w-[305px] flex flex-col items-center justify-center select-none translate-y-0"
+        className="relative w-[260px] sm:w-[285px] md:w-[310px] lg:w-[330px] flex flex-col items-center justify-center select-none translate-y-0"
       >
         {/* Stage 1 — Atmosphere: Soft radiant sky-white atmosphere behind logo (no dark halo) */}
         <div
@@ -251,41 +251,27 @@ export const OrionHeroBrandLockup: React.FC<OrionHeroBrandLockupProps> = ({
             aria-label="Orion-9 — Supply Chain Intelligence"
           >
             <defs>
-              {/* High-Contrast Dual-Reflection Chrome Gradient for ORION (Image 2) */}
-              <linearGradient id="orionChromeMetal" x1="0%" y1="0%" x2="0%" y2="100%">
-                <stop offset="0%" stopColor="#FFFFFF" />
-                <stop offset="24%" stopColor="#DFEDF9" />
-                <stop offset="46%" stopColor="#93B8DC" />
-                <stop offset="50%" stopColor="#142842" />
-                <stop offset="66%" stopColor="#2E527D" />
-                <stop offset="84%" stopColor="#A2C8EE" />
-                <stop offset="100%" stopColor="#223E63" />
+              {/* Deep 3D Obsidian Black Gradient with Subtle Bevel Highlight for ORION-9 (Reference Target) */}
+              <linearGradient id="orionBlack3DGradient" x1="0%" y1="0%" x2="0%" y2="100%">
+                <stop offset="0%" stopColor="#2A374A" />
+                <stop offset="10%" stopColor="#141E2D" />
+                <stop offset="45%" stopColor="#080E18" />
+                <stop offset="100%" stopColor="#040810" />
               </linearGradient>
 
-              {/* Luminous Electric-Cyan to Royal-Blue Chrome Gradient for '9' (Image 2) */}
-              <linearGradient id="orionNineMetal" x1="0%" y1="0%" x2="0%" y2="100%">
-                <stop offset="0%" stopColor="#E6FAFF" />
-                <stop offset="28%" stopColor="#5CE1E6" />
-                <stop offset="48%" stopColor="#00B4D8" />
-                <stop offset="52%" stopColor="#033863" />
-                <stop offset="72%" stopColor="#0096C7" />
-                <stop offset="88%" stopColor="#48CAE4" />
-                <stop offset="100%" stopColor="#023E8A" />
-              </linearGradient>
-
-              {/* Chrome Reflection Sweep Gradient */}
-              <linearGradient id="orionChromeReflection" x1="0%" y1="0%" x2="100%" y2="0%">
+              {/* Restrained Lacquer Gleam Reflection Sweep Gradient */}
+              <linearGradient id="orionBlackReflection" x1="0%" y1="0%" x2="100%" y2="0%">
                 <stop offset="0%" stopColor="#FFFFFF" stopOpacity="0" />
-                <stop offset="38%" stopColor="#E0F2FE" stopOpacity="0.85" />
-                <stop offset="50%" stopColor="#FFFFFF" stopOpacity="1" />
-                <stop offset="62%" stopColor="#7DD3FC" stopOpacity="0.85" />
+                <stop offset="38%" stopColor="#94A3B8" stopOpacity="0.45" />
+                <stop offset="50%" stopColor="#FFFFFF" stopOpacity="0.75" />
+                <stop offset="62%" stopColor="#94A3B8" stopOpacity="0.45" />
                 <stop offset="100%" stopColor="#FFFFFF" stopOpacity="0" />
               </linearGradient>
 
-              {/* Beveled Text Depth & Drop Shadow for High-Contrast Pop */}
-              <filter id="orionWordmarkShadow" x="-15%" y="-25%" width="130%" height="160%">
-                <feDropShadow dx="0" dy="4" stdDeviation="5" floodColor="#040914" floodOpacity="0.35" />
-                <feDropShadow dx="0" dy="1" stdDeviation="1.5" floodColor="#040914" floodOpacity="0.55" />
+              {/* Dimensional Drop Shadow for High-Contrast Pop */}
+              <filter id="orionWordmarkShadow" x="-20%" y="-30%" width="140%" height="180%">
+                <feDropShadow dx="0" dy="5" stdDeviation="4.5" floodColor="#040914" floodOpacity="0.45" />
+                <feDropShadow dx="0" dy="1.5" stdDeviation="1.5" floodColor="#040914" floodOpacity="0.65" />
               </filter>
 
               <clipPath id="orionWordmarkGlyphClip">
@@ -306,7 +292,7 @@ export const OrionHeroBrandLockup: React.FC<OrionHeroBrandLockupProps> = ({
             </defs>
 
             {/* ==========================================================================
-                STAGE 3: MODERN GEOMETRIC "ORION-9" WORDMARK WITH RADIANT CYAN "-9"
+                STAGE 3: MODERN 3D "ORION-9" WORDMARK IN BLACK (MATCHING REFERENCE TARGET)
                ========================================================================== */}
             <g
               data-testid="orion-stage3-wordmark"
@@ -316,13 +302,13 @@ export const OrionHeroBrandLockup: React.FC<OrionHeroBrandLockupProps> = ({
               }}
             >
               <g transform="translate(500, 770)" filter="url(#orionWordmarkShadow)">
-                {/* Authoritative High-Contrast Sans-Serif ORION-9: Metallic Chrome "ORION" + Vivid Sky-Blue "-" + Electric-Cyan "9" */}
+                {/* Authoritative High-Contrast Sans-Serif ORION-9 in Solid 3D Black */}
                 <text
                   x="0"
                   y="0"
                   textAnchor="middle"
-                  stroke="#050C1A"
-                  strokeWidth="3.5"
+                  stroke="#040810"
+                  strokeWidth="3.0"
                   strokeLinejoin="round"
                   paintOrder="stroke fill"
                   style={{
@@ -332,22 +318,20 @@ export const OrionHeroBrandLockup: React.FC<OrionHeroBrandLockupProps> = ({
                     letterSpacing: '0.09em',
                   }}
                 >
-                  <tspan fill="url(#orionChromeMetal)">ORION</tspan>
-                  <tspan fill="#00D2FF" stroke="#050C1A" strokeWidth="3.5">-</tspan>
-                  <tspan fill="url(#orionNineMetal)" stroke="#050C1A" strokeWidth="3.5">9</tspan>
+                  <tspan fill="url(#orionBlack3DGradient)">ORION-9</tspan>
                 </text>
 
-                {/* Strictly Glyph-Clipped Chrome Reflection Highlight */}
+                {/* Strictly Glyph-Clipped Subtle Lacquer Reflection Highlight */}
                 <g clipPath="url(#orionWordmarkGlyphClip)">
                   <rect
                     x={chromeSweepX}
                     y="-110"
                     width="160"
                     height="135"
-                    fill="url(#orionChromeReflection)"
+                    fill="url(#orionBlackReflection)"
                     transform="skewX(-22)"
                     style={{
-                      opacity: chromeSweepOpacity,
+                      opacity: chromeSweepOpacity * 0.7,
                     }}
                   />
                 </g>
@@ -365,14 +349,14 @@ export const OrionHeroBrandLockup: React.FC<OrionHeroBrandLockupProps> = ({
             >
               <text
                 x="500"
-                y="846"
+                y="850"
                 textAnchor="middle"
                 fill="#070E1C"
                 style={{
                   fontFamily: "system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif",
                   fontWeight: 800,
-                  fontSize: '32px',
-                  letterSpacing: '0.34em',
+                  fontSize: '28px',
+                  letterSpacing: '0.32em',
                 }}
               >
                 SUPPLY CHAIN INTELLIGENCE
@@ -388,15 +372,15 @@ export const OrionHeroBrandLockup: React.FC<OrionHeroBrandLockupProps> = ({
                 opacity: introState.secondaryTaglineOpacity,
               }}
             >
-              {/* Left Tapered Needle Bar */}
+              {/* Left Cyan Accent Line */}
               <g
                 style={{
                   transform: `scaleX(${introState.secondaryTaglineRuleScale.toFixed(3)})`,
-                  transformOrigin: '220px 900px',
+                  transformOrigin: '235px 898px',
                 }}
               >
                 <polygon
-                  points="50,901 90,899 220,899 220,903 90,903"
+                  points="235,897 348,897 348,899.5 235,899.5"
                   fill="#0284C7"
                 />
               </g>
@@ -404,28 +388,28 @@ export const OrionHeroBrandLockup: React.FC<OrionHeroBrandLockupProps> = ({
               {/* Center Tagline */}
               <text
                 x="500"
-                y="904"
+                y="902"
                 textAnchor="middle"
                 fill="#0284C7"
                 style={{
                   fontFamily: "system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif",
                   fontWeight: 700,
-                  fontSize: '20px',
-                  letterSpacing: '0.24em',
+                  fontSize: '13.5px',
+                  letterSpacing: '0.16em',
                 }}
               >
                 A MORE RESILIENT TOMORROW
               </text>
 
-              {/* Right Tapered Needle Bar */}
+              {/* Right Cyan Accent Line */}
               <g
                 style={{
                   transform: `scaleX(${introState.secondaryTaglineRuleScale.toFixed(3)})`,
-                  transformOrigin: '780px 900px',
+                  transformOrigin: '765px 898px',
                 }}
               >
                 <polygon
-                  points="950,901 910,899 780,899 780,903 910,903"
+                  points="652,897 765,897 765,899.5 652,899.5"
                   fill="#0284C7"
                 />
               </g>

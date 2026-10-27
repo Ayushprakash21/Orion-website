@@ -57,23 +57,48 @@ function isWebGLAvailable(): boolean {
 }
 
 /**
- * Creates soft contact shadow texture (radial gradient with no dark blob)
+ * Creates soft, realistic dual-lobed contact shadow texture matching reference Image 2.
+ * Anchors the emblem to the ground with deeper contact zones under the left fold and right numeral 9.
  */
 function createContactShadowTexture(): THREE.CanvasTexture {
   const canvas = document.createElement('canvas');
-  canvas.width = 256;
-  canvas.height = 128;
+  canvas.width = 512;
+  canvas.height = 256;
   const ctx = canvas.getContext('2d');
   if (ctx) {
-    ctx.clearRect(0, 0, 256, 128);
-    const grad = ctx.createRadialGradient(128, 64, 8, 128, 64, 115);
-    grad.addColorStop(0, 'rgba(15, 30, 50, 0.24)');
-    grad.addColorStop(0.35, 'rgba(15, 30, 50, 0.12)');
-    grad.addColorStop(0.7, 'rgba(15, 30, 50, 0.03)');
-    grad.addColorStop(1, 'rgba(15, 30, 50, 0)');
-    ctx.fillStyle = grad;
+    ctx.clearRect(0, 0, 512, 256);
+
+    // 1. Broad soft ambient shadow ellipse
+    const broadGrad = ctx.createRadialGradient(256, 128, 12, 256, 128, 220);
+    broadGrad.addColorStop(0, 'rgba(8, 20, 44, 0.44)');
+    broadGrad.addColorStop(0.35, 'rgba(8, 20, 44, 0.24)');
+    broadGrad.addColorStop(0.70, 'rgba(8, 20, 44, 0.08)');
+    broadGrad.addColorStop(1.0, 'rgba(8, 20, 44, 0)');
+    ctx.fillStyle = broadGrad;
     ctx.beginPath();
-    ctx.ellipse(128, 64, 122, 54, 0, 0, Math.PI * 2);
+    ctx.ellipse(256, 128, 230, 68, 0, 0, Math.PI * 2);
+    ctx.fill();
+
+    // 2. Left contact lobe (under the bottom fold of the silver loop)
+    const leftGrad = ctx.createRadialGradient(172, 128, 4, 172, 128, 88);
+    leftGrad.addColorStop(0, 'rgba(6, 16, 36, 0.56)');
+    leftGrad.addColorStop(0.40, 'rgba(6, 16, 36, 0.30)');
+    leftGrad.addColorStop(0.75, 'rgba(6, 16, 36, 0.09)');
+    leftGrad.addColorStop(1.0, 'rgba(6, 16, 36, 0)');
+    ctx.fillStyle = leftGrad;
+    ctx.beginPath();
+    ctx.ellipse(172, 128, 88, 38, -0.06, 0, Math.PI * 2);
+    ctx.fill();
+
+    // 3. Right contact lobe (under the bottom angle of the blue numeral 9)
+    const rightGrad = ctx.createRadialGradient(338, 128, 4, 338, 128, 92);
+    rightGrad.addColorStop(0, 'rgba(6, 16, 36, 0.60)');
+    rightGrad.addColorStop(0.40, 'rgba(6, 16, 36, 0.32)');
+    rightGrad.addColorStop(0.75, 'rgba(6, 16, 36, 0.10)');
+    rightGrad.addColorStop(1.0, 'rgba(6, 16, 36, 0)');
+    ctx.fillStyle = rightGrad;
+    ctx.beginPath();
+    ctx.ellipse(338, 128, 92, 42, 0.06, 0, Math.PI * 2);
     ctx.fill();
   }
   const texture = new THREE.CanvasTexture(canvas);
@@ -308,12 +333,12 @@ export const Orion3DLogo: React.FC<Orion3DLogoProps> = ({
 
     // 3. Right Loop & "9" Stem: Lustrous Blue-Titanium Face + Machined Navy Sidewalls
     const nineArchFrontMaterial = new THREE.MeshPhysicalMaterial({
-      color: new THREE.Color(0x256094),
-      metalness: 0.80,
-      roughness: 0.16,
-      clearcoat: 0.65,
-      clearcoatRoughness: 0.10,
-      envMapIntensity: 1.4,
+      color: new THREE.Color(0x1e6bb8),
+      metalness: 0.82,
+      roughness: 0.14,
+      clearcoat: 0.80,
+      clearcoatRoughness: 0.06,
+      envMapIntensity: 1.5,
     });
     const nineArchSideMaterial = new THREE.MeshPhysicalMaterial({
       color: new THREE.Color(0x123658),
@@ -588,20 +613,21 @@ export const Orion3DLogo: React.FC<Orion3DLogoProps> = ({
 
     emblemGroup.add(starburstGroup);
 
-    // 11. Subtle, Restrained Contact Shadow (Directly beneath emblem, DoubleSide, No dark halo)
+    // 11. Subtle, Restrained Contact Shadow (Directly beneath emblem on floor plane, DoubleSide, No dark halo)
     const shadowTexture = createContactShadowTexture();
-    const shadowPlaneGeometry = new THREE.PlaneGeometry(540, 120);
+    const shadowPlaneGeometry = new THREE.PlaneGeometry(580, 140);
     const shadowPlaneMaterial = new THREE.MeshBasicMaterial({
       map: shadowTexture,
       transparent: true,
-      opacity: 0.32,
+      opacity: 0.88,
       side: THREE.DoubleSide,
       depthWrite: false,
     });
     const shadowMesh = new THREE.Mesh(shadowPlaneGeometry, shadowPlaneMaterial);
-    // In local emblem space (with rotX = PI), negative Y translates to world -Y (bottom)
-    shadowMesh.position.set(0, 255, 30);
-    emblemGroup.add(shadowMesh);
+    // Grounded in rootGroup coordinates: Y = -250 (beneath emblem), slightly pitched to match perspective floor
+    shadowMesh.position.set(0, -250, 15);
+    shadowMesh.rotation.x = -0.28;
+    rootGroup.add(shadowMesh);
 
     // Pointer Interaction Handlers — Tilting around the Authoritative 3D Hero Perspective Angle
     const handlePointerMove = (e: PointerEvent) => {
@@ -646,6 +672,13 @@ export const Orion3DLogo: React.FC<Orion3DLogoProps> = ({
     let animationFrameId: number;
     const clock = new THREE.Clock();
 
+    const handleVisibility = () => {
+      if (!document.hidden) {
+        clock.start();
+      }
+    };
+    document.addEventListener('visibilitychange', handleVisibility);
+
     const animate = () => {
       animationFrameId = requestAnimationFrame(animate);
 
@@ -668,29 +701,60 @@ export const Orion3DLogo: React.FC<Orion3DLogoProps> = ({
           interactionRef.current.currentRotZ) *
         lerpFactor;
 
-      // Subtle idle breathing oscillation (disabled if reduced motion)
+      // Continuous organic idle levitation & breathing motion (disabled if reduced motion)
       let idlePitch = 0;
       let idleYaw = 0;
+      let idleRoll = 0;
       let idleFloat = 0;
 
       if (!isReduced) {
-        idlePitch = Math.sin(elapsedTime * 1.2) * 0.015;
-        idleYaw = Math.cos(elapsedTime * 0.8) * 0.018;
-        idleFloat = Math.sin(elapsedTime * 1.5) * 2.5;
+        // Visible, graceful hovering levitation (amplitude ~13 units in Three.js world space)
+        idleFloat = Math.sin(elapsedTime * 1.5) * 13.0;
+        idlePitch = Math.sin(elapsedTime * 1.1) * 0.034;
+        idleYaw = Math.cos(elapsedTime * 0.8) * 0.044;
+        idleRoll = Math.sin(elapsedTime * 0.6) * 0.015;
+
+        // Kinetic orbital sphere: glides gracefully along the right arc of the orbital ellipse
+        const orbitAngle = -0.15 + Math.sin(elapsedTime * 0.85) * 0.30;
+        const sx = 385 * Math.cos(orbitAngle) + 49;
+        const sy = 280 * Math.sin(orbitAngle) + 20;
+        const sz = (sx / 385) * -75 - 12;
+        sphereGroup.position.set(sx, sy, sz);
+
+        // Orbital ring subtle harmonic precession
+        orbitalMesh.rotation.z = -0.26 + Math.sin(elapsedTime * 0.7) * 0.022;
+
+        // Starburst periodic glint shimmer: brilliant gleam every ~3.5 seconds
+        const glintPhase = (elapsedTime * 0.8) % (Math.PI * 2);
+        const glint = Math.pow(Math.max(0, Math.sin(glintPhase)), 8);
+        const starScale = 1.0 + glint * 0.32;
+        starburstGroup.scale.set(starScale, starScale, 1);
+        starburstMaterial.emissiveIntensity = 1.6 + glint * 2.2;
       }
 
+      // Smooth initial entrance glide integration
+      const entranceY = state
+        ? (1 - Math.min(1, Math.max(0, state.infinityOpacity))) * -24
+        : 0;
+
+      emblemGroup.position.y = idleFloat + entranceY;
       emblemGroup.rotation.x =
         interactionRef.current.currentRotX + idlePitch;
       emblemGroup.rotation.y =
         interactionRef.current.currentRotY + idleYaw;
       emblemGroup.rotation.z =
-        interactionRef.current.currentRotZ;
-      emblemGroup.position.y = idleFloat;
+        interactionRef.current.currentRotZ + idleRoll;
 
-      // Gentle starburst shimmer
-      const starScale =
-        1 + (isReduced ? 0 : Math.sin(elapsedTime * 3.2) * 0.06);
-      starburstGroup.scale.set(starScale, starScale, 1);
+      // Realistic ground contact shadow dynamic reaction:
+      // Contracts and darkens slightly as the emblem dips near the ground;
+      // expands and softens as the emblem levitates higher.
+      const shadowLift = (idleFloat + 13) / 26; // 0 to 1
+      shadowMesh.scale.set(
+        1.0 + (1 - shadowLift) * 0.06,
+        1.0 - shadowLift * 0.04,
+        1.0
+      );
+      shadowPlaneMaterial.opacity = 0.58 - shadowLift * 0.16;
 
       // Intro sequence scaling & opacity integration
       if (state) {
@@ -711,6 +775,7 @@ export const Orion3DLogo: React.FC<Orion3DLogoProps> = ({
     // Comprehensive Resource Cleanup
     return () => {
       cancelAnimationFrame(animationFrameId);
+      document.removeEventListener('visibilitychange', handleVisibility);
       container.removeEventListener('pointermove', handlePointerMove);
       container.removeEventListener('pointerleave', handlePointerLeave);
       mediaQuery.removeEventListener('change', onMotionPreferenceChange);
