@@ -2,14 +2,10 @@ import React, { useState, useMemo } from 'react';
 import {
   CheckCircle2,
   Clock,
-  Calendar,
-  Share2,
   Copy,
   Check,
   ChevronLeft,
   ChevronRight,
-  ExternalLink,
-  BookOpen,
 } from 'lucide-react';
 import { DocsBreadcrumbs } from './DocsBreadcrumbs';
 import { DocsTableOfContents } from './DocsTableOfContents';
@@ -103,7 +99,7 @@ export const DocsArticleView: React.FC<DocsArticleViewProps> = ({
     return null;
   };
 
-  // Custom simple Markdown renderer for dark enterprise aesthetic
+  // Standard Markdown renderer matching the main website's editorial design system
   const renderMarkdownContent = () => {
     const lines = rawMarkdown.split('\n');
     const elements: React.ReactNode[] = [];
@@ -120,20 +116,20 @@ export const DocsArticleView: React.FC<DocsArticleViewProps> = ({
       const body = tableRows.slice(1).filter((r) => !r.every((c) => /^[-:]+$/.test(c.trim())));
 
       elements.push(
-        <div key={`table-${elements.length}`} className="my-6 overflow-x-auto rounded-xl border border-slate-800 bg-[#070B19]/60">
-          <table className="w-full text-left text-xs font-mono">
-            <thead className="border-b border-slate-800 bg-slate-900/60 text-slate-300">
+        <div key={`table-${elements.length}`} className="my-6 overflow-x-auto rounded-2xl border border-[var(--glass-border-subtle)] liquid-glass shadow-xs">
+          <table className="w-full text-left text-xs font-sans">
+            <thead className="border-b border-[var(--glass-border-subtle)] bg-white/60 dark:bg-black/30 text-[var(--orion-text-primary)]">
               <tr>
                 {header.map((col, i) => (
-                  <th key={i} className="px-4 py-3 font-bold text-cyan-400">
+                  <th key={i} className="px-4 py-3 font-bold text-[var(--orion-accent)]">
                     {col.trim()}
                   </th>
                 ))}
               </tr>
             </thead>
-            <tbody className="divide-y divide-slate-800/60 text-slate-300">
+            <tbody className="divide-y divide-[var(--glass-border-subtle)] text-[var(--orion-text-secondary)]">
               {body.map((row, rIdx) => (
-                <tr key={rIdx} className="hover:bg-slate-900/30">
+                <tr key={rIdx} className="hover:bg-black/5 dark:hover:bg-white/5 transition">
                   {row.map((cell, cIdx) => (
                     <td key={cIdx} className="px-4 py-3 leading-relaxed">
                       {cell.trim()}
@@ -162,20 +158,27 @@ export const DocsArticleView: React.FC<DocsArticleViewProps> = ({
           const codeString = codeBuffer.join('\n');
           const currentIdx = codeBlockCount++;
           elements.push(
-            <div key={`code-${index}`} className="my-5 rounded-xl border border-slate-800 bg-[#030712] overflow-hidden">
-              <div className="flex items-center justify-between px-4 py-2 border-b border-slate-800 bg-slate-950/80 text-[11px] font-mono text-slate-400">
-                <span className="uppercase tracking-wider text-cyan-400">
-                  {codeLanguage || 'CODE'}
-                </span>
+            <div key={`code-${index}`} className="my-6 rounded-2xl border border-[#1E293B] bg-[#070B19] overflow-hidden shadow-xl text-slate-200">
+              <div className="flex items-center justify-between px-4 py-2.5 border-b border-[#1E293B] bg-[#0A101D] text-[11px] font-mono text-slate-400">
+                <div className="flex items-center gap-2">
+                  <div className="flex items-center gap-1.5 mr-2">
+                    <span className="w-2.5 h-2.5 rounded-full bg-slate-700 inline-block" />
+                    <span className="w-2.5 h-2.5 rounded-full bg-slate-700 inline-block" />
+                    <span className="w-2.5 h-2.5 rounded-full bg-slate-700 inline-block" />
+                  </div>
+                  <span className="uppercase tracking-wider text-[#38BDF8] font-bold">
+                    {codeLanguage || 'SOURCE'}
+                  </span>
+                </div>
                 <button
                   type="button"
                   onClick={() => handleCopyCode(codeString, currentIdx)}
-                  className="flex items-center gap-1.5 text-slate-400 hover:text-white transition cursor-pointer"
+                  className="flex items-center gap-1.5 text-slate-400 hover:text-white transition cursor-pointer font-sans"
                 >
                   {copiedCodeIndex === currentIdx ? (
                     <>
                       <Check className="w-3.5 h-3.5 text-emerald-400" />
-                      <span className="text-emerald-400">Copied</span>
+                      <span className="text-emerald-400 font-semibold">Copied</span>
                     </>
                   ) : (
                     <>
@@ -185,7 +188,7 @@ export const DocsArticleView: React.FC<DocsArticleViewProps> = ({
                   )}
                 </button>
               </div>
-              <pre className="p-4 text-xs font-mono text-slate-200 overflow-x-auto leading-relaxed">
+              <pre className="p-4 sm:p-5 text-xs sm:text-sm font-mono text-slate-200 overflow-x-auto leading-relaxed">
                 <code>{codeString}</code>
               </pre>
             </div>
@@ -225,7 +228,7 @@ export const DocsArticleView: React.FC<DocsArticleViewProps> = ({
           <h2
             key={`h2-${index}`}
             id={id}
-            className="text-xl sm:text-2xl font-bold text-white mt-10 mb-4 pt-4 border-t border-slate-800/60 scroll-mt-24"
+            className="text-xl sm:text-2xl font-editorial font-bold text-[var(--orion-text-primary)] mt-12 mb-4 pt-4 border-t border-[var(--glass-border-subtle)] scroll-mt-24"
           >
             {text}
           </h2>
@@ -238,9 +241,19 @@ export const DocsArticleView: React.FC<DocsArticleViewProps> = ({
         const text = line.replace('### ', '').trim();
         const id = text.toLowerCase().replace(/[^\w\s-]/g, '').replace(/\s+/g, '-');
         elements.push(
-          <h3 key={`h3-${index}`} id={id} className="text-base sm:text-lg font-bold text-cyan-300 mt-6 mb-2 scroll-mt-24">
+          <h3 key={`h3-${index}`} id={id} className="text-base sm:text-lg font-bold text-[var(--orion-accent)] mt-8 mb-2 scroll-mt-24 font-sans">
             {text}
           </h3>
+        );
+        return;
+      }
+
+      // Blockquotes / Tips
+      if (line.startsWith('> ')) {
+        elements.push(
+          <blockquote key={`quote-${index}`} className="my-4 p-4 rounded-xl liquid-glass-elevated border-l-4 border-[var(--orion-accent)] text-xs sm:text-sm text-[var(--orion-text-secondary)] font-sans leading-relaxed">
+            {line.replace(/^>\s+/, '')}
+          </blockquote>
         );
         return;
       }
@@ -248,7 +261,7 @@ export const DocsArticleView: React.FC<DocsArticleViewProps> = ({
       // Unordered list
       if (line.startsWith('- ') || line.startsWith('* ')) {
         elements.push(
-          <li key={`li-${index}`} className="ml-4 list-disc text-xs sm:text-sm text-slate-300 leading-relaxed my-1">
+          <li key={`li-${index}`} className="ml-5 list-disc text-sm sm:text-base text-[var(--orion-text-secondary)] leading-relaxed my-1.5 font-sans">
             {line.replace(/^[-*]\s+/, '')}
           </li>
         );
@@ -259,7 +272,7 @@ export const DocsArticleView: React.FC<DocsArticleViewProps> = ({
       const numMatch = line.match(/^(\d+)\.\s+(.+)$/);
       if (numMatch) {
         elements.push(
-          <li key={`oli-${index}`} className="ml-4 list-decimal text-xs sm:text-sm text-slate-300 leading-relaxed my-1">
+          <li key={`oli-${index}`} className="ml-5 list-decimal text-sm sm:text-base text-[var(--orion-text-secondary)] leading-relaxed my-1.5 font-sans">
             {numMatch[2]}
           </li>
         );
@@ -273,7 +286,7 @@ export const DocsArticleView: React.FC<DocsArticleViewProps> = ({
 
       // Normal paragraph
       elements.push(
-        <p key={`p-${index}`} className="text-xs sm:text-sm text-slate-300 leading-relaxed my-3 font-sans">
+        <p key={`p-${index}`} className="text-sm sm:text-base text-[var(--orion-text-secondary)] leading-relaxed my-4 font-sans">
           {line}
         </p>
       );
@@ -294,24 +307,24 @@ export const DocsArticleView: React.FC<DocsArticleViewProps> = ({
         />
 
         {/* Article Metadata Bar */}
-        <header className="space-y-4 pb-6 border-b border-slate-800">
-          <div className="flex flex-wrap items-center gap-2 text-xs font-mono">
-            <span className="px-2.5 py-0.5 rounded-full bg-cyan-500/10 text-cyan-400 border border-cyan-500/20 font-semibold">
+        <header className="space-y-4 pb-6 border-b border-[var(--glass-border-subtle)]">
+          <div className="flex flex-wrap items-center gap-2.5 text-xs font-sans">
+            <span className="px-3 py-1 rounded-full liquid-glass-badge text-[var(--orion-accent)] font-semibold text-xs">
               {currentCategory}
             </span>
-            <span className="text-slate-500">·</span>
-            <span className="text-slate-400 flex items-center gap-1">
+            <span className="opacity-40">·</span>
+            <span className="text-[var(--orion-text-muted)] flex items-center gap-1.5 font-medium">
               <Clock className="w-3.5 h-3.5" />
               <span>4 min read</span>
             </span>
-            <span className="text-slate-500">·</span>
-            <span className="text-emerald-400 flex items-center gap-1">
+            <span className="opacity-40">·</span>
+            <span className="text-emerald-600 dark:text-emerald-400 flex items-center gap-1.5 font-medium">
               <CheckCircle2 className="w-3.5 h-3.5" />
               <span>Verified Implementation</span>
             </span>
           </div>
 
-          <h1 className="text-2xl sm:text-4xl font-editorial font-bold text-white tracking-tight leading-tight">
+          <h1 className="text-2xl sm:text-4xl font-editorial font-bold text-[var(--orion-text-primary)] tracking-tight leading-tight">
             {articleTitle}
           </h1>
         </header>
@@ -320,20 +333,20 @@ export const DocsArticleView: React.FC<DocsArticleViewProps> = ({
         {renderInteractiveDemo()}
 
         {/* Rendered Documentation Text */}
-        <div className="pt-6 prose-invert">{renderMarkdownContent()}</div>
+        <div className="pt-6">{renderMarkdownContent()}</div>
 
         {/* Previous / Next Article Navigation Footer */}
-        <footer className="mt-14 pt-6 border-t border-slate-800 flex flex-wrap items-center justify-between gap-4 font-mono text-xs">
+        <footer className="mt-14 pt-6 border-t border-[var(--glass-border-subtle)] flex flex-wrap items-center justify-between gap-4 font-sans text-xs">
           {prevItem ? (
             <button
               type="button"
               onClick={() => onNavigate(prevItem.path)}
-              className="p-3 rounded-xl border border-slate-800 bg-[#070B19] hover:border-cyan-500/40 text-left transition cursor-pointer flex items-center gap-3 group"
+              className="p-4 rounded-2xl liquid-glass-card border border-[var(--glass-border)] hover:border-[var(--orion-accent)] text-left transition cursor-pointer flex items-center gap-3 group shadow-2xs hover:shadow-md"
             >
-              <ChevronLeft className="w-4 h-4 text-cyan-400 group-hover:-translate-x-0.5 transition" />
+              <ChevronLeft className="w-4 h-4 text-[var(--orion-accent)] group-hover:-translate-x-0.5 transition" />
               <div>
-                <span className="text-[10px] text-slate-500 uppercase block">Previous Article</span>
-                <span className="text-slate-200 font-semibold group-hover:text-cyan-300 transition truncate max-w-[200px] block">
+                <span className="text-[10px] font-mono text-[var(--orion-text-muted)] uppercase block">Previous Article</span>
+                <span className="text-[var(--orion-text-primary)] font-semibold group-hover:text-[var(--orion-accent)] transition truncate max-w-[220px] block mt-0.5">
                   {prevItem.title}
                 </span>
               </div>
@@ -346,15 +359,15 @@ export const DocsArticleView: React.FC<DocsArticleViewProps> = ({
             <button
               type="button"
               onClick={() => onNavigate(nextItem.path)}
-              className="p-3 rounded-xl border border-slate-800 bg-[#070B19] hover:border-cyan-500/40 text-right transition cursor-pointer flex items-center gap-3 group"
+              className="p-4 rounded-2xl liquid-glass-card border border-[var(--glass-border)] hover:border-[var(--orion-accent)] text-right transition cursor-pointer flex items-center gap-3 group shadow-2xs hover:shadow-md"
             >
               <div>
-                <span className="text-[10px] text-slate-500 uppercase block">Next Article</span>
-                <span className="text-slate-200 font-semibold group-hover:text-cyan-300 transition truncate max-w-[200px] block">
+                <span className="text-[10px] font-mono text-[var(--orion-text-muted)] uppercase block">Next Article</span>
+                <span className="text-[var(--orion-text-primary)] font-semibold group-hover:text-[var(--orion-accent)] transition truncate max-w-[220px] block mt-0.5">
                   {nextItem.title}
                 </span>
               </div>
-              <ChevronRight className="w-4 h-4 text-cyan-400 group-hover:translate-x-0.5 transition" />
+              <ChevronRight className="w-4 h-4 text-[var(--orion-accent)] group-hover:translate-x-0.5 transition" />
             </button>
           ) : (
             <div />

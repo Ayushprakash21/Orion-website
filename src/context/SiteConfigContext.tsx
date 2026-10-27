@@ -11,7 +11,12 @@ import {
   AuditLogEntry,
 } from '../types/cms';
 import { DEFAULT_SITE_CONFIG } from '../data/defaultSiteConfig';
-import { sanitizeForFirestore, normalizeBrandingConfig, validateBrandingConfig } from '../utils/cms-validation';
+import {
+  sanitizeForFirestore,
+  normalizeBrandingConfig,
+  validateBrandingConfig,
+  validateStoragePayloadSafeguards,
+} from '../utils/cms-validation';
 import {
   initializeFirebase,
   doc,
@@ -154,7 +159,7 @@ export function SiteConfigProvider({ children }: { children: React.ReactNode }) 
         'desktopReleases',
       ];
 
-      const nextPublished: SiteConfigurationBundle = { ...publishedConfig };
+      const nextPublished: SiteConfigurationBundle = { ...DEFAULT_SITE_CONFIG };
       let anyFound = false;
 
       for (const sec of sections) {
@@ -186,6 +191,37 @@ export function SiteConfigProvider({ children }: { children: React.ReactNode }) 
 
       if (isAdmin) {
         try {
+          const nextDrafts = { ...(anyFound ? nextPublished : DEFAULT_SITE_CONFIG) };
+          let anyDraftFound = false;
+          for (const sec of sections) {
+            try {
+              const draftSnap = await getDoc(doc(db, 'siteConfigDrafts', sec));
+              if (draftSnap.exists()) {
+                anyDraftFound = true;
+                const draftData = draftSnap.data();
+                (nextDrafts as unknown as Record<string, unknown>)[sec] =
+                  sec === 'branding'
+                    ? normalizeBrandingConfig({ ...(DEFAULT_SITE_CONFIG.branding), ...draftData })
+                    : {
+                        ...(DEFAULT_SITE_CONFIG[sec] as object),
+                        ...draftData,
+                      };
+              }
+            } catch {
+              // Ignore
+            }
+          }
+          if (anyDraftFound) {
+            setDraftConfig(nextDrafts);
+            if (typeof window !== 'undefined') {
+              window.localStorage.setItem(DRAFT_STORAGE_KEY, JSON.stringify(nextDrafts));
+            }
+          }
+        } catch {
+          // Ignore
+        }
+
+        try {
           const q = query(collection(db, 'auditLogs'), orderBy('timestamp', 'desc'), limit(35));
           const logsSnap = await getDocs(q);
           if (!logsSnap.empty) {
@@ -202,7 +238,7 @@ export function SiteConfigProvider({ children }: { children: React.ReactNode }) 
     } finally {
       setLoadingConfig(false);
     }
-  }, [isAdmin, publishedConfig]);
+  }, [isAdmin]);
 
   useEffect(() => {
     refreshFromFirestore();
@@ -276,22 +312,41 @@ export function SiteConfigProvider({ children }: { children: React.ReactNode }) 
       updatedBy: user?.email || user?.uid || 'admin',
     });
 
-    // 3. Firestore persistence FIRST: Only commit to runtime upon persistence success
-    const { db, isConfigured } = initializeFirebase();
-    if (isConfigured && db && user) {
-      try {
-        await setDoc(doc(db, 'siteConfigDrafts', String(section)), payload, { merge: true });
-      } catch (err: unknown) {
-        const errorMsg = err instanceof Error ? err.message : 'Firestore draft write failed.';
-        console.error(`[SiteConfigContext] Failed to persist draft for ${String(section)}:`, err);
-        return {
-          success: false,
-          error: `Draft not saved. Firestore write failed: ${errorMsg}`,
-        };
-      }
+    // 3. Document size safeguard: Reject large payloads (> 800 KB) and Base64 URLs (> 10 KB)
+    const safeguardCheck = validateStoragePayloadSafeguards(payload);
+    if (!safeguardCheck.valid) {
+      return { success: false, error: safeguardCheck.error };
     }
 
-    // 4. Update local draft state ONLY after persistence confirmation
+    // 4. Cloud configuration and authentication check
+    const { db, isConfigured } = initializeFirebase();
+    if (!isConfigured || !db) {
+      return {
+        success: false,
+        error: 'Firebase is not configured. Cloud persistence requires active Firebase configuration.',
+      };
+    }
+
+    if (!user) {
+      return {
+        success: false,
+        error: 'Authentication required. Please sign in with verified administrator credentials to persist changes.',
+      };
+    }
+
+    // 5. Firestore persistence FIRST: Only commit to runtime upon persistence success
+    try {
+      await setDoc(doc(db, 'siteConfigDrafts', String(section)), payload, { merge: true });
+    } catch (err: unknown) {
+      const errorMsg = err instanceof Error ? err.message : 'Firestore draft write failed.';
+      console.error(`[SiteConfigContext] Failed to persist draft for ${String(section)}:`, err);
+      return {
+        success: false,
+        error: `Draft not saved. Firestore write failed: ${errorMsg}`,
+      };
+    }
+
+    // 6. Update local draft state ONLY after persistence confirmation
     const nextDraft: SiteConfigurationBundle = {
       ...draftConfig,
       [section]: normalizedData as SiteConfigurationBundle[K],
@@ -331,22 +386,41 @@ export function SiteConfigProvider({ children }: { children: React.ReactNode }) 
       updatedBy: user?.email || user?.uid || 'admin',
     });
 
-    // 3. Firestore persistence FIRST: Active runtime must NOT be updated if persistence fails
-    const { db, isConfigured } = initializeFirebase();
-    if (isConfigured && db && user) {
-      try {
-        await setDoc(doc(db, 'siteConfig', String(section)), payload, { merge: true });
-      } catch (err: unknown) {
-        const errorMsg = err instanceof Error ? err.message : 'Firestore publish failed.';
-        console.error(`[SiteConfigContext] Failed to publish ${String(section)} to Firestore:`, err);
-        return {
-          success: false,
-          error: `Publication failed. Firestore sync returned: ${errorMsg}`,
-        };
-      }
+    // 3. Document size safeguard: Reject large payloads (> 800 KB) and Base64 URLs (> 10 KB)
+    const safeguardCheck = validateStoragePayloadSafeguards(payload);
+    if (!safeguardCheck.valid) {
+      return { success: false, error: safeguardCheck.error };
     }
 
-    // 4. Update active runtime & local persistence ONLY after persistence confirms
+    // 4. Cloud configuration and authentication check
+    const { db, isConfigured } = initializeFirebase();
+    if (!isConfigured || !db) {
+      return {
+        success: false,
+        error: 'Firebase is not configured. Cloud persistence requires active Firebase configuration.',
+      };
+    }
+
+    if (!user) {
+      return {
+        success: false,
+        error: 'Authentication required. Please sign in with verified administrator credentials to persist changes.',
+      };
+    }
+
+    // 5. Firestore persistence FIRST: Active runtime must NOT be updated if persistence fails
+    try {
+      await setDoc(doc(db, 'siteConfig', String(section)), payload, { merge: true });
+    } catch (err: unknown) {
+      const errorMsg = err instanceof Error ? err.message : 'Firestore publish failed.';
+      console.error(`[SiteConfigContext] Failed to publish ${String(section)} to Firestore:`, err);
+      return {
+        success: false,
+        error: `Publication failed. Firestore sync returned: ${errorMsg}`,
+      };
+    }
+
+    // 6. Update active runtime & local persistence ONLY after persistence confirms
     const nextPublished: SiteConfigurationBundle = {
       ...publishedConfig,
       [section]: normalizedData as SiteConfigurationBundle[K],

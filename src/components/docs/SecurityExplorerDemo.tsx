@@ -8,8 +8,6 @@ import {
   AlertOctagon,
   ExternalLink,
   CheckCircle2,
-  Server,
-  Layers,
 } from 'lucide-react';
 
 interface SecurityLayer {
@@ -69,31 +67,47 @@ export const SecurityExplorerDemo: React.FC<{ onNavigate?: (path: string) => voi
   const activeLayer = SECURITY_LAYERS[activeLayerIndex];
 
   return (
-    <div className="w-full my-8 rounded-2xl border border-slate-800 bg-[#070B19]/90 backdrop-blur-xl shadow-2xl overflow-hidden">
+    <div className="w-full my-8 rounded-2xl liquid-glass-elevated border border-[var(--glass-border)] shadow-xl overflow-hidden">
+      {/* Simulation Disclaimer Bar */}
+      <div className="px-5 py-2 bg-amber-500/10 border-b border-amber-500/20 text-[11px] text-amber-800 font-sans flex items-center justify-between">
+        <span className="font-semibold tracking-wide">
+          SECURITY ARCHITECTURE SPECIFICATION &middot; READ-ONLY REFERENCE
+        </span>
+        <span className="text-[10px] text-amber-700/80">Fail-Closed Verification Engine</span>
+      </div>
+
       {/* Header */}
-      <div className="flex flex-wrap items-center justify-between gap-4 px-5 py-3.5 border-b border-slate-800/80 bg-slate-900/40">
-        <div className="flex items-center gap-2.5">
-          <div className="w-2.5 h-2.5 rounded-full bg-emerald-400 animate-pulse" />
-          <span className="text-xs font-mono font-semibold tracking-wider text-emerald-400 uppercase">
-            Defense-in-Depth Security Explorer
-          </span>
-          <span className="text-xs text-slate-400">· Fail-Closed Architecture</span>
+      <div className="flex flex-wrap items-center justify-between gap-4 px-5 py-3.5 border-b border-[var(--glass-border-subtle)] bg-[var(--glass-surface-subtle)]">
+        <div className="flex items-center gap-3">
+          <div className="flex items-center gap-1.5" aria-hidden="true">
+            <span className="w-3 h-3 rounded-full bg-[#FF5F56] border border-[#E0443E]/50 shadow-sm" />
+            <span className="w-3 h-3 rounded-full bg-[#FFBD2E] border border-[#DEA123]/50 shadow-sm" />
+            <span className="w-3 h-3 rounded-full bg-[#27C93F] border border-[#1AAB29]/50 shadow-sm" />
+          </div>
+          <div>
+            <span className="text-xs font-semibold text-[var(--orion-text-primary)]">
+              Defense-in-Depth Security Layers
+            </span>
+            <span className="text-xs text-[var(--orion-text-muted)] ml-2">
+              Multi-Tenant Zero-Trust Model
+            </span>
+          </div>
         </div>
 
         {/* Layer Selector */}
-        <div className="flex items-center gap-1.5 p-1 rounded-xl bg-slate-950/70 border border-slate-800">
+        <div className="flex items-center gap-1 p-1 rounded-xl bg-[var(--orion-surface)] border border-[var(--glass-border-subtle)] shadow-xs">
           {SECURITY_LAYERS.map((layer, i) => (
             <button
               key={layer.id}
               type="button"
               onClick={() => setActiveLayerIndex(i)}
-              className={`px-3 py-1 rounded-lg text-xs font-mono font-semibold transition cursor-pointer flex items-center gap-1.5 ${
+              className={`px-3 py-1 rounded-lg text-xs font-medium transition cursor-pointer flex items-center gap-1.5 ${
                 activeLayerIndex === i
-                  ? 'bg-emerald-500 text-slate-950 shadow-sm'
-                  : 'text-slate-400 hover:text-white'
+                  ? 'bg-[#070B19] text-white shadow-sm'
+                  : 'text-[var(--orion-text-secondary)] hover:text-[var(--orion-text-primary)] hover:bg-[var(--glass-surface-subtle)]'
               }`}
             >
-              <span>{layer.number}</span>
+              <span className="font-mono text-[11px] opacity-75">{layer.number}</span>
               <span className="hidden sm:inline">{layer.title.split(' ')[0]}</span>
             </button>
           ))}
@@ -101,31 +115,31 @@ export const SecurityExplorerDemo: React.FC<{ onNavigate?: (path: string) => voi
       </div>
 
       {/* Layer Content */}
-      <div className="p-5 sm:p-6 bg-[#030712]/90 space-y-4">
+      <div className="p-5 sm:p-6 space-y-4 bg-gradient-to-b from-transparent to-[var(--orion-alt-bg)]/30">
         <AnimatePresence mode="wait">
           <motion.div
             key={activeLayer.id}
             initial={{ opacity: 0, y: 6 }}
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: -6 }}
-            transition={{ duration: 0.2 }}
+            transition={{ duration: 0.15 }}
             className="space-y-4"
           >
             <div>
-              <span className="text-[10px] font-mono font-bold text-emerald-400 tracking-wider uppercase">
+              <span className="inline-block px-2.5 py-0.5 rounded-full text-[10px] font-mono font-bold text-emerald-800 bg-emerald-100 border border-emerald-300 tracking-wider uppercase mb-2">
                 SECURITY PILLAR {activeLayer.number} / 04
               </span>
-              <h3 className="text-base sm:text-lg font-bold text-white mt-0.5">
+              <h3 className="text-base sm:text-lg font-editorial font-bold text-[var(--orion-text-primary)]">
                 {activeLayer.title}
               </h3>
-              <p className="text-xs sm:text-sm text-slate-300 mt-1 leading-relaxed font-sans">
+              <p className="text-xs sm:text-sm text-[var(--orion-text-secondary)] mt-1 leading-relaxed font-sans">
                 {activeLayer.mechanism}
               </p>
             </div>
 
             {/* Code Specification Box */}
-            <div className="p-4 rounded-xl border border-slate-800 bg-slate-950/80 font-mono text-xs space-y-2">
-              <span className="text-[10px] text-slate-500 font-bold uppercase tracking-wider block">
+            <div className="p-4 rounded-xl border border-[var(--glass-border)] bg-[#070B19] text-slate-100 font-mono text-xs space-y-2 shadow-inner">
+              <span className="text-[10px] text-slate-400 font-bold uppercase tracking-wider block">
                 Enforcement Invariant
               </span>
               <code className="text-emerald-400 block overflow-x-auto py-1">
@@ -134,22 +148,22 @@ export const SecurityExplorerDemo: React.FC<{ onNavigate?: (path: string) => voi
             </div>
 
             {/* Mitigation & Evidence Row */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 font-mono text-xs">
-              <div className="p-3.5 rounded-xl border border-slate-800 bg-slate-900/60">
-                <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block mb-1">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs">
+              <div className="p-4 rounded-xl border border-[var(--glass-border-subtle)] bg-[var(--orion-surface)] shadow-xs">
+                <span className="text-[10px] font-bold text-[var(--orion-text-muted)] uppercase tracking-wider block mb-1">
                   Threat Mitigation
                 </span>
-                <p className="text-slate-300 leading-relaxed font-sans">
+                <p className="text-[var(--orion-text-secondary)] leading-relaxed font-sans">
                   {activeLayer.attackMitigation}
                 </p>
               </div>
 
-              <div className="p-3.5 rounded-xl border border-slate-800 bg-slate-900/60">
-                <span className="text-[10px] font-bold text-cyan-400 uppercase tracking-wider block mb-1">
+              <div className="p-4 rounded-xl border border-[var(--glass-border-subtle)] bg-[var(--orion-surface)] shadow-xs">
+                <span className="text-[10px] font-bold text-[#0284C7] uppercase tracking-wider block mb-1">
                   Audit Certification
                 </span>
-                <p className="text-slate-300 leading-relaxed font-sans">
-                  Validated in <code className="text-cyan-400">{activeLayer.evidenceDoc}</code>
+                <p className="text-[var(--orion-text-secondary)] leading-relaxed font-sans">
+                  Validated in <code className="text-[#0284C7] font-semibold">{activeLayer.evidenceDoc}</code>
                 </p>
               </div>
             </div>
@@ -158,14 +172,14 @@ export const SecurityExplorerDemo: React.FC<{ onNavigate?: (path: string) => voi
       </div>
 
       {/* Footer */}
-      <div className="px-5 py-3.5 border-t border-slate-800/80 bg-slate-950/80 flex flex-wrap items-center justify-between gap-3 text-xs font-mono">
-        <span className="text-slate-400">
-          Security Test Suite: <code className="text-emerald-400">scripts/runSecurityTests.mjs</code> (100% Pass)
+      <div className="px-5 py-3 border-t border-[var(--glass-border-subtle)] bg-[var(--glass-surface-subtle)] flex flex-wrap items-center justify-between gap-3 text-xs">
+        <span className="text-[var(--orion-text-muted)] font-mono text-[11px]">
+          Security Test Suite: <code className="text-emerald-700 font-semibold">scripts/runSecurityTests.mjs</code> (100% Pass)
         </span>
         <button
           type="button"
           onClick={() => onNavigate && onNavigate('/docs/security/access-control')}
-          className="text-emerald-400 hover:text-emerald-300 transition flex items-center gap-1 cursor-pointer"
+          className="text-[#0284C7] hover:underline font-medium transition flex items-center gap-1 cursor-pointer"
         >
           <span>Access Control Security Manual</span>
           <ExternalLink className="w-3 h-3" />

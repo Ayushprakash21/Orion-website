@@ -194,7 +194,8 @@ export async function validateLogoFile(file: File): Promise<FileValidationResult
 
 /**
  * Uploads a validated logo file to Firebase Storage under branding/logos/
- * or generates a persistent local URL fallback when Firebase Storage is offline.
+ * and returns the permanent cloud download URL.
+ * NEVER silently falls back to Base64 on upload failure.
  */
 export async function uploadBrandingLogoAsset(
   placement: 'header' | 'auth' | 'footer' | 'default' | 'shared',
@@ -211,89 +212,90 @@ export async function uploadBrandingLogoAsset(
   const sizeBytes = validation.sizeBytes || file.size;
 
   const storage = getFirebaseStorageInstance();
-
-  // If Firebase Storage is initialized and online, upload directly to the bucket
-  if (storage) {
-    try {
-      const cleanFileName = file.name.replace(/[^a-zA-Z0-9._-]/g, '_');
-      const storagePath = `branding/logos/${placement}_${Date.now()}_${cleanFileName}`;
-      const fileRef = ref(storage, storagePath);
-
-      let payload: Blob = file;
-      if (validation.sanitizedContent) {
-        payload = new Blob([validation.sanitizedContent], { type: 'image/svg+xml' });
-      }
-
-      const uploadTask = uploadBytesResumable(fileRef, payload, {
-        contentType: fileType,
-        customMetadata: {
-          placement,
-          dimensions,
-          originalName: file.name,
-          uploadedAt: new Date().toISOString(),
-        },
-      });
-
-      await new Promise<void>((resolve, reject) => {
-        uploadTask.on(
-          'state_changed',
-          (snapshot) => {
-            const pct = Math.round((snapshot.bytesTransferred / snapshot.totalBytes) * 100);
-            if (onProgress) onProgress(pct);
-          },
-          (error) => {
-            console.error('[BrandingStorage] Firebase Storage upload error:', error);
-            reject(error);
-          },
-          () => {
-            if (onProgress) onProgress(100);
-            resolve();
-          }
-        );
-      });
-
-      const downloadUrl = await getDownloadURL(fileRef);
-
-      return {
-        url: downloadUrl,
-        dimensions,
-        fileType,
-        sizeBytes,
-        uploadedAt: new Date().toISOString(),
-      };
-    } catch (storageErr) {
-      console.warn('[BrandingStorage] Cloud storage upload failed, falling back to local asset data URL:', storageErr);
-    }
+  if (!storage) {
+    throw new Error(
+      'Firebase Storage is not configured. Cloud persistence requires an active Firebase Storage bucket.'
+    );
   }
 
-  // Local development / offline fallback:
-  if (onProgress) {
-    onProgress(50);
-    await new Promise((r) => setTimeout(r, 120));
-    onProgress(100);
-  }
+  try {
+    const cleanFileName = file.name.replace(/[^a-zA-Z0-9._-]/g, '_');
+    const storagePath = `branding/logos/${placement}_${Date.now()}_${cleanFileName}`;
+    const fileRef = ref(storage, storagePath);
 
-  // Convert to clean Data URL or Object URL for local persistence
-  const localDataUrl = await new Promise<string>((resolve, reject) => {
+    let payload: Blob = file;
     if (validation.sanitizedContent) {
-      const blob = new Blob([validation.sanitizedContent], { type: 'image/svg+xml' });
-      const reader = new FileReader();
-      reader.onload = () => resolve(reader.result as string);
-      reader.onerror = reject;
-      reader.readAsDataURL(blob);
-    } else {
-      const reader = new FileReader();
-      reader.onload = () => resolve(reader.result as string);
-      reader.onerror = reject;
-      reader.readAsDataURL(file);
+      payload = new Blob([validation.sanitizedContent], { type: 'image/svg+xml' });
     }
-  });
 
-  return {
-    url: localDataUrl,
-    dimensions,
-    fileType,
-    sizeBytes,
-    uploadedAt: new Date().toISOString(),
-  };
+    const uploadTask = uploadBytesResumable(fileRef, payload, {
+      contentType: fileType,
+      customMetadata: {
+        placement,
+        dimensions,
+        originalName: file.name,
+        uploadedAt: new Date().toISOString(),
+      },
+    });
+
+    await new Promise<void>((resolve, reject) => {
+      uploadTask.on(
+        'state_changed',
+        (snapshot) => {
+          const pct = Math.round((snapshot.bytesTransferred / snapshot.totalBytes) * 100);
+          if (onProgress) onProgress(pct);
+        },
+        (error) => {
+          console.error('[BrandingStorage] Firebase Storage upload error:', error);
+          reject(error);
+        },
+        () => {
+          if (onProgress) onProgress(100);
+          resolve();
+        }
+      );
+    });
+
+    const downloadUrl = await getDownloadURL(fileRef);
+    if (!downloadUrl || typeof downloadUrl !== 'string' || !downloadUrl.startsWith('http')) {
+      throw new Error('Failed to obtain a permanent download URL from Firebase Storage.');
+    }
+
+    return {
+      url: downloadUrl,
+      dimensions,
+      fileType,
+      sizeBytes,
+      uploadedAt: new Date().toISOString(),
+      originalFilename: file.name,
+    };
+  } catch (storageErr: unknown) {
+    console.error('[BrandingStorage] Cloud storage upload failed:', storageErr);
+    const errCode = (storageErr as { code?: string })?.code;
+    const errMsg = (storageErr as Error)?.message || '';
+
+    if (errCode === 'storage/unauthorized' || errMsg.toLowerCase().includes('permission') || errMsg.toLowerCase().includes('unauthorized')) {
+      throw new Error(
+        'Permission denied: You do not have permission to upload brand assets to Firebase Storage. Please ensure you are authenticated as an administrator.'
+      );
+    }
+    if (errCode === 'storage/quota-exceeded' || errMsg.toLowerCase().includes('quota')) {
+      throw new Error('Firebase Storage quota exceeded. Please contact your system administrator.');
+    }
+    if (
+      errCode === 'storage/retry-limit-exceeded' ||
+      errMsg.toLowerCase().includes('network') ||
+      errMsg.toLowerCase().includes('offline') ||
+      errMsg.toLowerCase().includes('timeout')
+    ) {
+      throw new Error(
+        'Network failure: Unable to upload logo to Firebase Storage. Please check your internet connection and try again.'
+      );
+    }
+    if (errCode === 'storage/unauthenticated' || errMsg.toLowerCase().includes('unauthenticated')) {
+      throw new Error('Authentication required: You must be signed in to upload assets.');
+    }
+
+    throw new Error(`Firebase Storage upload failed: ${errMsg || 'Unknown storage error.'}`);
+  }
 }

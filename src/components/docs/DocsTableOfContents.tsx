@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { AlignLeft, List } from 'lucide-react';
+import { List } from 'lucide-react';
 
 interface HeadingItem {
   id: string;
@@ -47,13 +47,13 @@ export const DocsTableOfContents: React.FC<{ markdownContent: string }> = ({
   if (headings.length === 0) return null;
 
   return (
-    <div className="sticky top-28 space-y-3 p-4 rounded-xl border border-slate-800 bg-[#070B19]/60 backdrop-blur-md">
-      <div className="flex items-center gap-2 text-xs font-mono font-semibold text-slate-300 uppercase tracking-wider">
-        <List className="w-3.5 h-3.5 text-cyan-400" />
+    <div className="sticky top-24 space-y-3 p-5 rounded-2xl liquid-glass-card border border-[var(--glass-border-subtle)] shadow-xs">
+      <div className="flex items-center gap-2 text-xs font-bold text-[var(--orion-text-muted)] uppercase tracking-wider font-sans">
+        <List className="w-3.5 h-3.5 text-[var(--orion-accent)]" />
         <span>On This Page</span>
       </div>
 
-      <nav className="space-y-1 text-xs">
+      <nav className="space-y-1 text-xs font-sans">
         {headings.map((h) => {
           const isAct = activeId === h.id;
           return (
@@ -61,12 +61,12 @@ export const DocsTableOfContents: React.FC<{ markdownContent: string }> = ({
               key={h.id}
               type="button"
               onClick={() => scrollToHeading(h.id)}
-              className={`block w-full text-left py-1 transition truncate cursor-pointer ${
-                h.level === 3 ? 'pl-3' : ''
+              className={`block w-full text-left py-1.5 transition truncate cursor-pointer rounded-md ${
+                h.level === 3 ? 'pl-3 text-[11px]' : ''
               } ${
                 isAct
-                  ? 'text-cyan-400 font-semibold border-l-2 border-cyan-400 pl-2'
-                  : 'text-slate-400 hover:text-slate-200'
+                  ? 'text-[var(--orion-accent)] font-semibold border-l-2 border-[var(--orion-accent)] pl-2'
+                  : 'text-[var(--orion-text-secondary)] hover:text-[var(--orion-text-primary)] hover:translate-x-0.5'
               }`}
             >
               {h.text}

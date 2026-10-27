@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useMemo, useRef } from 'react';
-import { Search, X, BookOpen, ArrowRight, Layers, Bot, Shield, Cpu, Tag } from 'lucide-react';
+import { Search, X, ArrowRight } from 'lucide-react';
 import featureCatalogData from '../../data/docs/feature-catalog.json';
 import navigationData from '../../data/docs/navigation.json';
 import articlesBundleData from '../../data/docs/articles-bundle.json';
@@ -101,10 +101,10 @@ export const DocsSearchModal: React.FC<{
         onClose();
       } else if (e.key === 'ArrowDown') {
         e.preventDefault();
-        setSelectedIndex((prev) => (prev + 1) % Math.max(1, results.length));
+        setSelectedIndex((prev) => (prev + 1 < results.length ? prev + 1 : prev));
       } else if (e.key === 'ArrowUp') {
         e.preventDefault();
-        setSelectedIndex((prev) => (prev - 1 + Math.max(1, results.length)) % Math.max(1, results.length));
+        setSelectedIndex((prev) => (prev > 0 ? prev - 1 : 0));
       } else if (e.key === 'Enter') {
         e.preventDefault();
         if (results[selectedIndex]) {
@@ -122,16 +122,16 @@ export const DocsSearchModal: React.FC<{
 
   return (
     <div
-      className="fixed inset-0 z-50 flex items-start justify-center pt-16 sm:pt-24 px-4 bg-black/80 backdrop-blur-md"
+      className="fixed inset-0 z-50 flex items-start justify-center pt-16 sm:pt-24 px-4 bg-black/50 backdrop-blur-md animate-in fade-in duration-200"
       onClick={onClose}
     >
       <div
-        className="w-full max-w-2xl rounded-2xl border border-slate-700 bg-[#070B19] shadow-2xl overflow-hidden text-slate-200"
+        className="w-full max-w-2xl liquid-glass-elevated border border-[var(--glass-border)] rounded-3xl shadow-2xl overflow-hidden text-[var(--orion-text-primary)] my-auto max-h-[85vh] flex flex-col animate-in zoom-in-95 duration-150"
         onClick={(e) => e.stopPropagation()}
       >
         {/* Search Input Bar */}
-        <div className="relative flex items-center px-4 py-3.5 border-b border-slate-800 bg-slate-900/60">
-          <Search className="w-5 h-5 text-cyan-400 shrink-0 mr-3" />
+        <div className="relative flex items-center px-5 py-4 border-b border-[var(--glass-border-subtle)] bg-white/40 dark:bg-black/20 shrink-0">
+          <Search className="w-5 h-5 text-[var(--orion-accent)] shrink-0 mr-3" />
           <input
             ref={inputRef}
             type="text"
@@ -141,24 +141,24 @@ export const DocsSearchModal: React.FC<{
               setSelectedIndex(0);
             }}
             placeholder="Search docs, APIs, engines, formulas, and architecture..."
-            className="w-full bg-transparent text-sm sm:text-base text-white placeholder-slate-500 outline-none"
+            className="w-full bg-transparent text-sm sm:text-base text-[var(--orion-text-primary)] placeholder-[var(--orion-text-muted)] outline-hidden font-sans"
           />
           {query && (
             <button
               type="button"
               onClick={() => setQuery('')}
-              className="p-1 rounded text-slate-400 hover:text-white"
+              className="p-1 rounded-lg text-[var(--orion-text-muted)] hover:text-[var(--orion-text-primary)] transition"
             >
               <X className="w-4 h-4" />
             </button>
           )}
-          <kbd className="hidden sm:inline-block ml-2 px-2 py-0.5 rounded text-[10px] font-mono bg-slate-800 border border-slate-700 text-slate-400">
+          <kbd className="hidden sm:inline-block ml-2 px-2 py-0.5 rounded text-[10px] font-mono bg-black/5 dark:bg-white/10 border border-black/10 dark:border-white/10 text-[var(--orion-text-muted)]">
             ESC
           </kbd>
         </div>
 
         {/* Category Filter Pills */}
-        <div className="flex items-center gap-1.5 px-4 py-2 border-b border-slate-800/80 bg-slate-950/40 overflow-x-auto scrollbar-none text-[11px] font-mono">
+        <div className="flex items-center gap-1.5 px-5 py-2.5 border-b border-[var(--glass-border-subtle)] bg-black/5 dark:bg-white/5 overflow-x-auto scrollbar-none text-xs font-sans shrink-0">
           {['ALL', 'Operating System', 'Supply Chain', 'AI', 'Architecture', 'Security'].map((cat) => (
             <button
               key={cat}
@@ -167,10 +167,10 @@ export const DocsSearchModal: React.FC<{
                 setSelectedCategory(cat);
                 setSelectedIndex(0);
               }}
-              className={`px-2.5 py-1 rounded-lg transition whitespace-nowrap cursor-pointer ${
+              className={`px-3 py-1 rounded-xl transition whitespace-nowrap cursor-pointer text-xs font-medium ${
                 selectedCategory === cat
-                  ? 'bg-cyan-500/20 text-cyan-300 border border-cyan-500/40 font-semibold'
-                  : 'text-slate-400 hover:text-white hover:bg-slate-800'
+                  ? 'bg-[#070B19] dark:bg-white text-white dark:text-[#070B19] shadow-xs font-semibold'
+                  : 'border border-[var(--glass-border-subtle)] bg-white/70 dark:bg-white/5 text-[var(--orion-text-secondary)] hover:text-[var(--orion-text-primary)]'
               }`}
             >
               {cat}
@@ -179,7 +179,7 @@ export const DocsSearchModal: React.FC<{
         </div>
 
         {/* Results List */}
-        <div className="max-h-[380px] overflow-y-auto p-2 divide-y divide-slate-800/50">
+        <div className="max-h-[380px] overflow-y-auto p-3 divide-y divide-[var(--glass-border-subtle)]">
           {results.length > 0 ? (
             results.map((res, i) => {
               const isSelected = i === selectedIndex;
@@ -191,43 +191,45 @@ export const DocsSearchModal: React.FC<{
                     onClose();
                   }}
                   onMouseEnter={() => setSelectedIndex(i)}
-                  className={`p-3 rounded-xl transition cursor-pointer flex items-start justify-between gap-3 ${
-                    isSelected ? 'bg-cyan-950/40 border border-cyan-500/30' : 'hover:bg-slate-900/60'
+                  className={`p-3.5 rounded-2xl transition cursor-pointer flex items-start justify-between gap-3 ${
+                    isSelected
+                      ? 'bg-[#0284C7]/10 border-l-4 border-[#0284C7]'
+                      : 'hover:bg-black/5 dark:hover:bg-white/5'
                   }`}
                 >
                   <div className="space-y-1 min-w-0">
                     <div className="flex items-center gap-2">
-                      <span className="text-[10px] font-mono font-bold tracking-wider text-cyan-400 uppercase">
+                      <span className="text-[10px] font-mono font-bold tracking-wider text-[var(--orion-accent)] uppercase">
                         {res.category}
                       </span>
-                      <span className="text-[10px] text-slate-500">· {res.type}</span>
+                      <span className="text-[10px] text-[var(--orion-text-muted)] font-mono">· {res.type}</span>
                     </div>
-                    <h4 className="text-sm font-semibold text-white truncate">{res.title}</h4>
-                    <p className="text-xs text-slate-400 line-clamp-2 leading-relaxed">{res.snippet}</p>
+                    <h4 className="text-sm font-bold text-[var(--orion-text-primary)] truncate font-sans">{res.title}</h4>
+                    <p className="text-xs text-[var(--orion-text-secondary)] line-clamp-2 leading-relaxed font-sans">{res.snippet}</p>
                   </div>
                   <ArrowRight
                     className={`w-4 h-4 shrink-0 mt-2 transition ${
-                      isSelected ? 'text-cyan-400 transform translate-x-0.5' : 'text-slate-600'
+                      isSelected ? 'text-[var(--orion-accent)] transform translate-x-0.5' : 'text-[var(--orion-text-muted)] opacity-50'
                     }`}
                   />
                 </div>
               );
             })
           ) : (
-            <div className="p-8 text-center text-slate-500 text-xs font-mono">
+            <div className="p-8 text-center text-[var(--orion-text-muted)] text-xs font-sans">
               No documentation articles or features matched &ldquo;{query}&rdquo;.
             </div>
           )}
         </div>
 
         {/* Footer Shortcut Instructions */}
-        <div className="px-4 py-2.5 border-t border-slate-800 bg-slate-950 flex items-center justify-between text-[11px] font-mono text-slate-500">
+        <div className="px-5 py-2.5 border-t border-[var(--glass-border-subtle)] bg-white/40 dark:bg-black/20 flex items-center justify-between text-[11px] font-mono text-[var(--orion-text-muted)] shrink-0">
           <div className="flex items-center gap-3">
             <span>↑↓ Navigate</span>
             <span>↵ Select</span>
             <span>ESC Dismiss</span>
           </div>
-          <span className="text-cyan-500/80">118 Features · 44 Articles Indexed</span>
+          <span className="text-[var(--orion-accent)]">118 Features · 44 Articles Indexed</span>
         </div>
       </div>
     </div>

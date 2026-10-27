@@ -13,38 +13,38 @@ export const DocsBreadcrumbs: React.FC<DocsBreadcrumbsProps> = ({
   onNavigate,
 }) => {
   return (
-    <nav aria-label="Breadcrumb" className="flex items-center gap-1.5 text-xs font-mono text-slate-400 mb-6 flex-wrap">
+    <nav aria-label="Breadcrumb" className="flex items-center gap-2 text-xs font-sans text-[var(--orion-text-muted)] mb-6 flex-wrap">
       <button
         type="button"
         onClick={() => onNavigate('/')}
-        className="hover:text-slate-200 transition flex items-center gap-1 cursor-pointer"
+        className="hover:text-[var(--orion-text-primary)] transition flex items-center gap-1.5 cursor-pointer font-medium"
       >
         <Home className="w-3.5 h-3.5" />
         <span>Home</span>
       </button>
 
-      <ChevronRight className="w-3.5 h-3.5 text-slate-600" />
+      <ChevronRight className="w-3 h-3 opacity-40" />
 
       <button
         type="button"
         onClick={() => onNavigate('/docs')}
-        className="hover:text-cyan-400 transition flex items-center gap-1 cursor-pointer"
+        className="hover:text-[var(--orion-accent)] transition flex items-center gap-1.5 cursor-pointer font-medium"
       >
         <BookOpen className="w-3.5 h-3.5" />
-        <span>Docs</span>
+        <span>Documentation</span>
       </button>
 
       {category && (
         <>
-          <ChevronRight className="w-3.5 h-3.5 text-slate-600" />
-          <span className="text-slate-400">{category}</span>
+          <ChevronRight className="w-3 h-3 opacity-40" />
+          <span className="text-[var(--orion-text-secondary)] font-medium">{category}</span>
         </>
       )}
 
       {title && (
         <>
-          <ChevronRight className="w-3.5 h-3.5 text-slate-600" />
-          <span className="text-cyan-400 font-semibold truncate max-w-xs">{title}</span>
+          <ChevronRight className="w-3 h-3 opacity-40" />
+          <span className="text-[var(--orion-text-primary)] font-semibold truncate max-w-xs">{title}</span>
         </>
       )}
     </nav>

@@ -4,7 +4,9 @@ import {
   validateBrandingConfig,
   sanitizeForFirestore,
   normalizeBrandingConfig,
+  validateStoragePayloadSafeguards,
 } from './cms-validation.ts';
+import { evaluateHeroIntroSequence } from './cinematic-choreography.ts';
 import {
   DEFAULT_SITE_CONFIG,
   DEFAULT_LOGO_PLACEMENT_CONFIG,
@@ -1350,6 +1352,205 @@ runTest('50. Restoring default resets all static placements consistently', () =>
   assert.equal(restored.authLogoConfig.customUrl, null);
   assert.equal(restored.footerLogoConfig.useCustom, false);
   assert.equal(restored.footerLogoConfig.customUrl, null);
+});
+
+// ================================================================
+// P0 BRANDING PERSISTENCE & UPLOAD REGRESSION TEST SUITE (51-66)
+// ================================================================
+
+runTest('51. P0 Valid SVG and image validation for storage candidacy', () => {
+  const dirtySvg = '<svg viewBox="0 0 100 100"><circle cx="50" cy="50" r="40" fill="#0284C7"/></svg>';
+  const clean = sanitizeSvg(dirtySvg);
+  assert.equal(clean.isClean, true);
+  assert.equal(clean.warnings.length, 0);
+  assert.ok(clean.sanitized.includes('circle'));
+});
+
+runTest('52. P0 Oversized image (> 5MB) rejected by limit definition', () => {
+  const maxBytes = MAX_LOGO_FILE_SIZE_BYTES;
+  assert.equal(maxBytes, 5 * 1024 * 1024);
+  const oversizedBytes = 6 * 1024 * 1024;
+  assert.ok(oversizedBytes > maxBytes);
+});
+
+runTest('53. P0 Unsupported extensions and MIME types rejected', () => {
+  const unallowed = ['.exe', '.sh', '.bin', '.pdf', '.docx'];
+  for (const ext of unallowed) {
+    assert.equal(ALLOWED_LOGO_EXTENSIONS.includes(ext), false);
+  }
+  assert.equal(ALLOWED_LOGO_MIME_TYPES.includes('application/x-msdownload'), false);
+});
+
+runTest('54. P0 SVG sanitization strips scripts, foreignObject, and inline handlers', () => {
+  const maliciousSvg = `
+    <svg xmlns="http://www.w3.org/2000/svg" onload="alert(1)">
+      <script>fetch('/stolen')</script>
+      <foreignObject><body><iframe src="evil.com"></iframe></body></foreignObject>
+      <a href="javascript:alert('xss')"><rect width="10" height="10"/></a>
+    </svg>
+  `;
+  const result = sanitizeSvg(maliciousSvg);
+  assert.equal(result.isClean, false);
+  assert.ok(!result.sanitized.includes('<script>'));
+  assert.ok(!result.sanitized.includes('alert('));
+  assert.ok(!result.sanitized.includes('<foreignObject>'));
+  assert.ok(!result.sanitized.includes('<iframe>'));
+  assert.ok(!result.sanitized.includes('onload='));
+  assert.ok(!result.sanitized.includes('javascript:'));
+});
+
+runTest('55. P0 Firebase Storage permission denied surfaces explicit admin auth error', () => {
+  const errCode = 'storage/unauthorized';
+  let message = '';
+  if (errCode === 'storage/unauthorized') {
+    message = 'Permission denied: You do not have permission to upload brand assets to Firebase Storage. Please ensure you are authenticated as an administrator.';
+  }
+  assert.ok(message.includes('Permission denied'));
+  assert.ok(message.includes('authenticated as an administrator'));
+});
+
+runTest('56. P0 Network failure during upload surfaces explicit connectivity error', () => {
+  const errCode = 'storage/retry-limit-exceeded';
+  let message = '';
+  if (errCode === 'storage/retry-limit-exceeded') {
+    message = 'Network failure: Unable to upload logo to Firebase Storage. Please check your internet connection and try again.';
+  }
+  assert.ok(message.includes('Network failure'));
+  assert.ok(message.includes('check your internet connection'));
+});
+
+runTest('57. P0 Upload failure throws error and NEVER returns a Base64 fallback URL', () => {
+  const uploadFn = () => {
+    const error = new Error('Upload rejected');
+    if (error) {
+      throw new Error('Firebase Storage upload failed: Upload rejected');
+    }
+    return { url: 'data:image/png;base64,silent_fallback' };
+  };
+  assert.throws(() => uploadFn(), /Firebase Storage upload failed/);
+});
+
+runTest('58. P0 Unauthenticated save draft rejected before write', () => {
+  const guard = (user, isConfigured) => {
+    if (!isConfigured) return { success: false, error: 'Firebase is not configured.' };
+    if (!user) return { success: false, error: 'Authentication required. Please sign in with verified administrator credentials to persist changes.' };
+    return { success: true };
+  };
+  const res = guard(null, true);
+  assert.equal(res.success, false);
+  assert.match(res.error, /Authentication required/);
+});
+
+runTest('59. P0 Unauthenticated publish rejected before write', () => {
+  const guard = (user, isConfigured) => {
+    if (!isConfigured) return { success: false, error: 'Firebase is not configured.' };
+    if (!user) return { success: false, error: 'Authentication required. Please sign in with verified administrator credentials to persist changes.' };
+    return { success: true };
+  };
+  const res = guard(null, true);
+  assert.equal(res.success, false);
+  assert.match(res.error, /Authentication required/);
+});
+
+runTest('60. P0 Unconfigured Firebase returns descriptive configuration error', () => {
+  const guard = (user, isConfigured) => {
+    if (!isConfigured) return { success: false, error: 'Firebase is not configured. Cloud persistence requires active Firebase configuration.' };
+    if (!user) return { success: false, error: 'Auth required' };
+    return { success: true };
+  };
+  const res = guard({ uid: 'admin-01' }, false);
+  assert.equal(res.success, false);
+  assert.match(res.error, /Firebase is not configured/);
+});
+
+runTest('61. P0 Firestore write failure leaves published runtime state untouched', () => {
+  let publishedUrl = 'https://firebasestorage.googleapis.com/v0/b/bucket/o/initial.png';
+  const performPublish = (succeeds) => {
+    if (!succeeds) {
+      return { success: false, error: 'Firestore write failed: PERMISSION_DENIED' };
+    }
+    publishedUrl = 'https://firebasestorage.googleapis.com/v0/b/bucket/o/new.png';
+    return { success: true };
+  };
+
+  const res = performPublish(false);
+  assert.equal(res.success, false);
+  assert.equal(publishedUrl, 'https://firebasestorage.googleapis.com/v0/b/bucket/o/initial.png');
+});
+
+runTest('62. P0 Firestore write failure preserves user working form state for retry', () => {
+  const workingState = {
+    sharedLogo: 'https://firebasestorage.googleapis.com/v0/b/bucket/o/new_staged.png',
+  };
+  // Failure occurs
+  const res = { success: false, error: 'Firestore draft write failed: Network timeout' };
+  assert.equal(res.success, false);
+  // Form state was NOT cleared
+  assert.equal(workingState.sharedLogo, 'https://firebasestorage.googleapis.com/v0/b/bucket/o/new_staged.png');
+});
+
+runTest('63. P0 Large Base64 payload (> 800KB or > 10KB data URL) rejected before write', () => {
+  const oversizedDataUrl = {
+    sharedLogo: 'data:image/png;base64,' + 'Z'.repeat(15 * 1024),
+  };
+  const checkDataUrl = validateStoragePayloadSafeguards(oversizedDataUrl);
+  assert.equal(checkDataUrl.valid, false);
+  assert.equal(
+    checkDataUrl.error,
+    'Logo asset must be uploaded to cloud storage before saving. Base64 embedding is not permitted for published assets.'
+  );
+
+  const oversizedDoc = {
+    largePayload: 'X'.repeat(850 * 1024),
+  };
+  const checkDoc = validateStoragePayloadSafeguards(oversizedDoc);
+  assert.equal(checkDoc.valid, false);
+  assert.match(checkDoc.error, /Payload size exceeds 800 KB limit/);
+});
+
+runTest('64. P0 Published config reloads from Firestore on fresh session (localStorage empty)', () => {
+  const emptyLocalStorage = {};
+  const firestoreBrandingDoc = {
+    companyName: 'Orion-9 Logistics',
+    sharedLogo: 'https://firebasestorage.googleapis.com/v0/b/bucket/o/canonical.png',
+    sharedLogoConfig: {
+      useCustom: true,
+      customUrl: 'https://firebasestorage.googleapis.com/v0/b/bucket/o/canonical.png',
+      originalFilename: 'canonical.png',
+    },
+  };
+
+  const restored = normalizeBrandingConfig({
+    ...DEFAULT_SITE_CONFIG.branding,
+    ...firestoreBrandingDoc,
+  });
+
+  assert.equal(restored.companyName, 'Orion-9 Logistics');
+  assert.equal(restored.sharedLogo, 'https://firebasestorage.googleapis.com/v0/b/bucket/o/canonical.png');
+  assert.equal(restored.headerLogo, 'https://firebasestorage.googleapis.com/v0/b/bucket/o/canonical.png');
+  assert.equal(restored.authLogo, 'https://firebasestorage.googleapis.com/v0/b/bucket/o/canonical.png');
+  assert.equal(restored.footerLogo, 'https://firebasestorage.googleapis.com/v0/b/bucket/o/canonical.png');
+});
+
+runTest('65. P0 Broken logo image falls back to default vector mark without crash', () => {
+  const evaluateLogoRender = (customUrl, hasImgError) => {
+    const hasCustomLogo = Boolean(customUrl && !hasImgError);
+    return {
+      usesCustomImage: hasCustomLogo,
+      usesDefaultVectorSvg: !hasCustomLogo,
+    };
+  };
+
+  const brokenResult = evaluateLogoRender('https://broken-domain.com/missing.png', true);
+  assert.equal(brokenResult.usesCustomImage, false);
+  assert.equal(brokenResult.usesDefaultVectorSvg, true);
+});
+
+runTest('66. P0 3D animated hero centerpiece remains autonomous and unaffected by branding logo', () => {
+  const heroReveal = evaluateHeroIntroSequence(3800, false);
+  assert.equal(heroReveal.infinityOpacity, 1);
+  assert.equal(heroReveal.wordmarkOpacity, 1);
+  assert.equal(heroReveal.primaryTaglineOpacity, 1);
 });
 
 

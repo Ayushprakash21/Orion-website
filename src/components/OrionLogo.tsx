@@ -87,7 +87,12 @@ export const OrionLogo: React.FC<OrionLogoProps> = ({
               src={effectiveLogoUrl!}
               alt={`${companyName} Logo`}
               className="w-full h-full object-contain select-none"
-              onError={() => setImgError(true)}
+              onError={() => {
+                console.warn(
+                  `[OrionLogo] Failed to load brand logo from "${effectiveLogoUrl}". Falling back to default vector mark.`
+                );
+                setImgError(true);
+              }}
             />
           ) : (
             <svg

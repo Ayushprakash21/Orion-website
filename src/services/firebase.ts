@@ -48,7 +48,8 @@ export const DEFAULT_FIREBASE_CONFIG: FirebaseClientConfig = {
   projectId: 'orion9-dev-db-2026',
   storageBucket: 'orion9-dev-db-2026.firebasestorage.app',
   messagingSenderId: '1031466156269',
-  appId: '1:1031466156269:web:44dd23cdcc883f809b8ce4',
+  appId: '1:1031466156269:web:1d8b92bd6adea9b09b8ce4',
+  firestoreDatabaseId: 'ai-studio-orion9theintelli-c9e042d6-9d0a-4a41-91ee-a78214c20b1b',
 };
 
 const RUNTIME_FIREBASE_STORAGE_KEY = 'orion9_firebase_runtime_config';
@@ -166,8 +167,17 @@ export function initializeFirebase(): {
 
 export function getFirebaseStorageInstance(): FirebaseStorage | null {
   if (storage) return storage;
-  const { storage: s } = initializeFirebase();
-  return s;
+  const { app, storage: s } = initializeFirebase();
+  if (s) return s;
+  if (app) {
+    try {
+      storage = getStorage(app);
+      return storage;
+    } catch {
+      return null;
+    }
+  }
+  return null;
 }
 
 /**

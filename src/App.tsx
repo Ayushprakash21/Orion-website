@@ -19,6 +19,7 @@ import { AuthPageView } from './components/auth/AuthPageView';
 import { AdminLogin } from './components/admin/AdminLogin';
 import { AdminConsole } from './components/admin/AdminConsole';
 import { DocsLayout } from './components/docs/DocsLayout';
+import { AboutPage } from './components/about/AboutPage';
 
 const AppContent: React.FC = () => {
   const { activeConfig } = useSiteConfig();
@@ -33,9 +34,16 @@ const AppContent: React.FC = () => {
   useEffect(() => {
     const handlePopState = () => {
       const pathname = window.location.pathname || '/';
-      setCurrentPath(pathname);
+      setCurrentPath(pathname.split(/[?#]/)[0]);
       if (pathname.startsWith('/download')) {
         setDownloadModalOpen(true);
+      }
+      if (window.location.hash) {
+        const hash = window.location.hash.replace('#', '');
+        setTimeout(() => {
+          const el = document.getElementById(hash);
+          if (el) el.scrollIntoView({ behavior: 'smooth' });
+        }, 150);
       }
     };
     window.addEventListener('popstate', handlePopState);
@@ -49,8 +57,16 @@ const AppContent: React.FC = () => {
       return;
     }
     window.history.pushState({}, '', path);
-    setCurrentPath(path.split('?')[0]);
-    window.scrollTo({ top: 0, behavior: 'smooth' });
+    setCurrentPath(path.split(/[?#]/)[0]);
+    if (path.includes('#')) {
+      const hash = path.split('#')[1];
+      setTimeout(() => {
+        const el = document.getElementById(hash);
+        if (el) el.scrollIntoView({ behavior: 'smooth' });
+      }, 150);
+    } else {
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
   };
 
   useEffect(() => {
@@ -81,6 +97,27 @@ const AppContent: React.FC = () => {
 
   if (currentPath.startsWith('/docs')) {
     return <DocsLayout currentPath={currentPath} onNavigate={navigate} />;
+  }
+
+  if (currentPath === '/about' || currentPath.startsWith('/about')) {
+    return (
+      <>
+        <AboutPage
+          onNavigate={navigate}
+          onOpenDownload={() => setDownloadModalOpen(true)}
+        />
+        <DesktopDownloadModal
+          isOpen={downloadModalOpen}
+          onClose={() => {
+            setDownloadModalOpen(false);
+            if (window.location.pathname.startsWith('/download')) {
+              window.history.replaceState({}, '', '/about');
+            }
+          }}
+          onNavigate={navigate}
+        />
+      </>
+    );
   }
 
   return (

@@ -23,6 +23,13 @@ export const Footer: React.FC<FooterProps> = ({ onNavigate, onOpenDownload }) =>
       window.history.pushState({}, '', path);
       window.dispatchEvent(new PopStateEvent('popstate'));
     }
+    if (path.includes('#')) {
+      const hash = path.split('#')[1];
+      setTimeout(() => {
+        const el = document.getElementById(hash);
+        if (el) el.scrollIntoView({ behavior: 'smooth' });
+      }, 150);
+    }
   };
 
   const scrollToSection = (sectionId: string) => {
@@ -268,7 +275,7 @@ export const Footer: React.FC<FooterProps> = ({ onNavigate, onOpenDownload }) =>
                   <button
                     type="button"
                     onClick={() => handleRoute('/docs')}
-                    className="hover:text-[var(--orion-accent)] transition-colors cursor-pointer text-left text-cyan-400 font-semibold"
+                    className="hover:text-[var(--orion-accent)] transition-colors cursor-pointer text-left text-[var(--orion-accent)] font-semibold"
                   >
                     Documentation Manual
                   </button>
@@ -303,46 +310,64 @@ export const Footer: React.FC<FooterProps> = ({ onNavigate, onOpenDownload }) =>
               </ul>
             </div>
 
-            {/* Column 4: ACCOUNT */}
+            {/* Column 4: ABOUT ORION-9 */}
             <div>
               <h3 className="text-[11px] font-mono font-bold uppercase tracking-wider text-[var(--orion-text-muted)] mb-4">
-                Account
+                About Orion-9
               </h3>
               <ul className="space-y-2.5 text-xs font-medium text-[var(--orion-text-primary)]">
                 <li>
                   <button
                     type="button"
-                    onClick={() => handleRoute('/login')}
+                    onClick={() => handleRoute('/about')}
                     className="hover:text-[var(--orion-accent)] transition-colors cursor-pointer text-left"
                   >
-                    Sign in
+                    About Orion-9
                   </button>
                 </li>
                 <li>
                   <button
                     type="button"
-                    onClick={() => handleRoute('/signup')}
+                    onClick={() => handleRoute('/about#why-orion-9')}
                     className="hover:text-[var(--orion-accent)] transition-colors cursor-pointer text-left"
                   >
-                    Sign up
+                    Why Orion-9
                   </button>
                 </li>
                 <li>
                   <button
                     type="button"
-                    onClick={() => launchOrion(destinationUrl)}
-                    className="hover:text-[var(--orion-accent)] transition-colors cursor-pointer text-left font-semibold text-[var(--orion-accent)]"
+                    onClick={() => handleRoute('/about#system-architecture')}
+                    className="hover:text-[var(--orion-accent)] transition-colors cursor-pointer text-left"
                   >
-                    Launch Cockpit
+                    System Architecture
                   </button>
                 </li>
                 <li>
                   <button
                     type="button"
-                    onClick={() => handleRoute('/admin/login')}
-                    className="hover:text-[var(--orion-accent)] transition-colors cursor-pointer text-left text-[var(--orion-text-secondary)]"
+                    onClick={() => handleRoute('/about#core-principles')}
+                    className="hover:text-[var(--orion-accent)] transition-colors cursor-pointer text-left"
                   >
-                    Admin Portal
+                    Core Principles
+                  </button>
+                </li>
+                <li>
+                  <button
+                    type="button"
+                    onClick={() => handleRoute('/about#whats-new')}
+                    className="hover:text-[var(--orion-accent)] transition-colors cursor-pointer text-left"
+                  >
+                    What's New
+                  </button>
+                </li>
+                <li>
+                  <button
+                    type="button"
+                    onClick={() => handleRoute('/docs')}
+                    className="hover:text-[var(--orion-accent)] transition-colors cursor-pointer text-left text-[var(--orion-accent)] font-semibold"
+                  >
+                    Help &amp; Documentation
                   </button>
                 </li>
               </ul>

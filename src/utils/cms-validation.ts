@@ -279,6 +279,53 @@ export function validateFooterConfig(config: FooterConfig): {
 }
 
 /**
+ * Recursively inspects data to ensure no large Base64 data URLs (> 10 KB)
+ * or total payload exceeding 800 KB are sent to Firestore.
+ */
+export function validateStoragePayloadSafeguards(data: unknown): { valid: boolean; error?: string } {
+  try {
+    const jsonStr = JSON.stringify(data);
+    const totalSizeBytes = new TextEncoder().encode(jsonStr).length;
+
+    if (totalSizeBytes > 800 * 1024) {
+      return {
+        valid: false,
+        error:
+          'Payload size exceeds 800 KB limit. Logo assets must be uploaded to cloud storage before saving. Base64 embedding is not permitted for published assets.',
+      };
+    }
+  } catch {
+    // If not stringifiable, continue
+  }
+
+  // Check for any data: URL larger than 10 KB in any property
+  let foundOversizedDataUrl = false;
+  function walk(val: unknown) {
+    if (foundOversizedDataUrl) return;
+    if (typeof val === 'string') {
+      if (val.startsWith('data:') && val.length > 10 * 1024) {
+        foundOversizedDataUrl = true;
+      }
+    } else if (val && typeof val === 'object') {
+      for (const k of Object.keys(val)) {
+        walk((val as Record<string, unknown>)[k]);
+      }
+    }
+  }
+  walk(data);
+
+  if (foundOversizedDataUrl) {
+    return {
+      valid: false,
+      error:
+        'Logo asset must be uploaded to cloud storage before saving. Base64 embedding is not permitted for published assets.',
+    };
+  }
+
+  return { valid: true };
+}
+
+/**
  * Recursively sanitizes any JavaScript object or array before Firestore setDoc / updateDoc.
  * - Recursively removes any property whose value is `undefined`.
  * - Omits genuinely absent optional properties.

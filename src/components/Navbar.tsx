@@ -41,10 +41,35 @@ export const Navbar: React.FC<NavbarProps> = ({ onNavigate, onOpenDownload }) =>
     }
   };
 
+  const handleNavLinkClick = (e: React.MouseEvent, href: string) => {
+    e.preventDefault();
+    setMobileMenuOpen(false);
+    if (href.startsWith('#')) {
+      const sectionId = href.replace('#', '');
+      if (window.location.pathname !== '/') {
+        handleRoute(`/${href}`);
+        setTimeout(() => {
+          const el = document.getElementById(sectionId);
+          if (el) el.scrollIntoView({ behavior: 'smooth' });
+        }, 150);
+      } else {
+        const el = document.getElementById(sectionId);
+        if (el) {
+          el.scrollIntoView({ behavior: 'smooth' });
+        } else {
+          window.scrollTo({ top: 0, behavior: 'smooth' });
+        }
+      }
+    } else {
+      handleRoute(href);
+    }
+  };
+
   const navLinks = [
     { label: 'Process', href: '#process' },
     { label: 'Capabilities', href: '#capabilities' },
     { label: 'Orion-9 OS', href: '#control-tower' },
+    { label: 'About', href: '/about' },
     { label: 'Readiness', href: '#faq' },
     { label: 'Documentation', href: '/docs' },
   ];
@@ -113,7 +138,8 @@ export const Navbar: React.FC<NavbarProps> = ({ onNavigate, onOpenDownload }) =>
               <a
                 key={item.label}
                 href={item.href}
-                className="px-3.5 py-1.5 rounded-full text-xs font-medium text-[var(--orion-text-secondary)] hover:text-[var(--orion-text-primary)] hover:bg-white/40 dark:hover:bg-white/10 transition-all duration-200 whitespace-nowrap"
+                onClick={(e) => handleNavLinkClick(e, item.href)}
+                className="px-3.5 py-1.5 rounded-full text-xs font-medium text-[var(--orion-text-secondary)] hover:text-[var(--orion-text-primary)] hover:bg-white/40 dark:hover:bg-white/10 transition-all duration-200 whitespace-nowrap cursor-pointer"
               >
                 {item.label}
               </a>
@@ -296,8 +322,8 @@ export const Navbar: React.FC<NavbarProps> = ({ onNavigate, onOpenDownload }) =>
                 <a
                   key={item.label}
                   href={item.href}
-                  onClick={() => setMobileMenuOpen(false)}
-                  className="px-3.5 py-2.5 rounded-xl text-xs font-medium text-[var(--orion-text-primary)] hover:bg-white/40 dark:hover:bg-white/10 transition"
+                  onClick={(e) => handleNavLinkClick(e, item.href)}
+                  className="px-3.5 py-2.5 rounded-xl text-xs font-medium text-[var(--orion-text-primary)] hover:bg-white/40 dark:hover:bg-white/10 transition cursor-pointer"
                 >
                   {item.label}
                 </a>

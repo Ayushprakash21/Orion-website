@@ -197,7 +197,9 @@ export function AdminConsole({ onNavigate }: AdminConsoleProps) {
   const [fbAppId, setFbAppId] = useState(currentFbCfg.appId || '');
 
   useEffect(() => {
-    setBrandingForm(draftConfig.branding);
+    if (!isSavingBranding) {
+      setBrandingForm(draftConfig.branding);
+    }
     setNavForm(draftConfig.navigation);
     setHomeForm(draftConfig.homepage);
     setFooterForm(draftConfig.footer);
@@ -205,7 +207,7 @@ export function AdminConsole({ onNavigate }: AdminConsoleProps) {
     setAuthSettingsForm(draftConfig.authSettings);
     setMediaForm(draftConfig.mediaLibrary);
     setReleasesForm(draftConfig.desktopReleases || DEFAULT_DESKTOP_RELEASES);
-  }, [draftConfig]);
+  }, [draftConfig, isSavingBranding]);
 
   // Redirect unauthenticated visitors to /admin/login
   useEffect(() => {
