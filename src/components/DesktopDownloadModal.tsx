@@ -198,16 +198,16 @@ export const DesktopDownloadModal: React.FC<DesktopDownloadModalProps> = ({
         <div className="flex items-center justify-between px-4 sm:px-6 py-3.5 sm:py-4 border-b border-white/10 bg-slate-900/80 backdrop-blur-md shrink-0 select-none">
           <div className="flex items-center gap-2.5 sm:gap-3.5 min-w-0">
             {/* macOS Traffic Lights */}
-            <div className="flex items-center gap-1.5 shrink-0 mr-0.5">
+            <div className="macos-traffic-lights shrink-0 mr-1">
               <button
                 type="button"
                 onClick={onClose}
-                className="w-3 h-3 rounded-full bg-[#FF5F56] border border-[#E0443E] hover:opacity-80 transition cursor-pointer"
+                className="macos-traffic-light close"
                 aria-label="Close dialog"
                 title="Close"
               />
-              <span className="w-3 h-3 rounded-full bg-[#FFBD2E] border border-[#DEA123]" />
-              <span className="w-3 h-3 rounded-full bg-[#27C93F] border border-[#1AAB29]" />
+              <span className="macos-traffic-light minimize" title="Minimize" />
+              <span className="macos-traffic-light zoom" title="Zoom" />
             </div>
 
             <div className="h-4 w-[1px] bg-white/15 shrink-0 hidden min-[360px]:block" aria-hidden="true" />
@@ -258,14 +258,12 @@ export const DesktopDownloadModal: React.FC<DesktopDownloadModalProps> = ({
         {/* Modal Content Area (Scrollable on short screens) */}
         <div className="p-4 sm:p-6 space-y-4 sm:space-y-4.5 overflow-y-auto min-h-0 flex-1 custom-scrollbar">
           {/* Segmented Platform Switcher */}
-          <div className="flex items-center p-1 rounded-2xl bg-black/50 border border-white/10 shadow-inner">
+          <div className="macos-segmented w-full">
             <button
               type="button"
               onClick={() => handlePlatformChange('windows')}
-              className={`flex-1 h-10 sm:h-11 flex items-center justify-center gap-2 rounded-xl text-xs font-semibold transition-all cursor-pointer ${
-                selectedPlatform === 'windows'
-                  ? 'bg-gradient-to-b from-white/20 to-white/10 text-white shadow-md border border-white/25'
-                  : 'text-slate-400 hover:text-white hover:bg-white/5'
+              className={`macos-segmented-pill flex-1 h-10 sm:h-11 flex items-center justify-center gap-2 text-xs font-semibold ${
+                selectedPlatform === 'windows' ? 'active' : 'text-slate-400 hover:text-white'
               }`}
             >
               <Laptop className={`w-4 h-4 ${selectedPlatform === 'windows' ? 'text-sky-400' : 'text-slate-400'}`} />
@@ -274,10 +272,8 @@ export const DesktopDownloadModal: React.FC<DesktopDownloadModalProps> = ({
             <button
               type="button"
               onClick={() => handlePlatformChange('macos')}
-              className={`flex-1 h-10 sm:h-11 flex items-center justify-center gap-2 rounded-xl text-xs font-semibold transition-all cursor-pointer ${
-                selectedPlatform === 'macos'
-                  ? 'bg-gradient-to-b from-white/20 to-white/10 text-white shadow-md border border-white/25'
-                  : 'text-slate-400 hover:text-white hover:bg-white/5'
+              className={`macos-segmented-pill flex-1 h-10 sm:h-11 flex items-center justify-center gap-2 text-xs font-semibold ${
+                selectedPlatform === 'macos' ? 'active' : 'text-slate-400 hover:text-white'
               }`}
             >
               <Apple className={`w-4 h-4 ${selectedPlatform === 'macos' ? 'text-sky-400' : 'text-slate-400'}`} />

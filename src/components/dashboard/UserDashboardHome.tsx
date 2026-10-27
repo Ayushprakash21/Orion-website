@@ -83,17 +83,34 @@ export const UserDashboardHome: React.FC<UserDashboardHomeProps> = ({
   return (
     <div className="space-y-8 animate-in fade-in duration-300">
       {/* 1. Welcome & Status Banner */}
-      <section className="relative overflow-hidden rounded-3xl liquid-glass-elevated border border-[var(--glass-border)] p-6 sm:p-8 lg:p-10 shadow-2xl">
-        <div className="relative z-10 flex flex-col lg:flex-row lg:items-center lg:justify-between gap-6">
+      <section className="relative overflow-hidden rounded-3xl macos-window border border-[var(--glass-border)] shadow-2xl">
+        <div className="flex items-center justify-between px-6 py-3 border-b border-[var(--glass-border-subtle)] bg-white/20 dark:bg-white/5">
+          <div className="flex items-center gap-3">
+            <div className="macos-traffic-lights" aria-hidden="true">
+              <span className="macos-traffic-light close" />
+              <span className="macos-traffic-light minimize" />
+              <span className="macos-traffic-light zoom" />
+            </div>
+            <span className="text-[11px] font-mono tracking-wider text-[var(--orion-text-muted)] font-semibold uppercase">
+              ORION-9 WORKSPACE COCKPIT · v9.0.0
+            </span>
+          </div>
+          <span className="hidden sm:inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[10px] font-mono bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
+            <Activity className="w-3 h-3 animate-pulse" />
+            <span>19 SCM Engines Operational</span>
+          </span>
+        </div>
+
+        <div className="p-6 sm:p-8 lg:p-10 relative z-10 flex flex-col lg:flex-row lg:items-center lg:justify-between gap-6">
           <div className="space-y-3 max-w-2xl">
             <div className="flex flex-wrap items-center gap-2">
               <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[11px] font-mono font-semibold bg-sky-500/10 text-sky-400 border border-sky-500/20">
                 <ShieldCheck className="w-3.5 h-3.5" />
                 <span>{roleLabel}</span>
               </span>
-              <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[11px] font-mono bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
-                <Activity className="w-3.5 h-3.5 animate-pulse" />
-                <span>19 SCM Engines Operational</span>
+              <span className="sm:hidden inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[10px] font-mono bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
+                <Activity className="w-3 h-3 animate-pulse" />
+                <span>19 SCM Engines</span>
               </span>
             </div>
 
@@ -109,7 +126,7 @@ export const UserDashboardHome: React.FC<UserDashboardHomeProps> = ({
               <button
                 type="button"
                 onClick={handleLaunch}
-                className="inline-flex items-center gap-2 px-6 py-3 rounded-2xl bg-gradient-to-r from-[#0284C7] to-[#0369A1] hover:from-[#0369A1] hover:to-[#075985] text-white text-sm font-semibold shadow-lg shadow-sky-600/30 hover:shadow-xl hover:shadow-sky-600/40 transition-all cursor-pointer active:scale-[0.98]"
+                className="macos-btn-primary inline-flex items-center gap-2 px-6 py-3 rounded-2xl text-white text-sm font-semibold cursor-pointer"
               >
                 <Sparkles className="w-4 h-4" />
                 <span>Launch Orion-9 OS</span>

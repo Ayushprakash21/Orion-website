@@ -272,18 +272,21 @@ export const Navbar: React.FC<NavbarProps> = ({ onNavigate, onOpenDownload }) =>
                     <div
                       role="menu"
                       aria-label="User account actions"
-                      className="!absolute right-0 top-[calc(100%+8px)] w-[270px] rounded-2xl liquid-glass-elevated p-2.5 text-xs z-50 animate-in fade-in zoom-in-95 duration-150 shadow-xl border border-[var(--glass-border-subtle)]"
+                      className="!absolute right-0 top-[calc(100%+10px)] w-[280px] rounded-2xl macos-window p-2.5 text-xs z-50 animate-in fade-in zoom-in-95 duration-150 shadow-2xl border border-[var(--glass-border)] backdrop-blur-2xl"
                     >
                       <div className="px-3 py-2.5 rounded-xl bg-white/40 dark:bg-white/5 border border-[var(--glass-border-subtle)] mb-1.5 space-y-1">
-                        <span className="text-[10px] font-mono uppercase tracking-wider text-[var(--orion-text-muted)] font-bold block">
-                          SIGNED-IN USER
-                        </span>
+                        <div className="flex items-center justify-between">
+                          <span className="text-[10px] font-mono uppercase tracking-wider text-[var(--orion-text-muted)] font-bold">
+                            SIGNED-IN USER
+                          </span>
+                          <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
+                        </div>
                         <p className="font-semibold text-[var(--orion-text-primary)] truncate text-xs" title={user.email || undefined}>
                           {user.email}
                         </p>
                         <div className="flex items-center gap-1.5 pt-0.5 text-[11px] text-[var(--orion-accent)] font-medium">
                           <ShieldCheck className="w-3.5 h-3.5 shrink-0" />
-                          <span>{isFirebaseConfigured ? 'Verified User' : 'Authenticated'}</span>
+                          <span>{isFirebaseConfigured ? 'Verified Operator' : 'Authenticated'}</span>
                         </div>
                       </div>
 
@@ -376,7 +379,7 @@ export const Navbar: React.FC<NavbarProps> = ({ onNavigate, onOpenDownload }) =>
                 <button
                   type="button"
                   onClick={() => launchOrion(destinationUrl)}
-                  className="px-4 py-2 rounded-xl bg-gradient-to-r from-[#0284C7] to-[#0369A1] hover:from-[#0369A1] hover:to-[#075985] text-white text-xs font-semibold transition-all shadow-[0_4px_16px_rgba(2,132,199,0.35)] hover:shadow-[0_6px_20px_rgba(2,132,199,0.45)] cursor-pointer whitespace-nowrap active:scale-[0.98]"
+                  className="macos-btn-primary px-4 py-2 rounded-xl text-white text-xs font-semibold cursor-pointer whitespace-nowrap"
                 >
                   Launch Orion-9 OS
                 </button>

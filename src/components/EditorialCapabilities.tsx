@@ -7,7 +7,7 @@ export const EditorialCapabilities: React.FC = () => {
       tag: 'CAPABILITY · 01',
       title: 'Rapid Activation',
       description:
-        'Connect ERP, TMS, WMS, and satellite AIS streams in hours—deploying a live canonical operating picture without months of brittle custom integration.',
+        'Connect ERP, TMS, WMS, and satellite AIS streams in hours — deploying a live canonical operating picture without months of brittle custom integration.',
       illustration: (
         <svg viewBox="0 0 120 120" className="w-24 h-24 sm:w-28 sm:h-28" fill="none" aria-hidden="true">
           {/* Isometric Base Plinth */}
@@ -88,31 +88,23 @@ export const EditorialCapabilities: React.FC = () => {
             x1="60"
             y1="14"
             x2="60"
-            y2="84"
+            y2="76"
             stroke="#0284C7"
-            strokeWidth="2.2"
+            strokeWidth="2"
             strokeDasharray="3 3"
           />
-          <ellipse
-            cx="60"
-            cy="41"
-            rx="14"
-            ry="7.5"
-            fill="#0284C7"
-            fillOpacity="0.28"
-            stroke="currentColor"
-            strokeWidth="1.6"
-          />
-          <circle cx="60" cy="41" r="3.2" fill="currentColor" />
+          <circle cx="60" cy="22" r="5" fill="#0284C7" stroke="currentColor" strokeWidth="1.6" />
+          <circle cx="60" cy="48" r="4" fill="currentColor" />
+          <circle cx="60" cy="74" r="3" fill="currentColor" />
         </svg>
       ),
     },
     {
-      id: 'governed-decisions',
+      id: 'governed-execution',
       tag: 'CAPABILITY · 03',
-      title: 'Governed Decisions',
+      title: 'Governed Execution',
       description:
-        'Stochastic solvers evaluate 8,500+ reroute scenarios inside deterministic Zero-Trust policy bounds with cryptographic sign-off verification.',
+        'Deterministic Zero-Trust guardrails prevent hallucinated solver recommendations. Threshold triggers automatically escalate to human-in-the-loop reviewers.',
       illustration: (
         <svg viewBox="0 0 120 120" className="w-24 h-24 sm:w-28 sm:h-28" fill="none" aria-hidden="true">
           <polygon
@@ -218,11 +210,11 @@ export const EditorialCapabilities: React.FC = () => {
           <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full liquid-glass-badge text-[11px] font-mono uppercase tracking-wider text-[var(--orion-accent)] font-semibold">
             <span>Enterprise Architecture Capabilities</span>
           </div>
-          <h2 className="font-editorial text-3xl sm:text-5xl lg:text-[50px] font-extrabold tracking-[-0.03em] leading-[1.08] text-[var(--orion-text-primary)]">
-            Designed for today’s operations,
+          <h2 className="font-editorial text-3xl sm:text-5xl lg:text-[50px] font-extrabold tracking-tight leading-[1.12] text-[var(--orion-text-primary)]">
+            Designed for today's operations,
             <br className="hidden sm:inline" /> beyond legacy supply chain workflows.
           </h2>
-          <p className="text-base text-[var(--orion-text-secondary)] max-w-2xl leading-relaxed">
+          <p className="text-base text-[var(--orion-text-secondary)] max-w-2xl leading-relaxed font-sans">
             Eliminate blind spots between tier-1 purchase orders, multi-modal transport manifests, and factory assembly schedules with continuous deterministic reconciliation.
           </p>
         </div>
@@ -232,7 +224,7 @@ export const EditorialCapabilities: React.FC = () => {
           {capabilities.map((item, index) => (
             <div
               key={item.id}
-              className="liquid-glass-card liquid-glass-interactive rounded-3xl p-7 flex flex-col justify-between group hover:shadow-xl transition-all duration-300"
+              className="liquid-glass-card liquid-glass-interactive rounded-3xl p-7 flex flex-col justify-between group cursor-default transition-all duration-300"
             >
               <div>
                 <div
@@ -248,14 +240,17 @@ export const EditorialCapabilities: React.FC = () => {
                 <h3 className="font-editorial text-xl font-bold tracking-tight text-[var(--orion-text-primary)] mb-2.5">
                   {item.title}
                 </h3>
-                <p className="text-xs sm:text-sm text-[var(--orion-text-secondary)] leading-relaxed">
+                <p className="text-xs sm:text-sm text-[var(--orion-text-secondary)] leading-relaxed font-sans">
                   {item.description}
                 </p>
               </div>
 
               <div className="pt-6 mt-6 border-t border-[var(--glass-border-subtle)] flex items-center justify-between text-[11px] font-mono text-[var(--orion-text-muted)]">
                 <span>VERIFIED ONTOLOGY</span>
-                <span className="text-emerald-500 font-semibold">ACTIVE</span>
+                <span className="inline-flex items-center gap-1.5 text-emerald-500 font-semibold">
+                  <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
+                  ACTIVE
+                </span>
               </div>
             </div>
           ))}

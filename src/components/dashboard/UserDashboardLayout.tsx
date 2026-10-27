@@ -126,8 +126,8 @@ export const UserDashboardLayout: React.FC<UserDashboardLayoutProps> = ({
             </button>
           </div>
 
-          {/* Center: Desktop Navigation Tabs */}
-          <nav className="hidden lg:flex items-center gap-1.5 liquid-glass-subtle p-1 rounded-2xl border border-[var(--glass-border-subtle)]">
+          {/* Center: Desktop Navigation Tabs (macOS Segmented Picker) */}
+          <nav className="hidden lg:flex items-center gap-1 macos-segmented p-1 rounded-2xl border border-[var(--glass-border-subtle)]">
             {navTabs.map((tab) => {
               const Icon = tab.icon;
               return (
@@ -135,10 +135,8 @@ export const UserDashboardLayout: React.FC<UserDashboardLayoutProps> = ({
                   key={tab.path}
                   type="button"
                   onClick={() => handleTabClick(tab.path)}
-                  className={`flex items-center gap-2 px-3 py-1.5 rounded-xl text-xs font-medium transition-all cursor-pointer ${
-                    tab.isActive
-                      ? 'bg-sky-500 text-white shadow-sm shadow-sky-500/25 font-semibold'
-                      : 'text-[var(--orion-text-secondary)] hover:text-[var(--orion-text-primary)] hover:bg-white/40 dark:hover:bg-white/5'
+                  className={`flex items-center gap-2 px-3.5 py-1.5 rounded-xl text-xs font-medium cursor-pointer macos-segmented-pill ${
+                    tab.isActive ? 'active' : ''
                   }`}
                 >
                   <Icon className="w-3.5 h-3.5" />
@@ -179,7 +177,7 @@ export const UserDashboardLayout: React.FC<UserDashboardLayoutProps> = ({
             <button
               type="button"
               onClick={() => launchOrion(destinationUrl)}
-              className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl bg-gradient-to-r from-[#0284C7] to-[#0369A1] hover:from-[#0369A1] hover:to-[#075985] text-white text-xs font-semibold shadow-sm shadow-sky-600/30 hover:shadow-md hover:shadow-sky-600/40 transition-all cursor-pointer whitespace-nowrap active:scale-[0.98]"
+              className="macos-btn-primary inline-flex items-center gap-1.5 px-4 py-2 rounded-xl text-white text-xs font-semibold cursor-pointer whitespace-nowrap"
             >
               <Sparkles className="w-3.5 h-3.5" />
               <span className="hidden sm:inline">Launch Orion-9 OS</span>

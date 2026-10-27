@@ -198,14 +198,16 @@ export function AdminLogin({ onNavigate }: AdminLoginProps) {
 
       {/* Main Liquid Glass macOS Admin Window */}
       <main className="max-w-lg w-full mx-auto my-4 sm:my-10 relative z-10">
-        <div className="liquid-glass-elevated rounded-2xl sm:rounded-3xl border border-[var(--glass-border)] shadow-2xl overflow-hidden p-5 sm:p-8 md:p-10">
+        <div className="macos-window rounded-2xl sm:rounded-3xl border border-[var(--glass-border)] shadow-2xl overflow-hidden p-5 sm:p-8 md:p-10 backdrop-blur-2xl">
           {/* macOS Titlebar & Traffic Lights */}
           <div className="flex items-center justify-between pb-6 mb-6 border-b border-[var(--glass-border-subtle)]">
-            <div className="flex items-center gap-2">
-              <span className="w-3 h-3 rounded-full bg-[#FF5F56] border border-[#E0443E]" />
-              <span className="w-3 h-3 rounded-full bg-[#FFBD2E] border border-[#DEA123]" />
-              <span className="w-3 h-3 rounded-full bg-[#27C93F] border border-[#1AAB29]" />
-              <span className="ml-2 text-[10px] font-mono uppercase tracking-wider text-[var(--orion-accent)] font-semibold">
+            <div className="flex items-center gap-3">
+              <div className="macos-traffic-lights" aria-hidden="true">
+                <span className="macos-traffic-light close" />
+                <span className="macos-traffic-light minimize" />
+                <span className="macos-traffic-light zoom" />
+              </div>
+              <span className="text-[10px] font-mono uppercase tracking-wider text-[var(--orion-accent)] font-semibold">
                 ADMIN CONSOLE GATEWAY
               </span>
             </div>
