@@ -209,24 +209,24 @@ export const OrionHeroBrandLockup: React.FC<OrionHeroBrandLockupProps> = ({
          ========================================================================== */}
       <div
         data-testid="orion-hero-animated-logo"
-        className="relative w-[230px] sm:w-[300px] md:w-[340px] lg:w-[380px] flex flex-col items-center justify-center select-none -translate-y-[80px]"
+        className="relative w-[250px] sm:w-[275px] md:w-[290px] lg:w-[305px] flex flex-col items-center justify-center select-none translate-y-0"
       >
         {/* Stage 1 — Atmosphere: Soft radiant sky-white atmosphere behind logo (no dark halo) */}
         <div
           aria-hidden="true"
           data-testid="orion-hero-ambient-glow"
-          className="pointer-events-none absolute w-[240px] h-[200px] sm:w-[320px] sm:h-[260px] lg:w-[380px] lg:h-[300px] top-0 rounded-full blur-3xl -z-10"
+          className="pointer-events-none absolute w-[240px] h-[200px] sm:w-[300px] sm:h-[240px] lg:w-[340px] lg:h-[260px] top-2 rounded-full blur-3xl -z-10"
           style={{
             opacity: introState.ambientGlowOpacity,
             background:
-              'radial-gradient(circle at 50% 45%, rgba(186, 230, 253, 0.40) 0%, rgba(224, 242, 254, 0.18) 45%, rgba(255, 255, 255, 0) 72%)',
+              'radial-gradient(circle at 50% 45%, rgba(186, 230, 253, 0.45) 0%, rgba(224, 242, 254, 0.20) 45%, rgba(255, 255, 255, 0) 72%)',
           }}
         />
 
         {/* 3D Precision-Engineered Physical Metallic Emblem */}
         <div
           data-testid="orion-stage2-infinity"
-          className="w-full aspect-[1000/660] relative flex items-center justify-center"
+          className="w-full aspect-[1000/640] relative flex items-center justify-center overflow-visible"
           style={{
             opacity: introState.infinityOpacity,
             transform: `scale(${introState.logoScale.toFixed(4)})`,
@@ -241,9 +241,9 @@ export const OrionHeroBrandLockup: React.FC<OrionHeroBrandLockupProps> = ({
         </div>
 
         {/* Crisp Vector Typography: ORION-9 Wordmark & Taglines */}
-        <div className="w-full aspect-[1000/270] -mt-2 relative">
+        <div className="w-full aspect-[1000/280] -mt-1 relative">
           <svg
-            viewBox="0 660 1000 270"
+            viewBox="0 650 1000 280"
             className="w-full h-full overflow-visible"
             fill="none"
             xmlns="http://www.w3.org/2000/svg"
@@ -251,13 +251,26 @@ export const OrionHeroBrandLockup: React.FC<OrionHeroBrandLockupProps> = ({
             aria-label="Orion-9 — Supply Chain Intelligence"
           >
             <defs>
-              {/* ORION-9 Wordmark Metallic Fill (Silver-Chrome Left to Ice-Cyan Right) */}
-              <linearGradient id="orionWordmarkMetal" x1="-360" y1="-50" x2="360" y2="30" gradientUnits="userSpaceOnUse">
+              {/* High-Contrast Dual-Reflection Chrome Gradient for ORION (Image 2) */}
+              <linearGradient id="orionChromeMetal" x1="0%" y1="0%" x2="0%" y2="100%">
                 <stop offset="0%" stopColor="#FFFFFF" />
-                <stop offset="30%" stopColor="#F8FAFC" />
-                <stop offset="65%" stopColor="#E2E8F0" />
-                <stop offset="85%" stopColor="#BAE6FD" />
-                <stop offset="100%" stopColor="#00E5FF" />
+                <stop offset="24%" stopColor="#DFEDF9" />
+                <stop offset="46%" stopColor="#93B8DC" />
+                <stop offset="50%" stopColor="#142842" />
+                <stop offset="66%" stopColor="#2E527D" />
+                <stop offset="84%" stopColor="#A2C8EE" />
+                <stop offset="100%" stopColor="#223E63" />
+              </linearGradient>
+
+              {/* Luminous Electric-Cyan to Royal-Blue Chrome Gradient for '9' (Image 2) */}
+              <linearGradient id="orionNineMetal" x1="0%" y1="0%" x2="0%" y2="100%">
+                <stop offset="0%" stopColor="#E6FAFF" />
+                <stop offset="28%" stopColor="#5CE1E6" />
+                <stop offset="48%" stopColor="#00B4D8" />
+                <stop offset="52%" stopColor="#033863" />
+                <stop offset="72%" stopColor="#0096C7" />
+                <stop offset="88%" stopColor="#48CAE4" />
+                <stop offset="100%" stopColor="#023E8A" />
               </linearGradient>
 
               {/* Chrome Reflection Sweep Gradient */}
@@ -269,6 +282,12 @@ export const OrionHeroBrandLockup: React.FC<OrionHeroBrandLockupProps> = ({
                 <stop offset="100%" stopColor="#FFFFFF" stopOpacity="0" />
               </linearGradient>
 
+              {/* Beveled Text Depth & Drop Shadow for High-Contrast Pop */}
+              <filter id="orionWordmarkShadow" x="-15%" y="-25%" width="130%" height="160%">
+                <feDropShadow dx="0" dy="4" stdDeviation="5" floodColor="#040914" floodOpacity="0.35" />
+                <feDropShadow dx="0" dy="1" stdDeviation="1.5" floodColor="#040914" floodOpacity="0.55" />
+              </filter>
+
               <clipPath id="orionWordmarkGlyphClip">
                 <text
                   x="0"
@@ -277,8 +296,8 @@ export const OrionHeroBrandLockup: React.FC<OrionHeroBrandLockupProps> = ({
                   style={{
                     fontFamily: "system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif",
                     fontWeight: 900,
-                    fontSize: '116px',
-                    letterSpacing: '0.07em',
+                    fontSize: '122px',
+                    letterSpacing: '0.09em',
                   }}
                 >
                   ORION-9
@@ -296,22 +315,26 @@ export const OrionHeroBrandLockup: React.FC<OrionHeroBrandLockupProps> = ({
                 transform: `translate3d(0, ${introState.wordmarkTranslateY.toFixed(2)}px, 0)`,
               }}
             >
-              <g transform="translate(500, 776)">
-                {/* Authoritative High-Contrast Sans-Serif ORION-9: Deep Obsidian "ORION" + Vivid Sky-Blue "-" + Electric-Cyan "9" */}
+              <g transform="translate(500, 770)" filter="url(#orionWordmarkShadow)">
+                {/* Authoritative High-Contrast Sans-Serif ORION-9: Metallic Chrome "ORION" + Vivid Sky-Blue "-" + Electric-Cyan "9" */}
                 <text
                   x="0"
                   y="0"
                   textAnchor="middle"
+                  stroke="#050C1A"
+                  strokeWidth="3.5"
+                  strokeLinejoin="round"
+                  paintOrder="stroke fill"
                   style={{
                     fontFamily: "system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif",
                     fontWeight: 900,
-                    fontSize: '106px',
-                    letterSpacing: '0.08em',
+                    fontSize: '122px',
+                    letterSpacing: '0.09em',
                   }}
                 >
-                  <tspan fill="#070B19">ORION</tspan>
-                  <tspan fill="#0284C7">-</tspan>
-                  <tspan fill="#00D2FF">9</tspan>
+                  <tspan fill="url(#orionChromeMetal)">ORION</tspan>
+                  <tspan fill="#00D2FF" stroke="#050C1A" strokeWidth="3.5">-</tspan>
+                  <tspan fill="url(#orionNineMetal)" stroke="#050C1A" strokeWidth="3.5">9</tspan>
                 </text>
 
                 {/* Strictly Glyph-Clipped Chrome Reflection Highlight */}
@@ -319,7 +342,7 @@ export const OrionHeroBrandLockup: React.FC<OrionHeroBrandLockupProps> = ({
                   <rect
                     x={chromeSweepX}
                     y="-110"
-                    width="150"
+                    width="160"
                     height="135"
                     fill="url(#orionChromeReflection)"
                     transform="skewX(-22)"
@@ -342,14 +365,14 @@ export const OrionHeroBrandLockup: React.FC<OrionHeroBrandLockupProps> = ({
             >
               <text
                 x="500"
-                y="844"
+                y="846"
                 textAnchor="middle"
-                fill="#0F172A"
+                fill="#070E1C"
                 style={{
                   fontFamily: "system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif",
-                  fontWeight: 700,
-                  fontSize: '28px',
-                  letterSpacing: '0.28em',
+                  fontWeight: 800,
+                  fontSize: '32px',
+                  letterSpacing: '0.34em',
                 }}
               >
                 SUPPLY CHAIN INTELLIGENCE
@@ -369,11 +392,11 @@ export const OrionHeroBrandLockup: React.FC<OrionHeroBrandLockupProps> = ({
               <g
                 style={{
                   transform: `scaleX(${introState.secondaryTaglineRuleScale.toFixed(3)})`,
-                  transformOrigin: '214px 900px',
+                  transformOrigin: '220px 900px',
                 }}
               >
                 <polygon
-                  points="54,900 84,898 212,898 212,902 84,902"
+                  points="50,901 90,899 220,899 220,903 90,903"
                   fill="#0284C7"
                 />
               </g>
@@ -381,14 +404,14 @@ export const OrionHeroBrandLockup: React.FC<OrionHeroBrandLockupProps> = ({
               {/* Center Tagline */}
               <text
                 x="500"
-                y="903"
+                y="904"
                 textAnchor="middle"
                 fill="#0284C7"
                 style={{
                   fontFamily: "system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif",
-                  fontWeight: 600,
-                  fontSize: '18px',
-                  letterSpacing: '0.22em',
+                  fontWeight: 700,
+                  fontSize: '20px',
+                  letterSpacing: '0.24em',
                 }}
               >
                 A MORE RESILIENT TOMORROW
@@ -398,11 +421,11 @@ export const OrionHeroBrandLockup: React.FC<OrionHeroBrandLockupProps> = ({
               <g
                 style={{
                   transform: `scaleX(${introState.secondaryTaglineRuleScale.toFixed(3)})`,
-                  transformOrigin: '786px 900px',
+                  transformOrigin: '780px 900px',
                 }}
               >
                 <polygon
-                  points="946,900 916,898 788,898 788,902 916,902"
+                  points="950,901 910,899 780,899 780,903 910,903"
                   fill="#0284C7"
                 />
               </g>
@@ -420,7 +443,7 @@ export const OrionHeroBrandLockup: React.FC<OrionHeroBrandLockupProps> = ({
           opacity: introState.supportingTextOpacity,
           transform: `translate3d(0, ${introState.supportingTextTranslateY.toFixed(2)}px, 0)`,
         }}
-        className="max-w-2xl mx-auto -mt-10 sm:-mt-8 flex flex-col items-center"
+        className="max-w-2xl mx-auto mt-2 sm:mt-4 flex flex-col items-center"
       >
         <h1
           data-testid="orion-hero-editorial-headline"

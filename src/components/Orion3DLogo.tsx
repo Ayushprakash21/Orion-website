@@ -36,10 +36,10 @@ const SVG_PATH_FACET4_FOREGROUND_RIBBON =
 const EMBLEM_CENTER_X = 494;
 const EMBLEM_CENTER_Y = 418;
 
-// Authoritative 3D resting perspective angles (prevents orthogonal flattening)
-const RESTING_PITCH = Math.PI + 0.14; // ~8.0 degrees downward perspective tilt
-const RESTING_YAW = -0.18; // ~10.3 degrees yaw turn revealing gleaming metallic sidewalls
-const RESTING_ROLL = -0.035;
+// Authoritative 3D resting perspective angles (prevents orthogonal flattening, reveals beveled chamfers without distorting infinity proportions)
+const RESTING_PITCH = Math.PI + 0.08; // ~4.6 degrees downward perspective tilt
+const RESTING_YAW = -0.10; // ~5.7 degrees yaw turn revealing gleaming metallic sidewalls
+const RESTING_ROLL = -0.02;
 
 /**
  * Helper to check WebGL capability
@@ -67,7 +67,7 @@ function createContactShadowTexture(): THREE.CanvasTexture {
   if (ctx) {
     ctx.clearRect(0, 0, 256, 128);
     const grad = ctx.createRadialGradient(128, 64, 8, 128, 64, 115);
-    grad.addColorStop(0, 'rgba(15, 30, 50, 0.22)');
+    grad.addColorStop(0, 'rgba(15, 30, 50, 0.24)');
     grad.addColorStop(0.35, 'rgba(15, 30, 50, 0.12)');
     grad.addColorStop(0.7, 'rgba(15, 30, 50, 0.03)');
     grad.addColorStop(1, 'rgba(15, 30, 50, 0)');
@@ -86,8 +86,8 @@ function createContactShadowTexture(): THREE.CanvasTexture {
  */
 function createStarburstShape(): THREE.Shape {
   const shape = new THREE.Shape();
-  const outerR = 46;
-  const innerR = 8.5;
+  const outerR = 48;
+  const innerR = 9.0;
   for (let i = 0; i < 8; i++) {
     const r = i % 2 === 0 ? outerR : innerR;
     const angle = (i * Math.PI) / 4 - Math.PI / 2;
@@ -111,6 +111,7 @@ function createStarburstShape(): THREE.Shape {
  * - Genuine z-depth separation: foreground silver ribbon clearly crossing over the underbridge
  * - Premium metallic physical materials: polished chrome, titanium sidewalls, steel-blue, electric cyan
  * - Studio environment reflections and cinematic key, fill, and rim lights
+ * - Framed with comfortable breathing room so the orbit, starburst, and emblem are NEVER clipped
  * - Subtle, restrained contact shadow (no dark obsidian blob)
  * - Smooth pointer parallax tilt with resting return damping
  * - Full prefers-reduced-motion support and graceful 2D vector fallback
@@ -161,18 +162,17 @@ export const Orion3DLogo: React.FC<Orion3DLogoProps> = ({
     };
     mediaQuery.addEventListener('change', onMotionPreferenceChange);
 
-    // Initial sizing
-    let width = container.clientWidth || 320;
-    let height = container.clientHeight || 240;
+    // Sizing
+    let width = container.clientWidth || 300;
+    let height = container.clientHeight || 190;
 
     // Scene & Camera setup
     const scene = new THREE.Scene();
 
-    // Perspective camera positioned closer with natural perspective field of view
-    // to reveal extrusion depth, sidewalls, and physical bevels
-    const camera = new THREE.PerspectiveCamera(38, width / height, 1, 3000);
-    camera.position.set(20, -25, 960);
-    camera.lookAt(0, 0, 0);
+    // Perspective camera positioned with generous padding to prevent any clipping of orbit or starburst
+    const camera = new THREE.PerspectiveCamera(34, width / height, 1, 3000);
+    camera.position.set(0, 0, 1180);
+    camera.lookAt(0, 10, 0);
 
     // Renderer
     let renderer: THREE.WebGLRenderer | null = null;
@@ -186,7 +186,7 @@ export const Orion3DLogo: React.FC<Orion3DLogoProps> = ({
       renderer.setSize(width, height);
       renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
       renderer.toneMapping = THREE.ACESFilmicToneMapping;
-      renderer.toneMappingExposure = 1.3;
+      renderer.toneMappingExposure = 1.35;
       renderer.outputColorSpace = THREE.SRGBColorSpace;
     } catch {
       setWebglSupported(false);
@@ -267,39 +267,39 @@ export const Orion3DLogo: React.FC<Orion3DLogoProps> = ({
     emblemGroup.rotation.x = Math.PI;
     rootGroup.add(emblemGroup);
 
-    // Materials Definition — Dual-Tone PBR for High-End Physical Depth
+    // Materials Definition — Dual-Tone PBR for High-End Physical Depth matching Image 2
     // 1. Foreground Ribbon: Polished Platinum-Chrome Face + Brushed Titanium Sidewalls
     const chromeFrontMaterial = new THREE.MeshPhysicalMaterial({
-      color: new THREE.Color(0xffffff),
-      metalness: 0.68,
-      roughness: 0.10,
-      clearcoat: 0.95,
-      clearcoatRoughness: 0.06,
+      color: new THREE.Color(0xfcfdff),
+      metalness: 0.82,
+      roughness: 0.11,
+      clearcoat: 1.0,
+      clearcoatRoughness: 0.05,
       reflectivity: 1.0,
       envMapIntensity: 1.6,
     });
     const chromeSideMaterial = new THREE.MeshPhysicalMaterial({
       color: new THREE.Color(0x8faec9),
       metalness: 0.88,
-      roughness: 0.28,
+      roughness: 0.26,
       clearcoat: 0.40,
-      clearcoatRoughness: 0.14,
+      clearcoatRoughness: 0.12,
       envMapIntensity: 1.25,
     });
     const chromeMaterials = [chromeFrontMaterial, chromeSideMaterial];
 
     // 2. Under-Bridge Ribbon: Deep Metallic Steel-Blue Face + Dark Navy Sidewalls
     const steelBlueFrontMaterial = new THREE.MeshPhysicalMaterial({
-      color: new THREE.Color(0x1d4e82),
-      metalness: 0.74,
+      color: new THREE.Color(0x1a4675),
+      metalness: 0.80,
       roughness: 0.18,
-      clearcoat: 0.55,
-      clearcoatRoughness: 0.12,
+      clearcoat: 0.60,
+      clearcoatRoughness: 0.10,
       envMapIntensity: 1.3,
     });
     const steelBlueSideMaterial = new THREE.MeshPhysicalMaterial({
-      color: new THREE.Color(0x0f2d50),
-      metalness: 0.90,
+      color: new THREE.Color(0x0e2848),
+      metalness: 0.92,
       roughness: 0.32,
       clearcoat: 0.30,
       envMapIntensity: 1.1,
@@ -308,17 +308,17 @@ export const Orion3DLogo: React.FC<Orion3DLogoProps> = ({
 
     // 3. Right Loop & "9" Stem: Lustrous Blue-Titanium Face + Machined Navy Sidewalls
     const nineArchFrontMaterial = new THREE.MeshPhysicalMaterial({
-      color: new THREE.Color(0x2f73aa),
-      metalness: 0.76,
+      color: new THREE.Color(0x256094),
+      metalness: 0.80,
       roughness: 0.16,
       clearcoat: 0.65,
       clearcoatRoughness: 0.10,
       envMapIntensity: 1.4,
     });
     const nineArchSideMaterial = new THREE.MeshPhysicalMaterial({
-      color: new THREE.Color(0x143c64),
+      color: new THREE.Color(0x123658),
       metalness: 0.88,
-      roughness: 0.30,
+      roughness: 0.28,
       clearcoat: 0.35,
       envMapIntensity: 1.15,
     });
@@ -326,35 +326,35 @@ export const Orion3DLogo: React.FC<Orion3DLogoProps> = ({
 
     // 4. Brushed Silver Return Fold (Left Loop Bottom)
     const silverFoldFrontMaterial = new THREE.MeshPhysicalMaterial({
-      color: new THREE.Color(0xeaf2fa),
-      metalness: 0.72,
+      color: new THREE.Color(0xe6f0fa),
+      metalness: 0.80,
       roughness: 0.14,
       clearcoat: 0.70,
       envMapIntensity: 1.35,
     });
     const silverFoldSideMaterial = new THREE.MeshPhysicalMaterial({
-      color: new THREE.Color(0x84a2be),
+      color: new THREE.Color(0x829fb8),
       metalness: 0.88,
-      roughness: 0.28,
+      roughness: 0.26,
       envMapIntensity: 1.15,
     });
     const silverFoldMaterials = [silverFoldFrontMaterial, silverFoldSideMaterial];
 
     // 5. Deep Electric-Blue Recessed Inner Channel
     const innerBlueMaterial = new THREE.MeshStandardMaterial({
-      color: new THREE.Color(0x0070f3),
-      emissive: new THREE.Color(0x0044cc),
-      emissiveIntensity: 0.75,
+      color: new THREE.Color(0x0066ee),
+      emissive: new THREE.Color(0x0044dd),
+      emissiveIntensity: 0.85,
       metalness: 0.55,
-      roughness: 0.18,
+      roughness: 0.16,
     });
 
     // 6. Luminous Electric-Cyan Bevel Trim
     const cyanGlowMaterial = new THREE.MeshStandardMaterial({
       color: new THREE.Color(0x00f0ff),
       emissive: new THREE.Color(0x00e1ff),
-      emissiveIntensity: 1.3,
-      metalness: 0.3,
+      emissiveIntensity: 1.4,
+      metalness: 0.25,
       roughness: 0.06,
     });
 
@@ -389,18 +389,18 @@ export const Orion3DLogo: React.FC<Orion3DLogoProps> = ({
       }
     };
 
-    // 1. Facet 1: Under-Bridge Metallic Ribbon (Substantial 38-unit extrusion positioned back in Z)
+    // 1. Facet 1: Under-Bridge Metallic Ribbon (Substantial 36-unit extrusion positioned back in Z)
     const meshFacet1 = createExtrudedMesh(
       SVG_PATH_FACET1_UNDERBRIDGE,
       {
-        depth: 38,
+        depth: 36,
         bevelEnabled: true,
-        bevelThickness: 5.5,
-        bevelSize: 3.8,
+        bevelThickness: 5.0,
+        bevelSize: 3.5,
         bevelSegments: 3,
       },
       steelBlueMaterials,
-      22 // Local +Z translates to world -Z (further from camera, genuine physical clearance)
+      18 // Local +Z translates to world -Z (further from camera, genuine physical clearance)
     );
     if (meshFacet1) emblemGroup.add(meshFacet1);
 
@@ -408,40 +408,40 @@ export const Orion3DLogo: React.FC<Orion3DLogoProps> = ({
     const meshFacet1Blue = createExtrudedMesh(
       SVG_PATH_FACET1_BLUE_CHANNEL,
       {
-        depth: 26,
+        depth: 24,
         bevelEnabled: true,
-        bevelThickness: 3.5,
-        bevelSize: 2.2,
+        bevelThickness: 3.0,
+        bevelSize: 2.0,
         bevelSegments: 2,
       },
       innerBlueMaterial,
-      16
+      14
     );
     if (meshFacet1Blue) emblemGroup.add(meshFacet1Blue);
 
-    // 3. Facet 2: Right Loop Outer Arch & Angled Numeral "9" Stem (42-unit extrusion)
+    // 3. Facet 2: Right Loop Outer Arch & Angled Numeral "9" Stem (38-unit extrusion)
     const meshFacet2 = createExtrudedMesh(
       SVG_PATH_FACET2_RIGHT_NINE,
       {
-        depth: 42,
+        depth: 38,
         bevelEnabled: true,
-        bevelThickness: 6.5,
-        bevelSize: 4.2,
+        bevelThickness: 5.5,
+        bevelSize: 3.8,
         bevelSegments: 4,
       },
       nineArchMaterials,
-      -6
+      -5
     );
     if (meshFacet2) emblemGroup.add(meshFacet2);
 
-    // 4. Facet 3: Left Loop Lower-Left Return Fold (40-unit extrusion)
+    // 4. Facet 3: Left Loop Lower-Left Return Fold (36-unit extrusion)
     const meshFacet3 = createExtrudedMesh(
       SVG_PATH_FACET3_LEFT_FOLD,
       {
-        depth: 40,
+        depth: 36,
         bevelEnabled: true,
-        bevelThickness: 6.0,
-        bevelSize: 4.0,
+        bevelThickness: 5.0,
+        bevelSize: 3.5,
         bevelSegments: 3,
       },
       silverFoldMaterials,
@@ -453,10 +453,10 @@ export const Orion3DLogo: React.FC<Orion3DLogoProps> = ({
     const meshFacet3Blue = createExtrudedMesh(
       SVG_PATH_FACET3_INNER_BLUE,
       {
-        depth: 26,
+        depth: 24,
         bevelEnabled: true,
-        bevelThickness: 3.5,
-        bevelSize: 2.2,
+        bevelThickness: 3.0,
+        bevelSize: 2.0,
         bevelSegments: 2,
       },
       innerBlueMaterial,
@@ -468,29 +468,29 @@ export const Orion3DLogo: React.FC<Orion3DLogoProps> = ({
     const meshFacet4Blue = createExtrudedMesh(
       SVG_PATH_FACET4_INNER_WALL,
       {
-        depth: 28,
+        depth: 26,
         bevelEnabled: true,
-        bevelThickness: 3.8,
-        bevelSize: 2.4,
+        bevelThickness: 3.2,
+        bevelSize: 2.2,
         bevelSegments: 2,
       },
       innerBlueMaterial,
-      -14
+      -12
     );
     if (meshFacet4Blue) emblemGroup.add(meshFacet4Blue);
 
-    // 7. Facet 4: Hero Foreground Ribbon (Highest Z-elevation, 48-unit extrusion crossing prominently over underbridge)
+    // 7. Facet 4: Hero Foreground Ribbon (Highest Z-elevation, 44-unit extrusion crossing prominently over underbridge)
     const meshFacet4 = createExtrudedMesh(
       SVG_PATH_FACET4_FOREGROUND_RIBBON,
       {
-        depth: 48,
+        depth: 44,
         bevelEnabled: true,
-        bevelThickness: 7.5,
-        bevelSize: 5.0,
+        bevelThickness: 6.5,
+        bevelSize: 4.5,
         bevelSegments: 4,
       },
       chromeMaterials,
-      -32 // Local -Z translates to world +Z (54 units of physical clearance in front of Facet 1)
+      -28 // Local -Z translates to world +Z (46 units of physical clearance in front of Facet 1)
     );
     if (meshFacet4) emblemGroup.add(meshFacet4);
 
@@ -498,8 +498,8 @@ export const Orion3DLogo: React.FC<Orion3DLogoProps> = ({
     const orbitalCurve = new THREE.EllipseCurve(
       0,
       0, // ax, aY
-      390,
-      285, // xRadius, yRadius
+      385,
+      280, // xRadius, yRadius
       0,
       2 * Math.PI, // aStartAngle, aEndAngle
       false, // aClockwise
@@ -507,47 +507,47 @@ export const Orion3DLogo: React.FC<Orion3DLogoProps> = ({
     );
     const orbitalPoints = orbitalCurve.getPoints(100);
     const orbital3DPoints = orbitalPoints.map(
-      (p) => new THREE.Vector3(p.x, p.y, (p.x / 390) * -85)
+      (p) => new THREE.Vector3(p.x, p.y, (p.x / 385) * -75)
     );
     const orbitalPath = new THREE.CatmullRomCurve3(orbital3DPoints, true);
     const orbitalGeometry = new THREE.TubeGeometry(
       orbitalPath,
       100,
-      4.2, // Substantial 3D metallic tube rail
+      3.8, // Elegant 3D metallic tube rail
       14,
       true
     );
     const orbitalMaterial = new THREE.MeshPhysicalMaterial({
       color: new THREE.Color(0x38bdf8),
       emissive: new THREE.Color(0x0284c7),
-      emissiveIntensity: 0.7,
+      emissiveIntensity: 0.8,
       metalness: 0.88,
       roughness: 0.16,
     });
     const orbitalMesh = new THREE.Mesh(orbitalGeometry, orbitalMaterial);
     orbitalMesh.position.set(0, 0, 0);
-    orbitalMesh.rotation.set(0.28, 0.22, -0.28);
+    orbitalMesh.rotation.set(0.26, 0.20, -0.26);
     emblemGroup.add(orbitalMesh);
 
     // 9. Dark Orbital Sphere Node at (928, 344)
     // Convert (928, 344) to centered coords: (928 - 494, 344 - 418) = (434, -74)
     const sphereGroup = new THREE.Group();
-    sphereGroup.position.set(434, -74, -20);
+    sphereGroup.position.set(434, -74, -18);
 
-    const sphereGeometry = new THREE.SphereGeometry(18, 32, 32);
+    const sphereGeometry = new THREE.SphereGeometry(17, 32, 32);
     const sphereMaterial = new THREE.MeshPhysicalMaterial({
-      color: new THREE.Color(0x040c19),
-      metalness: 0.95,
-      roughness: 0.12,
-      clearcoat: 0.90,
-      clearcoatRoughness: 0.06,
-      reflectivity: 0.95,
+      color: new THREE.Color(0x030812),
+      metalness: 0.98,
+      roughness: 0.10,
+      clearcoat: 1.0,
+      clearcoatRoughness: 0.05,
+      reflectivity: 1.0,
     });
     const sphereMesh = new THREE.Mesh(sphereGeometry, sphereMaterial);
     sphereGroup.add(sphereMesh);
 
     // Glowing cyan equatorial ring around the dark node
-    const sphereHaloGeometry = new THREE.TorusGeometry(23, 1.8, 16, 48);
+    const sphereHaloGeometry = new THREE.TorusGeometry(22, 1.6, 16, 48);
     const sphereHaloMesh = new THREE.Mesh(sphereHaloGeometry, cyanGlowMaterial);
     sphereHaloMesh.rotation.x = Math.PI / 2.3;
     sphereGroup.add(sphereHaloMesh);
@@ -557,50 +557,50 @@ export const Orion3DLogo: React.FC<Orion3DLogoProps> = ({
     // 10. 4-Pointed Cyan-White Starburst Flare at (773, 206)
     // Centered coords: (773 - 494, 206 - 418) = (279, -212)
     const starburstGroup = new THREE.Group();
-    starburstGroup.position.set(279, -212, -38); // High foreground crest
+    starburstGroup.position.set(279, -212, -34); // High foreground crest
 
     const starburstShape = createStarburstShape();
     const starburstGeometry = new THREE.ExtrudeGeometry(starburstShape, {
-      depth: 8.0,
+      depth: 6.5,
       bevelEnabled: true,
-      bevelThickness: 2.5,
-      bevelSize: 1.5,
+      bevelThickness: 2.2,
+      bevelSize: 1.2,
       bevelSegments: 3,
     });
     const starburstMaterial = new THREE.MeshStandardMaterial({
       color: new THREE.Color(0xffffff),
-      emissive: new THREE.Color(0xddf5ff),
-      emissiveIntensity: 1.5,
-      metalness: 0.3,
-      roughness: 0.08,
+      emissive: new THREE.Color(0xe0f8ff),
+      emissiveIntensity: 1.8,
+      metalness: 0.2,
+      roughness: 0.06,
     });
     const starburstMesh = new THREE.Mesh(starburstGeometry, starburstMaterial);
     starburstGroup.add(starburstMesh);
 
     // Glowing cyan core center
-    const starburstCoreGeometry = new THREE.SphereGeometry(7.0, 16, 16);
+    const starburstCoreGeometry = new THREE.SphereGeometry(6.5, 16, 16);
     const starburstCoreMesh = new THREE.Mesh(
       starburstCoreGeometry,
       cyanGlowMaterial
     );
-    starburstCoreMesh.position.z = -3;
+    starburstCoreMesh.position.z = -2.5;
     starburstGroup.add(starburstCoreMesh);
 
     emblemGroup.add(starburstGroup);
 
     // 11. Subtle, Restrained Contact Shadow (Directly beneath emblem, DoubleSide, No dark halo)
     const shadowTexture = createContactShadowTexture();
-    const shadowPlaneGeometry = new THREE.PlaneGeometry(560, 140);
+    const shadowPlaneGeometry = new THREE.PlaneGeometry(540, 120);
     const shadowPlaneMaterial = new THREE.MeshBasicMaterial({
       map: shadowTexture,
       transparent: true,
-      opacity: 0.40,
+      opacity: 0.32,
       side: THREE.DoubleSide,
       depthWrite: false,
     });
     const shadowMesh = new THREE.Mesh(shadowPlaneGeometry, shadowPlaneMaterial);
     // In local emblem space (with rotX = PI), negative Y translates to world -Y (bottom)
-    shadowMesh.position.set(0, 260, 40);
+    shadowMesh.position.set(0, 255, 30);
     emblemGroup.add(shadowMesh);
 
     // Pointer Interaction Handlers — Tilting around the Authoritative 3D Hero Perspective Angle
@@ -612,9 +612,9 @@ export const Orion3DLogo: React.FC<Orion3DLogoProps> = ({
       const normY = ((e.clientY - rect.top) / rect.height) * 2 - 1;
 
       // Dynamic tilt responding cleanly around the resting 3D hero perspective angle
-      interactionRef.current.targetRotY = RESTING_YAW + normX * 0.28;
-      interactionRef.current.targetRotX = RESTING_PITCH - normY * 0.18;
-      interactionRef.current.targetRotZ = RESTING_ROLL + normX * 0.05;
+      interactionRef.current.targetRotY = RESTING_YAW + normX * 0.18;
+      interactionRef.current.targetRotX = RESTING_PITCH - normY * 0.12;
+      interactionRef.current.targetRotZ = RESTING_ROLL + normX * 0.03;
       interactionRef.current.isHovered = true;
     };
 
@@ -632,8 +632,8 @@ export const Orion3DLogo: React.FC<Orion3DLogoProps> = ({
     // Resize Observer
     const handleResize = () => {
       if (!container || !renderer) return;
-      const newWidth = container.clientWidth || 320;
-      const newHeight = container.clientHeight || 240;
+      const newWidth = container.clientWidth || 300;
+      const newHeight = container.clientHeight || 190;
       camera.aspect = newWidth / newHeight;
       camera.updateProjectionMatrix();
       renderer.setSize(newWidth, newHeight);
@@ -674,9 +674,9 @@ export const Orion3DLogo: React.FC<Orion3DLogoProps> = ({
       let idleFloat = 0;
 
       if (!isReduced) {
-        idlePitch = Math.sin(elapsedTime * 1.2) * 0.02;
-        idleYaw = Math.cos(elapsedTime * 0.8) * 0.025;
-        idleFloat = Math.sin(elapsedTime * 1.5) * 3.5;
+        idlePitch = Math.sin(elapsedTime * 1.2) * 0.015;
+        idleYaw = Math.cos(elapsedTime * 0.8) * 0.018;
+        idleFloat = Math.sin(elapsedTime * 1.5) * 2.5;
       }
 
       emblemGroup.rotation.x =
@@ -689,7 +689,7 @@ export const Orion3DLogo: React.FC<Orion3DLogoProps> = ({
 
       // Gentle starburst shimmer
       const starScale =
-        1 + (isReduced ? 0 : Math.sin(elapsedTime * 3.2) * 0.08);
+        1 + (isReduced ? 0 : Math.sin(elapsedTime * 3.2) * 0.06);
       starburstGroup.scale.set(starScale, starScale, 1);
 
       // Intro sequence scaling & opacity integration
