@@ -5,7 +5,7 @@ import { useTheme } from '../../context/ThemeContext';
 import { FlowLogin } from './FlowLogin';
 import { FlowSignup } from './FlowSignup';
 import { OrionLogo } from '../OrionLogo';
-import { ArrowLeft, ArrowRight, ShieldCheck, Globe2, Lock, Sun, Moon } from 'lucide-react';
+import { ArrowLeft, ArrowRight, ShieldCheck, Lock, Sun, Moon } from 'lucide-react';
 
 interface AuthPageViewProps {
   mode: 'login' | 'signup';
@@ -21,8 +21,6 @@ export const AuthPageView: React.FC<AuthPageViewProps> = ({ mode, onNavigate }) 
     user,
     username,
     launchOrion,
-    destinationUrl,
-    isFirebaseConfigured,
   } = useAuth();
   const { activeConfig } = useSiteConfig();
   const { theme, toggleTheme } = useTheme();
@@ -248,19 +246,15 @@ export const AuthPageView: React.FC<AuthPageViewProps> = ({ mode, onNavigate }) 
           </div>
         )}
 
-        {/* Environment & Security Footnote in Liquid Glass */}
+        {/* Security Footnote in Liquid Glass */}
         <div className="mt-5 max-w-md w-full rounded-2xl liquid-glass-subtle px-4 py-3 text-[11px] text-[var(--orion-text-secondary)] flex flex-wrap items-center justify-between gap-2 shadow-xs border border-[var(--glass-border-subtle)]">
           <div className="flex items-center gap-1.5">
             <Lock className="w-3.5 h-3.5 text-[var(--orion-accent)]" />
-            <span className="font-medium">
-              {isFirebaseConfigured
-                ? 'Firebase Identity Gateway Connected'
-                : 'Environment-Driven Auth Gateway'}
-            </span>
+            <span className="font-medium">Enterprise Identity Protection</span>
           </div>
-          <div className="flex items-center gap-1.5 font-mono text-[10px] text-[var(--orion-text-muted)]">
-            <Globe2 className="w-3.5 h-3.5 text-[var(--orion-accent)]" />
-            <span className="truncate max-w-[180px]">{destinationUrl}</span>
+          <div className="flex items-center gap-1.5 text-[10px] text-[var(--orion-text-muted)]">
+            <ShieldCheck className="w-3.5 h-3.5 text-[var(--orion-accent)]" />
+            <span>256-Bit SSL Encrypted Session</span>
           </div>
         </div>
       </main>

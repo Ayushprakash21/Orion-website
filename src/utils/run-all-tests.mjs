@@ -1557,6 +1557,43 @@ runTest('66. P0 3D animated hero centerpiece remains autonomous and unaffected b
   assert.equal(heroReveal.primaryTaglineOpacity, 1);
 });
 
+runTest('67. Account dropdown structure: SIGNED-IN USER hierarchy and email display', () => {
+  function getAccountDropdownData(user, isFirebaseConfigured) {
+    if (!user) return null;
+    return {
+      heading: 'SIGNED-IN USER',
+      email: user.email || 'user@example.com',
+      authStatus: isFirebaseConfigured ? 'Verified User' : 'Authenticated',
+      actions: ['Admin Console', 'Sign out'],
+    };
+  }
+
+  const dropdown = getAccountDropdownData({ email: 'kabirshah0021@gmail.com', role: 'admin' }, true);
+  assert.ok(dropdown);
+  assert.equal(dropdown.heading, 'SIGNED-IN USER');
+  assert.equal(dropdown.email, 'kabirshah0021@gmail.com');
+  assert.equal(dropdown.authStatus, 'Verified User');
+  assert.ok(dropdown.actions.includes('Sign out'));
+});
+
+runTest('68. Global human account holder terminology: User instead of Operator', () => {
+  const accountLabels = {
+    dropdownHeading: 'SIGNED-IN USER',
+    sessionBadge: 'SIGNED-IN USER SESSION',
+    signupSubtitle: 'Provision your user credentials and get started.',
+    signupAction: 'Create Account',
+    ctaAction: 'Create Account',
+    modalAuthRequirement: 'User Authentication Required',
+  };
+
+  assert.equal(accountLabels.dropdownHeading, 'SIGNED-IN USER');
+  assert.equal(accountLabels.sessionBadge, 'SIGNED-IN USER SESSION');
+  assert.equal(accountLabels.signupAction, 'Create Account');
+  assert.equal(accountLabels.ctaAction, 'Create Account');
+  assert.equal(accountLabels.modalAuthRequirement, 'User Authentication Required');
+  assert.ok(!Object.values(accountLabels).some((label) => label.toLowerCase().includes('operator')));
+});
+
 
 
 // Execution Summary

@@ -3,7 +3,7 @@
  * Settings → Creator Profile
  *
  * Dedicated admin control for uploading, replacing, and managing the project creator's
- * photographic identity stored in Cloudflare R2 bucket `orion9-brand-assets`.
+ * photographic identity stored in secure asset storage.
  * Synchronizes with the public About Page (#created-by) while preserving creator attribution.
  */
 
@@ -29,7 +29,6 @@ import {
 import { CreatorProfileConfig, LogoPlacementMetadata } from '../../types/cms';
 import {
   uploadCreatorProfileImage,
-  DEFAULT_R2_BUCKET,
 } from '../../services/brandingStorage';
 import { DEFAULT_CREATOR_PROFILE } from '../../data/defaultSiteConfig';
 import { useSiteConfig } from '../../context/SiteConfigContext';
@@ -112,10 +111,10 @@ export const CreatorProfileSection: React.FC<CreatorProfileSectionProps> = ({
 
       showBanner(
         'success',
-        `Creator photograph uploaded to Cloudflare R2 successfully (${metadata.fileType}, ${metadata.dimensions}). Remember to Save Draft or Publish Live.`
+        `Creator photograph uploaded successfully (${metadata.fileType}, ${metadata.dimensions}). Remember to Save Draft or Publish Live.`
       );
     } catch (err: unknown) {
-      const msg = (err as Error).message || 'Failed to upload creator photograph to Cloudflare R2.';
+      const msg = (err as Error).message || 'Failed to upload creator photograph.';
       setUploadError(msg);
       showBanner('error', msg);
     } finally {
@@ -164,8 +163,6 @@ export const CreatorProfileSection: React.FC<CreatorProfileSectionProps> = ({
             </h2>
             <p className="text-xs sm:text-sm text-[var(--orion-text-secondary)] mt-1">
               Manage the creator photograph and attribution displayed on the public About page.
-              Photographs are stored securely in Cloudflare R2 bucket{' '}
-              <code className="font-mono text-[#0284C7] font-semibold">{DEFAULT_R2_BUCKET}</code>.
             </p>
           </div>
 
@@ -246,15 +243,14 @@ export const CreatorProfileSection: React.FC<CreatorProfileSectionProps> = ({
             </div>
           </div>
 
-          {/* Right Column: Actions & Cloudflare R2 Upload Controls */}
+          {/* Right Column: Actions & Photograph Upload Controls */}
           <div className="md:col-span-7 space-y-4">
             <div>
               <h3 className="text-sm font-semibold text-[var(--orion-text-primary)]">
                 Photograph Controls
               </h3>
               <p className="text-xs text-[var(--orion-text-secondary)] mt-0.5">
-                Upload your portrait in PNG, JPEG, WebP, or SVG format (max 5 MB). The asset is
-                stored permanently in Cloudflare R2 and served via the high-speed CDN.
+                Upload your portrait in PNG, JPEG, WebP, or SVG format (max 5 MB).
               </p>
             </div>
 
@@ -312,7 +308,7 @@ export const CreatorProfileSection: React.FC<CreatorProfileSectionProps> = ({
                 <div className="flex items-center justify-between text-xs text-sky-800 dark:text-sky-300 font-medium">
                   <span className="flex items-center gap-1.5">
                     <UploadCloud className="w-4 h-4 animate-bounce" />
-                    Uploading photograph to Cloudflare R2...
+                    Uploading photograph...
                   </span>
                   <span className="font-mono">{uploadProgress}%</span>
                 </div>
@@ -341,11 +337,11 @@ export const CreatorProfileSection: React.FC<CreatorProfileSectionProps> = ({
               <div className="p-3.5 rounded-xl bg-[var(--orion-alt-bg)] border border-[var(--glass-border-subtle)] text-xs font-mono space-y-1.5">
                 <div className="flex items-center justify-between text-[var(--orion-text-muted)] text-[11px] pb-1 border-b border-[var(--glass-border-subtle)]">
                   <span className="font-sans font-semibold uppercase tracking-wider text-[#0284C7]">
-                    R2 Asset Metadata
+                    Asset Metadata
                   </span>
                   <span className="text-emerald-600 font-medium flex items-center gap-1">
                     <Check className="w-3 h-3" />
-                    Verified R2 Object
+                    Verified Asset
                   </span>
                 </div>
                 {creatorForm.avatarMetadata?.originalFilename && (
