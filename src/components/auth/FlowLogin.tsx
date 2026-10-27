@@ -550,7 +550,7 @@ export const FlowLogin: React.FC<FlowLoginProps> = ({
                       onClick={onNavigateSignup}
                       className="font-semibold text-[#294D6B] transition hover:underline disabled:opacity-40 cursor-pointer"
                     >
-                      Create operator account
+                      Create Account
                     </button>
                   </p>
                 )}

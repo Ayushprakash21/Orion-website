@@ -830,7 +830,7 @@ export function AdminConsole({ onNavigate }: AdminConsoleProps) {
           </nav>
         </div>
 
-        {/* 14th Item: Logout & Operator badge */}
+        {/* 14th Item: Logout & User badge */}
         <div className="mt-5 pt-5 border-t border-white/10 space-y-3 shrink-0">
           <div className="px-3 py-2.5 rounded-xl bg-white/5 text-xs">
             <div className="flex items-center gap-1.5 text-emerald-400 font-mono text-[11px] mb-0.5 truncate">
@@ -1698,7 +1698,7 @@ export function AdminConsole({ onNavigate }: AdminConsoleProps) {
               <div className="space-y-3">
                 {(
                   [
-                    ['allowEmailSignup', 'Allow Public Operator Self-Registration (/signup)'],
+                    ['allowEmailSignup', 'Allow Public User Self-Registration (/signup)'],
                     ['allowGoogleAuth', 'Enable Google Workspace OAuth Sign-In'],
                     ['allowPasswordReset', 'Enable Inline Password Recovery Flow'],
                     [
@@ -1772,7 +1772,7 @@ export function AdminConsole({ onNavigate }: AdminConsoleProps) {
                 />
                 <input
                   type="email"
-                  placeholder="operator@orion9.io"
+                  placeholder="user@orion9.io"
                   value={newAdminEmail}
                   onChange={(e) => setNewAdminEmail(e.target.value)}
                   className="px-3 py-2 rounded-lg bg-white border border-[#D5E1E8] text-xs"
@@ -1829,7 +1829,7 @@ export function AdminConsole({ onNavigate }: AdminConsoleProps) {
                 </h2>
                 <p className="text-xs text-[#566575] mt-1">
                   Every configuration save, live publication, and factory reset is recorded with
-                  operator identity and ISO timestamp.
+                  user identity and ISO timestamp.
                 </p>
               </div>
 

@@ -84,7 +84,7 @@ export function verifyBinaryResponseHeaders(
   if (status === 401) {
     return {
       valid: false,
-      error: 'Authentication required: Your operator session is invalid or expired. Please sign in.',
+      error: 'Authentication required: Your user session is invalid or expired. Please sign in.',
       errorType: 'unauthorized',
     };
   }

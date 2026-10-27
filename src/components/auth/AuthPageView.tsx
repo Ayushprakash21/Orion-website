@@ -125,7 +125,7 @@ export const AuthPageView: React.FC<AuthPageViewProps> = ({ mode, onNavigate }) 
             </div>
             <div className="space-y-1.5">
               <span className="text-[10px] font-mono uppercase tracking-widest text-[var(--orion-accent)] font-semibold block">
-                ACTIVE OPERATOR SESSION
+                SIGNED-IN USER SESSION
               </span>
               <h1 className="text-2xl font-bold tracking-tight text-[var(--orion-text-primary)]">
                 Welcome, {user.displayName || username || user.email?.split('@')[0]}
@@ -215,8 +215,8 @@ export const AuthPageView: React.FC<AuthPageViewProps> = ({ mode, onNavigate }) 
               title={companyName}
               subtitle={
                 redirectTarget?.startsWith('/download')
-                  ? 'Register an operator profile to access verified desktop releases.'
-                  : 'Provision your operator credentials and get started.'
+                  ? 'Register a user profile to access verified desktop releases.'
+                  : 'Provision your user credentials and get started.'
               }
               defaultExpanded={true}
               showSocial={activeConfig.authSettings.allowGoogleAuth}

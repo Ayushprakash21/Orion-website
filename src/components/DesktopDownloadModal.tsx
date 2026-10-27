@@ -294,10 +294,10 @@ export const DesktopDownloadModal: React.FC<DesktopDownloadModalProps> = ({
                 </div>
                 <div className="space-y-1 min-w-0">
                   <h4 className="text-xs font-bold text-amber-400 uppercase font-mono tracking-wider">
-                    Operator Authentication Required
+                    User Authentication Required
                   </h4>
                   <p className="text-xs text-amber-200/90 leading-relaxed">
-                    To prevent unverified distribution and preserve cryptographic boundary controls, Orion-9 workstation installers require an authenticated operator profile.
+                    To prevent unverified distribution and preserve cryptographic boundary controls, Orion-9 workstation installers require an authenticated user profile.
                   </p>
                 </div>
               </div>
@@ -325,7 +325,7 @@ export const DesktopDownloadModal: React.FC<DesktopDownloadModalProps> = ({
               <div className="flex items-center gap-2.5 min-w-0">
                 <CheckCircle2 className="w-4 h-4 text-emerald-400 shrink-0" />
                 <span className="truncate text-slate-300">
-                  Operator Session:{' '}
+                  User Session:{' '}
                   <strong className="font-mono text-emerald-300 font-semibold truncate">
                     {user?.email || username}
                   </strong>

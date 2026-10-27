@@ -99,7 +99,7 @@ const TOUR_STEPS: TourStep[] = [
     title: 'Window Layering & Snapping',
     shortDesc: 'Z-index elevation, edge snapping & minimize tray.',
     detail:
-      'Enterprise operators can snap windows into split-screen views, minimize heavy analytics into the taskbar, and restore saved workspace layouts with zero latency.',
+      'Enterprise users can snap windows into split-screen views, minimize heavy analytics into the taskbar, and restore saved workspace layouts with zero latency.',
     icon: Layout,
     hotspot: { x: '55%', y: '48%' },
     simulatedVisual: {

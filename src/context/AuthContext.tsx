@@ -417,7 +417,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       actualEmail = emailOrPass;
       actualPass = pass;
     } else {
-      actualUsername = usernameOrEmail.split('@')[0] || 'operator';
+      actualUsername = usernameOrEmail.split('@')[0] || 'user';
       actualEmail = usernameOrEmail;
       actualPass = emailOrPass;
     }

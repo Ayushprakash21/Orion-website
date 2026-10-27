@@ -226,7 +226,7 @@ export const DEFAULT_SITE_CONFIG: SiteConfigurationBundle = {
     finalCtaEyebrow: '06 / PRODUCTION DEPLOYMENT',
     finalCtaTitle: 'Command your supply chain with fast response, and execution you can rely on.',
     finalCtaSubtitle:
-      'Create an operator account, connect your enterprise ERP, or launch the live Orion-9 OS.',
+      'Create an account, connect your enterprise ERP, or launch the live Orion-9 OS.',
     sectionVisibility: {
       platformOverview: true,
       scrollStorytelling: true,

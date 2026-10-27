@@ -68,12 +68,12 @@ export interface FlowSignupProps {
 
 export const FlowSignup: React.FC<FlowSignupProps> = ({
   title = 'Orion-9',
-  subtitle = 'Provision your operator credentials and get started.',
+  subtitle = 'Provision your user credentials and get started.',
   trigger = 'click',
   defaultExpanded = true,
   showSocial = true,
   showTerms = true,
-  compactText = 'Create operator account',
+  compactText = 'Create Account',
   primaryText = 'Create Orion-9 Account',
   onSubmit,
   onGoogleSignIn,
@@ -313,7 +313,7 @@ export const FlowSignup: React.FC<FlowSignupProps> = ({
             >
               <div className="mx-auto mb-2 inline-flex items-center gap-1.5 rounded-full liquid-glass-badge px-3 py-1 text-[10px] font-mono font-semibold uppercase tracking-widest text-[var(--orion-accent)]">
                 <ShieldCheck size={12} />
-                <span>OPERATOR PROVISIONING</span>
+                <span>USER PROVISIONING</span>
               </div>
               <h2 className="text-[26px] font-bold tracking-[-0.03em] text-[var(--orion-text-primary)]">
                 {title}
@@ -403,7 +403,7 @@ export const FlowSignup: React.FC<FlowSignupProps> = ({
                       htmlFor="flow-signup-username"
                       className="block text-[11px] font-semibold uppercase tracking-wider text-[var(--orion-text-secondary)]"
                     >
-                      Operator Username
+                      Username
                     </label>
                     <span className="text-[10px] text-[#566575]">a-z, 0-9, _ (3-30 chars)</span>
                   </div>
@@ -640,7 +640,7 @@ export const FlowSignup: React.FC<FlowSignupProps> = ({
                   {loading ? (
                     <>
                       <span className="h-4 w-4 animate-spin rounded-full border-2 border-white/30 border-t-white" />
-                      <span>Provisioning operator account...</span>
+                      <span>Creating account...</span>
                     </>
                   ) : (
                     primaryText
@@ -671,7 +671,7 @@ export const FlowSignup: React.FC<FlowSignupProps> = ({
                 )}
 
                 <p className="pt-2 text-center text-[12px] font-medium text-[#566575]">
-                  Already have an operator account?{' '}
+                  Already have an account?{' '}
                   <button
                     type="button"
                     disabled={loading}

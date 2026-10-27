@@ -779,7 +779,7 @@ runTest('31. Public Logged-Out Desktop Navigation items (Sign in, Sign up, Downl
     if (!user) {
       return ['Sign in', 'Sign up', 'Download Desktop'];
     }
-    return ['Download Desktop', 'Operator Profile', 'Launch Orion-9 OS'];
+    return ['Download Desktop', 'User Profile', 'Launch Orion-9 OS'];
   }
 
   const loggedOutItems = getPublicDesktopNavItems(null);
@@ -809,7 +809,7 @@ runTest('33. Authenticated Navigation Access to Orion-9 OS', () => {
     if (!user) {
       return ['Sign in', 'Sign up', 'Download Desktop'];
     }
-    return ['Download Desktop', 'Operator Profile', 'Launch Orion-9 OS'];
+    return ['Download Desktop', 'User Profile', 'Launch Orion-9 OS'];
   }
 
   const authenticatedItems = getPublicDesktopNavItems({ email: 'operator@orion.tech', role: 'operator' });
