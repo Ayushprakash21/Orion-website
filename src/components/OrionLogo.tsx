@@ -211,7 +211,7 @@ export const OrionHeroBrandLockup: React.FC<OrionHeroBrandLockupProps> = ({
         data-testid="orion-hero-animated-logo"
         className="relative w-[230px] sm:w-[300px] md:w-[340px] lg:w-[380px] flex flex-col items-center justify-center select-none -translate-y-[80px]"
       >
-        {/* Stage 1 — Atmosphere: Soft radiant cyan ambient glow behind logo (no dark blob) */}
+        {/* Stage 1 — Atmosphere: Soft radiant sky-white atmosphere behind logo (no dark halo) */}
         <div
           aria-hidden="true"
           data-testid="orion-hero-ambient-glow"
@@ -219,7 +219,7 @@ export const OrionHeroBrandLockup: React.FC<OrionHeroBrandLockupProps> = ({
           style={{
             opacity: introState.ambientGlowOpacity,
             background:
-              'radial-gradient(circle at 50% 45%, rgba(0, 220, 255, 0.40) 0%, rgba(2, 132, 199, 0.18) 50%, rgba(2, 132, 199, 0) 75%)',
+              'radial-gradient(circle at 50% 45%, rgba(186, 230, 253, 0.40) 0%, rgba(224, 242, 254, 0.18) 45%, rgba(255, 255, 255, 0) 72%)',
           }}
         />
 
