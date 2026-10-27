@@ -78,22 +78,7 @@ export function isOriginAllowed(origin: string, env: Env): boolean {
     return true;
   }
 
-  // 3. Allow Cloudflare Workers and Cloudflare Pages origins
-  if (lower.endsWith('.workers.dev') || lower.endsWith('.pages.dev')) {
-    return true;
-  }
-
-  // 4. Allow GitHub Pages origins (e.g. https://ayushprakash21.github.io)
-  if (lower.endsWith('.github.io')) {
-    return true;
-  }
-
-  // 5. Allow Vercel and Netlify preview/production deployments
-  if (lower.endsWith('.vercel.app') || lower.endsWith('.netlify.app')) {
-    return true;
-  }
-
-  // 6. Allow explicitly configured origins in ALLOWED_ORIGINS
+  // 3. Allow explicitly configured origins in ALLOWED_ORIGINS (e.g. dev origins or custom staging domains)
   const rawAllowed = env.ALLOWED_ORIGINS || '';
   if (rawAllowed) {
     const list = rawAllowed.split(',').map((o) => o.trim().toLowerCase());

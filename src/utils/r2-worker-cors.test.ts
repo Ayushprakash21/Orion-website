@@ -46,7 +46,7 @@ function createTestEnv(mockBucket: MockR2Bucket): Env {
     BRAND_ASSETS: mockBucket,
     FIREBASE_PROJECT_ID: 'orion9-dev-db-2026',
     ALLOWED_ORIGINS:
-      'https://orion-9-webos.ai.studio,https://orion9.pages.dev,https://orion-9.pages.dev,https://orion-website.pages.dev,https://orion-9.ayushprakash0021.workers.dev,https://ayushprakash21.github.io,http://localhost:3000,http://localhost:5173,http://localhost,http://127.0.0.1',
+      'https://orion-9-webos.ai.studio,https://ai.studio,http://localhost:3000,http://localhost:5173,http://127.0.0.1:3000',
   };
 }
 
