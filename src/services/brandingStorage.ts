@@ -311,6 +311,22 @@ export function classifyStorageError(storageErr: unknown): string {
     return 'File size exceeds maximum allowed size of 5 MB.';
   }
 
+  if (errCode === 'unexpected_html_response' || combined.includes('unexpected html response')) {
+    return errMsg || 'Upload service returned an unexpected HTML response instead of JSON. Please verify the Cloudflare Worker deployment.';
+  }
+
+  if (errCode === 'invalid_json_response' || combined.includes('invalid json response')) {
+    return errMsg || 'Upload service returned an invalid JSON response. Please verify the Cloudflare Worker deployment.';
+  }
+
+  if (errCode === 'empty_response' || combined.includes('empty response')) {
+    return errMsg || 'Upload service returned an empty response. Please verify the Cloudflare Worker deployment.';
+  }
+
+  if (errCode === 'invalid_response_schema' || combined.includes('did not return a valid asset url')) {
+    return errMsg || 'Upload service did not return a valid asset URL. Please verify the Cloudflare Worker deployment.';
+  }
+
   if (
     status === 400 ||
     errCode === 'unsupported_format' ||
@@ -363,9 +379,13 @@ export function classifyStorageError(storageErr: unknown): string {
   if (
     errCode === 'cors_or_network_failure' ||
     combined.includes('cors') ||
-    combined.includes('network or cors')
+    combined.includes('network or cors') ||
+    combined.includes('preflight')
   ) {
-    return 'Network or CORS failure: Unable to reach Cloudflare R2 upload worker. Please check your internet connection and verify CORS origin permissions.';
+    const host = (storageErr as { endpointHost?: string })?.endpointHost;
+    const path = (storageErr as { endpointPath?: string })?.endpointPath;
+    const target = host ? ` (${host}${path || ''})` : '';
+    return `Network or CORS failure: Unable to reach Cloudflare R2 upload worker${target}. Please check your internet connection and verify CORS origin permissions.`;
   }
 
   if (
@@ -483,13 +503,20 @@ export async function uploadBrandingLogoAsset(
       fileType?: string;
       sizeBytes?: number;
       uploadedAt?: string;
+      requestId?: string;
     }>((resolve, reject) => {
+      const clientRequestId =
+        typeof crypto !== 'undefined' && crypto.randomUUID
+          ? crypto.randomUUID()
+          : 'req-' + Date.now();
+
       // Browser environment with XMLHttpRequest for upload progress tracking
       if (typeof XMLHttpRequest !== 'undefined') {
         const xhr = new XMLHttpRequest();
         xhr.open('POST', endpoint);
         xhr.setRequestHeader('Authorization', `Bearer ${token}`);
         xhr.setRequestHeader('Accept', 'application/json');
+        xhr.setRequestHeader('X-Request-Id', clientRequestId);
 
         if (xhr.upload && onProgress) {
           xhr.upload.onprogress = (evt) => {
@@ -502,33 +529,100 @@ export async function uploadBrandingLogoAsset(
 
         xhr.onload = () => {
           if (onProgress) onProgress(100);
-          if (xhr.status >= 200 && xhr.status < 300) {
-            try {
-              const parsed = JSON.parse(xhr.responseText);
-              if (parsed.success && parsed.url) {
-                resolve(parsed);
-              } else {
-                reject({
-                  status: xhr.status,
-                  code: parsed.code,
-                  message: parsed.error || 'Server did not return a valid asset URL.',
-                });
-              }
-            } catch {
-              reject({ status: xhr.status, message: 'Invalid JSON response from R2 worker.' });
-            }
-          } else {
-            let errorMsg = `HTTP ${xhr.status}`;
-            let errorCode: string | undefined;
-            try {
-              const parsed = JSON.parse(xhr.responseText);
-              if (parsed.error) errorMsg = parsed.error;
-              if (parsed.code) errorCode = parsed.code;
-            } catch {
-              // Ignore parse error
-            }
-            reject({ status: xhr.status, code: errorCode, message: errorMsg });
+
+          const status = xhr.status;
+          const contentType = (xhr.getResponseHeader('Content-Type') || '').toLowerCase();
+          const serverRequestId = xhr.getResponseHeader('X-Request-Id') || clientRequestId;
+          const rawText = xhr.responseText ? xhr.responseText.trim() : '';
+
+          // 1. Defect Guard: Empty response body
+          if (!rawText) {
+            reject({
+              status,
+              code: 'empty_response',
+              message: `Upload service returned an empty response (HTTP ${status}). Request ID: ${serverRequestId}`,
+              requestId: serverRequestId,
+            });
+            return;
           }
+
+          // 2. Defect Guard: Unexpected HTML response (e.g. SPA fallback, Cloudflare error, redirect)
+          const isHtml =
+            contentType.includes('text/html') ||
+            rawText.startsWith('<!doctype') ||
+            rawText.startsWith('<!DOCTYPE') ||
+            rawText.startsWith('<html') ||
+            rawText.startsWith('<head');
+
+          if (isHtml) {
+            reject({
+              status,
+              code: 'unexpected_html_response',
+              contentType,
+              message: `Upload service returned an unexpected HTML response instead of JSON. Request ID: ${serverRequestId}`,
+              requestId: serverRequestId,
+            });
+            return;
+          }
+
+          // 3. Controlled JSON Parsing
+          let parsed: Record<string, any>;
+          try {
+            parsed = JSON.parse(rawText);
+          } catch {
+            reject({
+              status,
+              code: 'invalid_json_response',
+              contentType,
+              message: `Upload service returned an invalid JSON response. Request ID: ${serverRequestId}`,
+              requestId: serverRequestId,
+            });
+            return;
+          }
+
+          const responseReqId = parsed?.requestId || serverRequestId;
+
+          // 4. Schema Evaluation for Success (2xx)
+          if (status >= 200 && status < 300) {
+            if (
+              parsed &&
+              typeof parsed === 'object' &&
+              parsed.success === true &&
+              typeof parsed.url === 'string' &&
+              parsed.url.trim().length > 0
+            ) {
+              resolve({
+                ...parsed,
+                url: parsed.url.trim(),
+                requestId: responseReqId,
+              });
+            } else {
+              reject({
+                status,
+                code: parsed?.code || 'invalid_response_schema',
+                message:
+                  parsed?.error ||
+                  parsed?.message ||
+                  `Server did not return a valid asset URL. Request ID: ${responseReqId}`,
+                requestId: responseReqId,
+              });
+            }
+            return;
+          }
+
+          // 5. Handled Non-2xx Responses
+          const serverCode = parsed?.code || `HTTP_${status}`;
+          const serverError =
+            parsed?.error ||
+            parsed?.message ||
+            `HTTP ${status} server error. Request ID: ${responseReqId}`;
+
+          reject({
+            status,
+            code: serverCode,
+            message: serverError,
+            requestId: responseReqId,
+          });
         };
 
         xhr.onerror = () => {
@@ -540,10 +634,21 @@ export async function uploadBrandingLogoAsset(
               message: 'Network offline: Your device is not connected to the internet.',
             });
           } else {
+            let endpointHost = '';
+            let endpointPath = '';
+            try {
+              const parsedUrl = new URL(endpoint);
+              endpointHost = parsedUrl.host;
+              endpointPath = parsedUrl.pathname;
+            } catch {
+              // fallback
+            }
             reject({
               code: 'cors_or_network_failure',
               status: 0,
-              message: `Network or CORS error: Unable to reach Cloudflare R2 upload worker at ${endpoint}. This may be caused by a CORS restriction, firewall, or ad-blocker.`,
+              endpointHost,
+              endpointPath,
+              message: `Network or preflight failure: Unable to reach Cloudflare R2 upload worker at ${endpointHost || endpoint}. Please verify CORS origin permissions and connectivity.`,
             });
           }
         };
@@ -568,23 +673,94 @@ export async function uploadBrandingLogoAsset(
           headers: {
             Authorization: `Bearer ${token}`,
             Accept: 'application/json',
+            'X-Request-Id': clientRequestId,
           },
           body: formData,
         })
           .then(async (res) => {
             if (onProgress) onProgress(100);
-            if (!res.ok) {
-              let msg = `HTTP ${res.status}`;
-              let code: string | undefined;
-              try {
-                const errData = await res.json();
-                if (errData.error) msg = errData.error;
-                if (errData.code) code = errData.code;
-              } catch {}
-              return reject({ status: res.status, code, message: msg });
+
+            const status = res.status;
+            const contentType = (res.headers.get('content-type') || '').toLowerCase();
+            const serverRequestId = res.headers.get('x-request-id') || clientRequestId;
+            const rawText = (await res.text()).trim();
+
+            if (!rawText) {
+              return reject({
+                status,
+                code: 'empty_response',
+                message: `Upload service returned an empty response (HTTP ${status}). Request ID: ${serverRequestId}`,
+                requestId: serverRequestId,
+              });
             }
-            const data = await res.json();
-            resolve(data);
+
+            const isHtml =
+              contentType.includes('text/html') ||
+              rawText.startsWith('<!doctype') ||
+              rawText.startsWith('<!DOCTYPE') ||
+              rawText.startsWith('<html') ||
+              rawText.startsWith('<head');
+
+            if (isHtml) {
+              return reject({
+                status,
+                code: 'unexpected_html_response',
+                contentType,
+                message: `Upload service returned an unexpected HTML response instead of JSON. Request ID: ${serverRequestId}`,
+                requestId: serverRequestId,
+              });
+            }
+
+            let parsed: Record<string, any>;
+            try {
+              parsed = JSON.parse(rawText);
+            } catch {
+              return reject({
+                status,
+                code: 'invalid_json_response',
+                contentType,
+                message: `Upload service returned an invalid JSON response. Request ID: ${serverRequestId}`,
+                requestId: serverRequestId,
+              });
+            }
+
+            const responseReqId = parsed?.requestId || serverRequestId;
+
+            if (!res.ok) {
+              return reject({
+                status,
+                code: parsed?.code || `HTTP_${status}`,
+                message:
+                  parsed?.error ||
+                  parsed?.message ||
+                  `HTTP ${status} server error. Request ID: ${responseReqId}`,
+                requestId: responseReqId,
+              });
+            }
+
+            if (
+              !parsed ||
+              typeof parsed !== 'object' ||
+              parsed.success !== true ||
+              typeof parsed.url !== 'string' ||
+              !parsed.url.trim()
+            ) {
+              return reject({
+                status,
+                code: parsed?.code || 'invalid_response_schema',
+                message:
+                  parsed?.error ||
+                  parsed?.message ||
+                  `Server did not return a valid asset URL. Request ID: ${responseReqId}`,
+                requestId: responseReqId,
+              });
+            }
+
+            resolve({
+              ...parsed,
+              url: parsed.url.trim(),
+              requestId: responseReqId,
+            });
           })
           .catch((err) => {
             const isOffline = typeof navigator !== 'undefined' && !navigator.onLine;

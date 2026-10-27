@@ -43,7 +43,7 @@ export const AuthPageView: React.FC<AuthPageViewProps> = ({ mode, onNavigate }) 
       onNavigate(redirectTarget);
       return;
     }
-    onNavigate('/');
+    onNavigate('/dashboard');
   };
 
   const companyName = activeConfig.branding.companyName || 'Orion-9';
@@ -155,6 +155,14 @@ export const AuthPageView: React.FC<AuthPageViewProps> = ({ mode, onNavigate }) 
               >
                 <span className="hidden sm:inline">Launch Orion-9 OS</span>
               <span className="sm:hidden">Orion-9 OS</span>
+                <ArrowRight className="w-4 h-4" />
+              </button>
+              <button
+                type="button"
+                onClick={() => onNavigate('/dashboard')}
+                className="w-full h-11 rounded-xl bg-sky-500/15 text-sky-400 hover:bg-sky-500/25 text-xs font-semibold transition-all flex items-center justify-center gap-2 cursor-pointer border border-sky-500/30"
+              >
+                <span>Open User Dashboard</span>
                 <ArrowRight className="w-4 h-4" />
               </button>
               <button

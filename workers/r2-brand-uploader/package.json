@@ -1,11 +1,13 @@
 {
   "name": "orion9-r2-brand-uploader",
   "version": "1.0.0",
+  "type": "module",
   "description": "Orion-9 Cloudflare R2 Brand Asset Storage & Upload Worker",
   "main": "src/index.ts",
   "scripts": {
     "dev": "wrangler dev",
-    "deploy": "wrangler deploy",
+    "build": "esbuild-wasm src/index.ts --bundle --target=es2022 --format=esm --outfile=dist/index.js",
+    "deploy": "npm run build && wrangler deploy dist/index.js --no-bundle",
     "test": "node --test"
   },
   "devDependencies": {

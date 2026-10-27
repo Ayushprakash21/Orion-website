@@ -1,4 +1,4 @@
-import { DesktopReleaseRecord } from '../types/cms';
+import type { DesktopReleaseRecord } from '../types/cms.ts';
 
 export type DownloadErrorType =
   | 'unauthorized'

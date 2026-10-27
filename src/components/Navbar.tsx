@@ -15,6 +15,10 @@ import {
   Sun,
   Moon,
   ChevronDown,
+  LayoutDashboard,
+  GraduationCap,
+  BookOpen,
+  FileText,
 } from 'lucide-react';
 
 interface NavbarProps {
@@ -238,6 +242,54 @@ export const Navbar: React.FC<NavbarProps> = ({ onNavigate, onOpenDownload }) =>
                         </div>
                       </div>
 
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setUserDropdownOpen(false);
+                          handleRoute('/dashboard');
+                        }}
+                        className="w-full flex items-center gap-2 px-3 py-2 rounded-xl text-[var(--orion-text-primary)] hover:bg-white/50 dark:hover:bg-white/10 transition-colors text-left font-medium cursor-pointer"
+                      >
+                        <LayoutDashboard className="w-3.5 h-3.5 text-[var(--orion-accent)]" />
+                        <span>User Dashboard</span>
+                      </button>
+
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setUserDropdownOpen(false);
+                          handleRoute('/dashboard/learn');
+                        }}
+                        className="w-full flex items-center gap-2 px-3 py-2 rounded-xl text-[var(--orion-text-primary)] hover:bg-white/50 dark:hover:bg-white/10 transition-colors text-left font-medium cursor-pointer"
+                      >
+                        <GraduationCap className="w-3.5 h-3.5 text-[var(--orion-accent)]" />
+                        <span>Learning Center</span>
+                      </button>
+
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setUserDropdownOpen(false);
+                          handleRoute('/dashboard/manual');
+                        }}
+                        className="w-full flex items-center gap-2 px-3 py-2 rounded-xl text-[var(--orion-text-primary)] hover:bg-white/50 dark:hover:bg-white/10 transition-colors text-left font-medium cursor-pointer"
+                      >
+                        <BookOpen className="w-3.5 h-3.5 text-[var(--orion-accent)]" />
+                        <span>OS User Manual</span>
+                      </button>
+
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setUserDropdownOpen(false);
+                          handleRoute('/dashboard/documentation');
+                        }}
+                        className="w-full flex items-center gap-2 px-3 py-2 rounded-xl text-[var(--orion-text-primary)] hover:bg-white/50 dark:hover:bg-white/10 transition-colors text-left font-medium cursor-pointer"
+                      >
+                        <FileText className="w-3.5 h-3.5 text-[var(--orion-accent)]" />
+                        <span>Documentation</span>
+                      </button>
+
                       {isAdmin && (
                         <button
                           type="button"
@@ -336,6 +388,22 @@ export const Navbar: React.FC<NavbarProps> = ({ onNavigate, onOpenDownload }) =>
             <div className="pt-3 border-t border-[var(--glass-border-subtle)] flex flex-col gap-2">
               {user ? (
                 <>
+                  <div className="grid grid-cols-2 gap-2">
+                    <button
+                      type="button"
+                      onClick={() => handleRoute('/dashboard')}
+                      className="py-2 px-3 rounded-xl bg-sky-500/15 text-sky-400 font-semibold text-xs text-center border border-sky-500/30"
+                    >
+                      User Dashboard
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => handleRoute('/dashboard/learn')}
+                      className="py-2 px-3 rounded-xl liquid-glass-button text-xs font-medium text-[var(--orion-text-primary)] text-center"
+                    >
+                      Learning Center
+                    </button>
+                  </div>
                   <div className="grid grid-cols-2 gap-2">
                     {isAdmin && (
                       <button

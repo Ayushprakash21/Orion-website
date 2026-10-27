@@ -7,8 +7,8 @@
  * Verifies Firebase Authentication ID tokens and administrator RBAC on all write endpoints.
  */
 
-import { verifyFirebaseAdminToken } from './auth';
-import { sanitizeSvgServer } from './svgSanitizer';
+import { verifyFirebaseAdminToken } from './auth.ts';
+import { sanitizeSvgServer } from './svgSanitizer.ts';
 
 export interface R2ObjectMetadata {
   httpMetadata?: { contentType?: string; cacheControl?: string };
@@ -52,11 +52,21 @@ const ALLOWED_MIME_TYPES = new Set([
 
 const ALLOWED_EXTENSIONS = new Set(['.png', '.jpg', '.jpeg', '.webp', '.svg']);
 
-function isOriginAllowed(origin: string, env: Env): boolean {
+export function isOriginAllowed(origin: string, env: Env): boolean {
   if (!origin) return false;
   const lower = origin.toLowerCase().trim();
 
-  // 1. Allow all localhost, loopback, and local network development origins
+  // 1. Production Google AI Studio & Google Cloud Run origins
+  if (
+    lower === 'https://orion-9-webos.ai.studio' ||
+    lower.endsWith('.ai.studio') ||
+    lower === 'https://ai.studio' ||
+    lower.endsWith('.run.app')
+  ) {
+    return true;
+  }
+
+  // 2. Allow all localhost, loopback, and local network development origins
   if (
     lower.startsWith('http://localhost') ||
     lower.startsWith('http://127.0.0.1') ||
@@ -67,22 +77,22 @@ function isOriginAllowed(origin: string, env: Env): boolean {
     return true;
   }
 
-  // 2. Allow Cloudflare Workers and Cloudflare Pages origins
+  // 3. Allow Cloudflare Workers and Cloudflare Pages origins
   if (lower.endsWith('.workers.dev') || lower.endsWith('.pages.dev')) {
     return true;
   }
 
-  // 3. Allow GitHub Pages origins (e.g. https://ayushprakash21.github.io)
+  // 4. Allow GitHub Pages origins (e.g. https://ayushprakash21.github.io)
   if (lower.endsWith('.github.io')) {
     return true;
   }
 
-  // 4. Allow Vercel and Netlify preview/production deployments
+  // 5. Allow Vercel and Netlify preview/production deployments
   if (lower.endsWith('.vercel.app') || lower.endsWith('.netlify.app')) {
     return true;
   }
 
-  // 5. Allow explicitly configured origins in ALLOWED_ORIGINS
+  // 6. Allow explicitly configured origins in ALLOWED_ORIGINS
   const rawAllowed = env.ALLOWED_ORIGINS || '';
   if (rawAllowed) {
     const list = rawAllowed.split(',').map((o) => o.trim().toLowerCase());
@@ -92,39 +102,50 @@ function isOriginAllowed(origin: string, env: Env): boolean {
   return false;
 }
 
-function getCorsHeaders(request: Request, env: Env): Headers {
+export function getCorsHeaders(request: Request, env: Env): Headers {
   const headers = new Headers();
   const origin = request.headers.get('Origin');
 
-  if (origin) {
-    // Reflect origin to enable browser reading of both successful and error responses
+  if (origin && isOriginAllowed(origin, env)) {
     headers.set('Access-Control-Allow-Origin', origin);
-    if (isOriginAllowed(origin, env)) {
-      headers.set('Access-Control-Allow-Credentials', 'true');
-    }
-  } else {
-    headers.set('Access-Control-Allow-Origin', '*');
+    headers.set('Access-Control-Allow-Methods', 'GET, POST, PUT, OPTIONS');
+    const reqHeaders = request.headers.get('Access-Control-Request-Headers');
+    headers.set(
+      'Access-Control-Allow-Headers',
+      reqHeaders || 'Authorization, Content-Type, Accept, X-Requested-With, Cache-Control, Origin'
+    );
+    headers.set('Access-Control-Max-Age', '86400');
+    headers.set('Vary', 'Origin');
+  } else if (!origin) {
+    headers.set('Access-Control-Allow-Methods', 'GET, POST, PUT, OPTIONS');
+    headers.set(
+      'Access-Control-Allow-Headers',
+      'Authorization, Content-Type, Accept, X-Requested-With, Cache-Control, Origin'
+    );
   }
+  // For disallowed origins: do NOT set Access-Control-Allow-Origin
 
-  headers.set('Access-Control-Allow-Methods', 'GET, POST, PUT, OPTIONS');
-  const reqHeaders = request.headers.get('Access-Control-Request-Headers');
-  headers.set(
-    'Access-Control-Allow-Headers',
-    reqHeaders || 'Authorization, Content-Type, Accept, X-Requested-With, Cache-Control, Origin'
-  );
-  headers.set('Access-Control-Max-Age', '86400');
-  headers.set('Vary', 'Origin');
   return headers;
 }
 
 function jsonResponse(
   data: Record<string, unknown>,
   status = 200,
-  corsHeaders?: Headers
+  corsHeaders?: Headers,
+  requestId?: string
 ): Response {
   const headers = new Headers(corsHeaders);
   headers.set('Content-Type', 'application/json; charset=utf-8');
-  return new Response(JSON.stringify(data), { status, headers });
+  if (requestId) {
+    headers.set('X-Request-Id', requestId);
+  }
+  const isSuccess = status >= 200 && status < 300;
+  const payload: Record<string, unknown> = {
+    success: typeof data.success === 'boolean' ? data.success : isSuccess,
+    ...data,
+    requestId: (data.requestId as string) || requestId || 'req-orion9',
+  };
+  return new Response(JSON.stringify(payload), { status, headers });
 }
 
 function extractFileExtension(fileName: string): string {
@@ -135,13 +156,24 @@ function extractFileExtension(fileName: string): string {
 export default {
   async fetch(request: Request, env: Env): Promise<Response> {
     const corsHeaders = getCorsHeaders(request, env);
+    const requestId = request.headers.get('X-Request-Id') || crypto.randomUUID();
 
     try {
       const url = new URL(request.url);
 
       // 1. Handle CORS Preflight
       if (request.method === 'OPTIONS') {
-        return new Response(null, { status: 204, headers: corsHeaders });
+        const origin = request.headers.get('Origin');
+        if (origin && !isOriginAllowed(origin, env)) {
+          return jsonResponse(
+            { error: 'Origin not allowed by CORS security policy.', code: 'cors_forbidden' },
+            403,
+            corsHeaders
+          );
+        }
+        const optHeaders = new Headers(corsHeaders);
+        optHeaders.set('X-Request-Id', requestId);
+        return new Response(null, { status: 204, headers: optHeaders });
       }
 
     // 2. Health & Status check endpoint
@@ -162,7 +194,8 @@ export default {
           },
         },
         200,
-        corsHeaders
+        corsHeaders,
+        requestId
       );
     }
 
@@ -262,6 +295,19 @@ export default {
       request.method === 'POST' &&
       (url.pathname === '/api/upload-logo' || url.pathname === '/upload')
     ) {
+      // Guard against disallowed cross-origin write requests
+      const requestOrigin = request.headers.get('Origin');
+      if (requestOrigin && !isOriginAllowed(requestOrigin, env)) {
+        return jsonResponse(
+          {
+            error: 'Origin not permitted by CORS security policy.',
+            code: 'cors_forbidden',
+          },
+          403,
+          corsHeaders
+        );
+      }
+
       if (!env.BRAND_ASSETS) {
         return jsonResponse(
           {
@@ -451,7 +497,8 @@ export default {
           originalFilename: file.name,
         },
         200,
-        corsHeaders
+        corsHeaders,
+        requestId
       );
     }
 

@@ -3,12 +3,12 @@ import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import path from 'node:path';
 import crypto from 'node:crypto';
-import { DEFAULT_DESKTOP_RELEASES } from '../data/defaultSiteConfig';
+import { DEFAULT_DESKTOP_RELEASES } from '../data/defaultSiteConfig.ts';
 import {
   validateReleaseForDownload,
   verifyBinaryResponseHeaders,
   DesktopDownloadError,
-} from '../services/downloadService';
+} from '../services/downloadService.ts';
 
 describe('Desktop Installer Download & Binary Pipeline Test Suite', () => {
   const winRelease = DEFAULT_DESKTOP_RELEASES.find((r) => r.platform === 'windows-x64' && r.format === 'exe')!;

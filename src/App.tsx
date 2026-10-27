@@ -4,7 +4,7 @@
  */
 
 import React, { useEffect, useState } from 'react';
-import { AuthProvider } from './context/AuthContext';
+import { AuthProvider, useAuth } from './context/AuthContext';
 import { SiteConfigProvider, useSiteConfig } from './context/SiteConfigContext';
 import { ThemeProvider } from './context/ThemeContext';
 import { Navbar } from './components/Navbar';
@@ -21,9 +21,17 @@ import { AdminConsole } from './components/admin/AdminConsole';
 import { DocsLayout } from './components/docs/DocsLayout';
 import { AboutPage } from './components/about/AboutPage';
 import { initLiquidGlassEngine } from './utils/liquidGlass';
+import { UserDashboardLayout } from './components/dashboard/UserDashboardLayout';
+import { UserDashboardHome } from './components/dashboard/UserDashboardHome';
+import { LearningCenterHome } from './components/dashboard/LearningCenterHome';
+import { LessonReaderView } from './components/dashboard/LessonReaderView';
+import { LearningProgressView } from './components/dashboard/LearningProgressView';
+import { OsUserManualView } from './components/dashboard/OsUserManualView';
+import { DocumentationLibraryView } from './components/dashboard/DocumentationLibraryView';
 
 const AppContent: React.FC = () => {
   const { activeConfig } = useSiteConfig();
+  const { user, loading: authLoading } = useAuth();
 
   const [currentPath, setCurrentPath] = useState<string>(
     window.location.pathname || '/'
@@ -92,6 +100,109 @@ const AppContent: React.FC = () => {
       metaDesc.setAttribute('content', activeConfig.seo.metaDescription);
     }
   }, [activeConfig.seo.metaTitle, activeConfig.seo.metaDescription]);
+
+  if (currentPath === '/dashboard' || currentPath.startsWith('/dashboard')) {
+    if (authLoading) {
+      return (
+        <div className="min-h-screen bg-[var(--orion-canvas)] flex items-center justify-center">
+          <div className="flex flex-col items-center gap-3">
+            <div className="w-8 h-8 rounded-full border-2 border-sky-400 border-t-transparent animate-spin" />
+            <p className="text-xs font-mono text-[var(--orion-text-muted)]">Verifying Operator Session...</p>
+          </div>
+        </div>
+      );
+    }
+
+    if (!user) {
+      const redirectUrl = `/login?redirect=${encodeURIComponent(currentPath)}`;
+      window.history.replaceState({}, '', redirectUrl);
+      return <AuthPageView mode="login" onNavigate={navigate} />;
+    }
+
+    if (currentPath === '/dashboard') {
+      return (
+        <UserDashboardLayout currentPath={currentPath} onNavigate={navigate}>
+          <UserDashboardHome
+            onNavigate={navigate}
+            onOpenDownload={() => setDownloadModalOpen(true)}
+          />
+        </UserDashboardLayout>
+      );
+    }
+
+    if (currentPath === '/dashboard/learn') {
+      return (
+        <UserDashboardLayout
+          currentPath={currentPath}
+          onNavigate={navigate}
+          breadcrumbs={[{ label: 'Learning Center' }]}
+        >
+          <LearningCenterHome onNavigate={navigate} />
+        </UserDashboardLayout>
+      );
+    }
+
+    if (currentPath.startsWith('/dashboard/learn/lessons/')) {
+      const lessonId = currentPath.replace('/dashboard/learn/lessons/', '').split(/[?#]/)[0];
+      return (
+        <UserDashboardLayout
+          currentPath={currentPath}
+          onNavigate={navigate}
+          breadcrumbs={[
+            { label: 'Learning Center', href: '/dashboard/learn' },
+            { label: `Lesson: ${lessonId}` },
+          ]}
+        >
+          <LessonReaderView lessonId={lessonId} onNavigate={navigate} />
+        </UserDashboardLayout>
+      );
+    }
+
+    if (currentPath === '/dashboard/manual' || currentPath.startsWith('/dashboard/manual')) {
+      return (
+        <UserDashboardLayout
+          currentPath={currentPath}
+          onNavigate={navigate}
+          breadcrumbs={[{ label: 'OS User Manual' }]}
+        >
+          <OsUserManualView onNavigate={navigate} />
+        </UserDashboardLayout>
+      );
+    }
+
+    if (currentPath === '/dashboard/documentation' || currentPath.startsWith('/dashboard/documentation')) {
+      return (
+        <UserDashboardLayout
+          currentPath={currentPath}
+          onNavigate={navigate}
+          breadcrumbs={[{ label: 'Documentation Library' }]}
+        >
+          <DocumentationLibraryView onNavigate={navigate} />
+        </UserDashboardLayout>
+      );
+    }
+
+    if (currentPath === '/dashboard/progress' || currentPath.startsWith('/dashboard/progress')) {
+      return (
+        <UserDashboardLayout
+          currentPath={currentPath}
+          onNavigate={navigate}
+          breadcrumbs={[{ label: 'Learning Progress' }]}
+        >
+          <LearningProgressView onNavigate={navigate} />
+        </UserDashboardLayout>
+      );
+    }
+
+    return (
+      <UserDashboardLayout currentPath="/dashboard" onNavigate={navigate}>
+        <UserDashboardHome
+          onNavigate={navigate}
+          onOpenDownload={() => setDownloadModalOpen(true)}
+        />
+      </UserDashboardLayout>
+    );
+  }
 
   if (currentPath === '/login') {
     return <AuthPageView mode="login" onNavigate={navigate} />;
