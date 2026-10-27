@@ -256,6 +256,33 @@ export function classifyStorageError(storageErr: unknown): string {
   const status = (storageErr as { status?: number })?.status;
   const combined = `${errCode || ''} ${errMsg} ${status || ''}`.toLowerCase();
 
+  // Preserved specific server-side diagnostic messages
+  if (
+    errMsg &&
+    !errMsg.startsWith('HTTP ') &&
+    !errMsg.includes('Unknown storage error') &&
+    errMsg !== 'Logo upload failed.'
+  ) {
+    if (combined.includes('expired')) {
+      return 'Session expired: Your authentication session has expired. Please sign in again as an administrator.';
+    }
+    if (combined.includes('malformed') || combined.includes('invalid cryptographic signature')) {
+      return 'Authentication failed: Invalid administrator token signature. Please sign in again.';
+    }
+    if (
+      status === 403 ||
+      errCode === 'unauthorized' ||
+      combined.includes('permission') ||
+      combined.includes('unauthorized') ||
+      combined.includes('access denied')
+    ) {
+      if (errMsg && errMsg !== 'Permission denied' && errMsg !== 'Unauthorized' && errMsg.includes('administrator')) {
+        return errMsg.includes('Permission denied') ? errMsg : `Permission denied: ${errMsg}`;
+      }
+      return 'Permission denied: You do not have permission to upload brand assets to Cloudflare R2. Please ensure you are authenticated as an administrator.';
+    }
+  }
+
   if (
     status === 401 ||
     errCode === 'unauthenticated' ||
@@ -341,10 +368,25 @@ export async function uploadBrandingLogoAsset(
     const currentUser = auth?.currentUser;
     if (currentUser) {
       try {
-        token = await currentUser.getIdToken();
+        // Attempt fresh token first, with fallback to standard token
+        token = await currentUser.getIdToken(true).catch(async () => {
+          return currentUser.getIdToken(false);
+        });
       } catch (tokenErr) {
         console.error('[BrandingStorage] Failed to retrieve Firebase ID token:', tokenErr);
       }
+    }
+  }
+
+  // Fallback: Check if local development admin session is active
+  if (!token && typeof window !== 'undefined') {
+    try {
+      const isDevAdmin = window.sessionStorage.getItem('orion_local_dev_admin') === 'true';
+      if (isDevAdmin) {
+        token = 'mock-local-dev-admin-token';
+      }
+    } catch {
+      // Ignore sessionStorage errors
     }
   }
 

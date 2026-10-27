@@ -57,7 +57,7 @@ export const CreatorProfileSection: React.FC<CreatorProfileSectionProps> = ({
 
   const fileInputRef = useRef<HTMLInputElement | null>(null);
 
-  const { user } = useAuth();
+  const { user, isAdmin, loading: authLoading } = useAuth();
   const { publishedConfig } = useSiteConfig();
 
   const currentUrl = creatorForm.avatarUrl;
@@ -70,12 +70,32 @@ export const CreatorProfileSection: React.FC<CreatorProfileSectionProps> = ({
     const file = e.target.files?.[0];
     if (!file) return;
 
+    if (authLoading) {
+      showBanner('warning', 'Verifying administrator session, please wait a moment...');
+      return;
+    }
+
+    if (!user && !isAdmin) {
+      const authErr = 'Authentication required: You must be signed in as an administrator to upload assets.';
+      setUploadError(authErr);
+      showBanner('error', authErr);
+      return;
+    }
+
     setIsUploading(true);
     setUploadProgress(0);
     setUploadError(null);
 
     try {
-      const token = user ? await user.getIdToken() : undefined;
+      let token: string | undefined;
+      if (user) {
+        try {
+          token = await user.getIdToken(true).catch(() => user.getIdToken(false));
+        } catch {
+          token = await user.getIdToken(false).catch(() => undefined);
+        }
+      }
+
       const metadata = await uploadCreatorProfileImage(
         file,
         (pct) => setUploadProgress(pct),
@@ -253,7 +273,7 @@ export const CreatorProfileSection: React.FC<CreatorProfileSectionProps> = ({
               <button
                 type="button"
                 onClick={() => fileInputRef.current?.click()}
-                disabled={isUploading || isSaving}
+                disabled={isUploading || isSaving || authLoading}
                 className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-[#0284C7] hover:bg-[#0369A1] text-white text-xs font-medium transition-colors shadow-xs cursor-pointer disabled:opacity-50"
                 data-testid="creator-upload-button"
               >

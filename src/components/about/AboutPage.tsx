@@ -33,6 +33,18 @@ interface AboutPageProps {
   onOpenDownload?: () => void;
 }
 
+// Section Anchors for Sticky Sub-Nav
+const SECTION_NAV = [
+  { id: 'overview', label: 'Overview' },
+  { id: 'why-orion-9', label: 'Why Orion-9' },
+  { id: 'the-idea', label: 'The Idea' },
+  { id: 'created-by', label: 'Created By' },
+  { id: 'core-principles', label: 'Core Principles' },
+  { id: 'system-architecture', label: 'Architecture' },
+  { id: 'whats-new', label: "What's New" },
+  { id: 'documentation', label: 'Documentation' },
+];
+
 export const AboutPage: React.FC<AboutPageProps> = ({ onNavigate, onOpenDownload }) => {
   const { activeConfig } = useSiteConfig();
   const companyName = activeConfig.branding.companyName || 'Orion-9';
@@ -64,11 +76,40 @@ export const AboutPage: React.FC<AboutPageProps> = ({ onNavigate, onOpenDownload
     };
 
     window.addEventListener('hashchange', handleHashChange);
-    return () => window.removeEventListener('hashchange', handleHashChange);
+
+    // Dynamic scroll spy for sticky sub-nav
+    const observer = new IntersectionObserver(
+      (entries) => {
+        entries.forEach((entry) => {
+          if (entry.isIntersecting) {
+            setActiveSection(entry.target.id);
+          }
+        });
+      },
+      {
+        rootMargin: '-15% 0px -70% 0px',
+        threshold: 0,
+      }
+    );
+
+    const sectionElements = SECTION_NAV
+      .map((s) => document.getElementById(s.id))
+      .filter((el): el is HTMLElement => el !== null);
+    sectionElements.forEach((el) => observer.observe(el));
+
+    return () => {
+      window.removeEventListener('hashchange', handleHashChange);
+      observer.disconnect();
+    };
   }, []);
 
   const scrollToAnchor = (id: string) => {
     setActiveSection(id);
+    if (id === 'overview') {
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+      window.history.pushState({}, '', '/about');
+      return;
+    }
     window.history.pushState({}, '', `#${id}`);
     const el = document.getElementById(id);
     if (el) {
@@ -84,18 +125,6 @@ export const AboutPage: React.FC<AboutPageProps> = ({ onNavigate, onOpenDownload
       window.dispatchEvent(new PopStateEvent('popstate'));
     }
   };
-
-  // Section Anchors for Sticky Sub-Nav
-  const sectionNav = [
-    { id: 'overview', label: 'Overview' },
-    { id: 'why-orion-9', label: 'Why Orion-9' },
-    { id: 'the-idea', label: 'The Idea' },
-    { id: 'created-by', label: 'Created By' },
-    { id: 'core-principles', label: 'Core Principles' },
-    { id: 'system-architecture', label: 'Architecture' },
-    { id: 'whats-new', label: "What's New" },
-    { id: 'documentation', label: 'Documentation' },
-  ];
 
   // 10-Step Operating Loop from OS Repository
   const operatingLoop = [
@@ -177,20 +206,52 @@ export const AboutPage: React.FC<AboutPageProps> = ({ onNavigate, onOpenDownload
 
   return (
     <div className="min-h-screen bg-[var(--orion-canvas)] text-[var(--orion-text-primary)] flex flex-col font-sans transition-colors duration-300 relative selection:bg-[#0284C7] selection:text-white">
-      {/* Ambient background glow */}
-      <div
-        className="pointer-events-none absolute -top-40 left-1/2 -translate-x-1/2 w-[1100px] h-[550px] bg-gradient-to-b from-[#0284C7]/15 to-transparent blur-3xl opacity-60 rounded-full"
-        aria-hidden="true"
-      />
+      {/* Ambient background glow with local overflow clipping */}
+      <div className="pointer-events-none absolute inset-x-0 -top-40 h-[550px] overflow-hidden" aria-hidden="true">
+        <div className="w-[1100px] h-[550px] mx-auto bg-gradient-to-b from-[#0284C7]/15 to-transparent blur-3xl opacity-60 rounded-full" />
+      </div>
 
       {/* Floating Website Header */}
       <Navbar onNavigate={onNavigate} onOpenDownload={onOpenDownload} />
 
-      <main className="flex-1 pt-24 sm:pt-28 pb-16">
+      <main className="flex-1 pt-20 sm:pt-24 pb-16">
+        {/* ==========================================================================
+            STICKY SECTION NAVIGATION STRIP (Pinned across all sections)
+           ========================================================================== */}
+        <div className="sticky top-16 sm:top-20 z-40 py-2.5 bg-[var(--orion-canvas)]/85 backdrop-blur-md border-b border-[var(--glass-border-subtle)] transition-colors">
+          <div className="max-w-[1440px] mx-auto px-4 sm:px-6 lg:px-12">
+            <div className="liquid-glass-elevated border border-[var(--glass-border)] rounded-2xl p-1.5 shadow-md flex items-center gap-1 overflow-x-auto custom-scrollbar">
+              {SECTION_NAV.map((item) => {
+                const isSelected = activeSection === item.id;
+                return (
+                  <button
+                    key={item.id}
+                    type="button"
+                    onClick={() => {
+                      if (item.id === 'documentation') {
+                        handleRoute('/docs');
+                      } else {
+                        scrollToAnchor(item.id);
+                      }
+                    }}
+                    className={`px-3.5 py-1.5 rounded-xl text-xs font-medium whitespace-nowrap transition-all cursor-pointer ${
+                      isSelected
+                        ? 'bg-[#070B19] dark:bg-white text-white dark:text-[#070B19] font-semibold shadow-sm'
+                        : 'text-[var(--orion-text-secondary)] hover:text-[var(--orion-text-primary)] hover:bg-[var(--glass-surface-subtle)]'
+                    }`}
+                  >
+                    {item.label}
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+        </div>
+
         {/* ==========================================================================
             1. HERO & SYSTEM OVERVIEW (#overview)
            ========================================================================== */}
-        <section id="overview" className="max-w-[1440px] mx-auto px-4 sm:px-6 lg:px-12 pt-6 pb-12 sm:pb-16">
+        <section id="overview" className="max-w-[1440px] mx-auto px-4 sm:px-6 lg:px-12 pt-6 pb-12 sm:pb-16 scroll-mt-32">
           <div className="space-y-6 max-w-4xl">
             <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full liquid-glass-badge text-[var(--orion-accent)] font-mono text-xs font-semibold uppercase tracking-wider">
               <Sparkles className="w-3.5 h-3.5" />
@@ -233,35 +294,6 @@ export const AboutPage: React.FC<AboutPageProps> = ({ onNavigate, onOpenDownload
                 <span>Technical Documentation Manual</span>
                 <ExternalLink className="w-3.5 h-3.5" />
               </button>
-            </div>
-          </div>
-
-          {/* Sticky Section Anchor Navigation Strip */}
-          <div className="sticky top-20 z-40 mt-10 pt-2 pb-2">
-            <div className="liquid-glass-elevated border border-[var(--glass-border)] rounded-2xl p-1.5 shadow-md flex items-center gap-1 overflow-x-auto custom-scrollbar">
-              {sectionNav.map((item) => {
-                const isSelected = activeSection === item.id;
-                return (
-                  <button
-                    key={item.id}
-                    type="button"
-                    onClick={() => {
-                      if (item.id === 'documentation') {
-                        handleRoute('/docs');
-                      } else {
-                        scrollToAnchor(item.id);
-                      }
-                    }}
-                    className={`px-3.5 py-1.5 rounded-xl text-xs font-medium whitespace-nowrap transition-all cursor-pointer ${
-                      isSelected
-                        ? 'bg-[#070B19] dark:bg-white text-white dark:text-[#070B19] font-semibold shadow-sm'
-                        : 'text-[var(--orion-text-secondary)] hover:text-[var(--orion-text-primary)] hover:bg-[var(--glass-surface-subtle)]'
-                    }`}
-                  >
-                    {item.label}
-                  </button>
-                );
-              })}
             </div>
           </div>
 
@@ -316,7 +348,7 @@ export const AboutPage: React.FC<AboutPageProps> = ({ onNavigate, onOpenDownload
         {/* ==========================================================================
             2. WHY ORION-9 (#why-orion-9)
            ========================================================================== */}
-        <section id="why-orion-9" className="max-w-[1440px] mx-auto px-4 sm:px-6 lg:px-12 py-12 border-t border-[var(--glass-border-subtle)] scroll-mt-28">
+        <section id="why-orion-9" className="max-w-[1440px] mx-auto px-4 sm:px-6 lg:px-12 py-12 border-t border-[var(--glass-border-subtle)] scroll-mt-32">
           <div className="max-w-3xl space-y-3 mb-8">
             <div className="inline-flex items-center gap-2 text-xs font-mono font-bold uppercase tracking-wider text-[#0284C7]">
               <Compass className="w-4 h-4" />
@@ -450,7 +482,7 @@ export const AboutPage: React.FC<AboutPageProps> = ({ onNavigate, onOpenDownload
         {/* ==========================================================================
             3. THE IDEA (#the-idea)
            ========================================================================== */}
-        <section id="the-idea" className="max-w-[1440px] mx-auto px-4 sm:px-6 lg:px-12 py-12 border-t border-[var(--glass-border-subtle)] scroll-mt-28">
+        <section id="the-idea" className="max-w-[1440px] mx-auto px-4 sm:px-6 lg:px-12 py-12 border-t border-[var(--glass-border-subtle)] scroll-mt-32">
           <div className="max-w-3xl space-y-3 mb-8">
             <div className="inline-flex items-center gap-2 text-xs font-mono font-bold uppercase tracking-wider text-amber-500">
               <Lightbulb className="w-4 h-4" />
@@ -506,7 +538,7 @@ export const AboutPage: React.FC<AboutPageProps> = ({ onNavigate, onOpenDownload
         {/* ==========================================================================
             4. CREATED BY (#created-by)
            ========================================================================== */}
-        <section id="created-by" className="max-w-[1440px] mx-auto px-4 sm:px-6 lg:px-12 py-12 border-t border-[var(--glass-border-subtle)] scroll-mt-28">
+        <section id="created-by" className="max-w-[1440px] mx-auto px-4 sm:px-6 lg:px-12 py-12 border-t border-[var(--glass-border-subtle)] scroll-mt-32">
           <div className="max-w-3xl space-y-3 mb-8">
             <div className="inline-flex items-center gap-2 text-xs font-mono font-bold uppercase tracking-wider text-[#0284C7]">
               <User className="w-4 h-4" />
@@ -591,7 +623,7 @@ export const AboutPage: React.FC<AboutPageProps> = ({ onNavigate, onOpenDownload
         {/* ==========================================================================
             5. CORE PRINCIPLES (#core-principles)
            ========================================================================== */}
-        <section id="core-principles" className="max-w-[1440px] mx-auto px-4 sm:px-6 lg:px-12 py-12 border-t border-[var(--glass-border-subtle)] scroll-mt-28">
+        <section id="core-principles" className="max-w-[1440px] mx-auto px-4 sm:px-6 lg:px-12 py-12 border-t border-[var(--glass-border-subtle)] scroll-mt-32">
           <div className="max-w-3xl space-y-3 mb-8">
             <div className="inline-flex items-center gap-2 text-xs font-mono font-bold uppercase tracking-wider text-[#0284C7]">
               <Sparkles className="w-4 h-4" />
@@ -632,7 +664,7 @@ export const AboutPage: React.FC<AboutPageProps> = ({ onNavigate, onOpenDownload
         {/* ==========================================================================
             6. SYSTEM ARCHITECTURE & ENGINES (#system-architecture)
            ========================================================================== */}
-        <section id="system-architecture" className="max-w-[1440px] mx-auto px-4 sm:px-6 lg:px-12 py-12 border-t border-[var(--glass-border-subtle)] scroll-mt-28">
+        <section id="system-architecture" className="max-w-[1440px] mx-auto px-4 sm:px-6 lg:px-12 py-12 border-t border-[var(--glass-border-subtle)] scroll-mt-32">
           <div className="max-w-3xl space-y-3 mb-8">
             <div className="inline-flex items-center gap-2 text-xs font-mono font-bold uppercase tracking-wider text-[#0284C7]">
               <Layers className="w-4 h-4" />
@@ -760,7 +792,7 @@ export const AboutPage: React.FC<AboutPageProps> = ({ onNavigate, onOpenDownload
         {/* ==========================================================================
             7. EVOLUTION & WHAT'S NEW (#whats-new)
            ========================================================================== */}
-        <section id="whats-new" className="max-w-[1440px] mx-auto px-4 sm:px-6 lg:px-12 py-12 border-t border-[var(--glass-border-subtle)] scroll-mt-28">
+        <section id="whats-new" className="max-w-[1440px] mx-auto px-4 sm:px-6 lg:px-12 py-12 border-t border-[var(--glass-border-subtle)] scroll-mt-32">
           <div className="max-w-3xl space-y-3 mb-8">
             <div className="inline-flex items-center gap-2 text-xs font-mono font-bold uppercase tracking-wider text-[#0284C7]">
               <History className="w-4 h-4" />
@@ -784,7 +816,7 @@ export const AboutPage: React.FC<AboutPageProps> = ({ onNavigate, onOpenDownload
                   <div className="flex items-center gap-2 flex-wrap">
                     <span className="text-xs font-mono font-bold text-[#0284C7]">v9.4.2 (Current Baseline)</span>
                     <span className="text-[10px] font-mono px-2 py-0.5 rounded-full bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 font-semibold border border-emerald-500/20">
-                      CERTIFIED PRODUCTION
+                      VERIFIED RELEASE BASELINE
                     </span>
                   </div>
                   <h4 className="text-sm font-bold text-[var(--orion-text-primary)] mt-1">Native OS Experience &amp; Cloud Persistence</h4>
@@ -863,7 +895,7 @@ export const AboutPage: React.FC<AboutPageProps> = ({ onNavigate, onOpenDownload
         {/* ==========================================================================
             8. HELP & DOCUMENTATION (#documentation)
            ========================================================================== */}
-        <section id="documentation" className="max-w-[1440px] mx-auto px-4 sm:px-6 lg:px-12 py-12 border-t border-[var(--glass-border-subtle)] scroll-mt-28">
+        <section id="documentation" className="max-w-[1440px] mx-auto px-4 sm:px-6 lg:px-12 py-12 border-t border-[var(--glass-border-subtle)] scroll-mt-32">
           <div className="liquid-glass-elevated rounded-3xl p-8 sm:p-12 border border-[var(--glass-border)] shadow-xl relative overflow-hidden">
             <div className="max-w-2xl space-y-4 relative z-10">
               <div className="inline-flex items-center gap-2 text-xs font-mono font-bold uppercase tracking-wider text-[#0284C7]">

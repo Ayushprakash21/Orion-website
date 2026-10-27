@@ -58,6 +58,12 @@ export function AdminLogin({ onNavigate }: AdminLoginProps) {
   const isDev = isLocalDevEnvironment();
   const currentConfig = getActiveFirebaseConfig();
 
+  React.useEffect(() => {
+    if (!loading && isAuthenticated && isAdmin) {
+      onNavigate('/admin');
+    }
+  }, [loading, isAuthenticated, isAdmin, onNavigate]);
+
   const handleFillDevCredentials = () => {
     setIdentifier('admin@orion');
     setPassword('admin');
@@ -98,7 +104,7 @@ export function AdminLogin({ onNavigate }: AdminLoginProps) {
       return;
     }
 
-    const authorized = await refreshAdminStatus();
+    const authorized = await refreshAdminStatus(res.user);
     setLoading(false);
     if (authorized || res.success) {
       onNavigate('/admin');
@@ -114,7 +120,7 @@ export function AdminLogin({ onNavigate }: AdminLoginProps) {
       setLoading(false);
       return;
     }
-    const authorized = await refreshAdminStatus();
+    const authorized = await refreshAdminStatus(res.user);
     setLoading(false);
     if (authorized) {
       onNavigate('/admin');

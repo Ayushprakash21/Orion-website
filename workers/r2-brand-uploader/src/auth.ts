@@ -108,17 +108,25 @@ export async function verifyFirebaseAdminToken(
   const cleanToken = token.trim().replace(/^Bearer\s+/i, '');
 
   // Local development / test synthetic token support
-  if (allowLocalDev && (cleanToken === 'mock-local-dev-admin-token' || cleanToken.startsWith('test-admin-token'))) {
-    return {
-      valid: true,
-      user: {
-        uid: 'local-dev-admin-uid-01',
-        email: BOOTSTRAPPED_OWNER_EMAIL,
-        isAdmin: true,
-        source: 'local_dev',
-      },
-      status: 200,
-    };
+  if (cleanToken === 'mock-local-dev-admin-token' || cleanToken.startsWith('test-admin-token')) {
+    if (allowLocalDev) {
+      return {
+        valid: true,
+        user: {
+          uid: 'local-dev-admin-uid-01',
+          email: BOOTSTRAPPED_OWNER_EMAIL,
+          isAdmin: true,
+          source: 'local_dev',
+        },
+        status: 200,
+      };
+    } else {
+      return {
+        valid: false,
+        error: 'Synthetic local development administrator credentials are only permitted from authorized development and testing origins.',
+        status: 401,
+      };
+    }
   }
 
   const parts = cleanToken.split('.');

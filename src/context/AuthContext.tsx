@@ -115,10 +115,10 @@ interface AuthContextType {
     pass?: string,
     termsAccepted?: boolean
   ) => Promise<{ success: boolean; error?: string; verificationSent?: boolean }>;
-  loginWithGoogle: () => Promise<{ success: boolean; error?: string }>;
+  loginWithGoogle: () => Promise<{ success: boolean; error?: string; user?: User }>;
   resetPassword: (identifier: string) => Promise<{ success: boolean; error?: string; message?: string }>;
   logout: () => Promise<void>;
-  refreshAdminStatus: () => Promise<boolean>;
+  refreshAdminStatus: (targetUser?: User | null) => Promise<boolean>;
   checkUsernameAvailability: (username: string) => Promise<{ available: boolean; error?: string }>;
   clearRememberedUsername: () => void;
 }
@@ -520,7 +520,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
   };
 
-  const loginWithGoogle = async (): Promise<{ success: boolean; error?: string }> => {
+  const loginWithGoogle = async (): Promise<{ success: boolean; error?: string; user?: User }> => {
     const { auth, db, isConfigured } = initializeFirebase();
     if (!isConfigured || !auth) {
       return {
@@ -560,7 +560,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         executeLiveLaunch();
       }
 
-      return { success: true };
+      return { success: true, user: cred.user };
     } catch (err: unknown) {
       return {
         success: false,
@@ -657,14 +657,27 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     setIsLocalDevAdmin(false);
   };
 
-  const refreshAdminStatus = async (): Promise<boolean> => {
+  const refreshAdminStatus = async (targetUser?: User | null): Promise<boolean> => {
+    if (typeof window !== 'undefined') {
+      try {
+        if (window.sessionStorage.getItem('orion_local_dev_admin') === 'true') {
+          setIsAdmin(true);
+          setAdminAuthSource('master_admin');
+          setIsLocalDevAdmin(true);
+          return true;
+        }
+      } catch {
+        // Ignore sessionStorage read failure
+      }
+    }
+
     if (isLocalDevAdmin) {
       return true;
     }
     const { auth, isConfigured } = initializeFirebase();
     setIsFirebaseConfigured(isConfigured);
-    const currentUser = auth?.currentUser || user;
-    return checkAdmin(currentUser);
+    const candidateUser = targetUser !== undefined ? targetUser : (auth?.currentUser || user);
+    return checkAdmin(candidateUser);
   };
 
   return (

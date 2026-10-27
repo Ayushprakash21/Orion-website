@@ -60,7 +60,7 @@ export const LogoManagementSection: React.FC<LogoManagementSectionProps> = ({
   const fileInputRef = useRef<HTMLInputElement | null>(null);
 
   // Authentication & Canonical shared logo resolution
-  const { user } = useAuth();
+  const { user, isAdmin, loading: authLoading } = useAuth();
   const { publishedConfig } = useSiteConfig();
   const sharedConfig = brandingForm.sharedLogoConfig;
   const isCustom = Boolean(
@@ -87,12 +87,32 @@ export const LogoManagementSection: React.FC<LogoManagementSectionProps> = ({
     const file = e.target.files?.[0];
     if (!file) return;
 
+    if (authLoading) {
+      showBanner('warning', 'Verifying administrator session, please wait a moment...');
+      return;
+    }
+
+    if (!user && !isAdmin) {
+      const authErr = 'Authentication required: You must be signed in as an administrator to upload assets.';
+      setUploadError(authErr);
+      showBanner('error', authErr);
+      return;
+    }
+
     setIsUploading(true);
     setUploadProgress(0);
     setUploadError(null);
 
     try {
-      const token = user ? await user.getIdToken() : undefined;
+      let token: string | undefined;
+      if (user) {
+        try {
+          token = await user.getIdToken(true).catch(() => user.getIdToken(false));
+        } catch {
+          token = await user.getIdToken(false).catch(() => undefined);
+        }
+      }
+
       const metadata = await uploadBrandingLogoAsset(
         'shared',
         file,
@@ -424,7 +444,7 @@ export const LogoManagementSection: React.FC<LogoManagementSectionProps> = ({
               <>
                 <button
                   type="button"
-                  disabled={isUploading || isSaving}
+                  disabled={isUploading || isSaving || authLoading}
                   onClick={() => fileInputRef.current?.click()}
                   className="w-full sm:flex-1 py-3 px-4 rounded-xl bg-[#0284C7] hover:bg-[#0369A1] text-white text-xs font-semibold flex items-center justify-center gap-2 shadow-sm transition cursor-pointer disabled:opacity-50"
                 >
@@ -433,7 +453,7 @@ export const LogoManagementSection: React.FC<LogoManagementSectionProps> = ({
                 </button>
                 <button
                   type="button"
-                  disabled={isUploading || isSaving}
+                  disabled={isUploading || isSaving || authLoading}
                   onClick={handleRestoreDefault}
                   className="w-full sm:w-auto py-3 px-4 rounded-xl border border-[#D5E1E8] bg-white hover:bg-[#F8FAFC] text-[#475569] hover:text-[#0F172A] text-xs font-semibold flex items-center justify-center gap-2 transition cursor-pointer disabled:opacity-50"
                 >
