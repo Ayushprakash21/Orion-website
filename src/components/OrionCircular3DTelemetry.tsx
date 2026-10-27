@@ -7,8 +7,8 @@
  *    is ALWAYS positioned at the exact horizontal and vertical center of the stage.
  * 2. Automatic State Transitions: Automatically advances every 10 seconds
  *    (State 01 -> State 02 -> State 03 -> State 01) continuously with tab visibility protection.
- * 3. No Play / Pause Controls: Manual play/pause buttons completely removed while keeping
- *    previous / next chevron controls and scenario navigation pills.
+ * 3. Minimal Scenario Selector: Clean pill navigation for State 01, 02, and 03
+ *    with responsive touch/drag swipe support.
  * 4. Preserved Dark Enterprise Aesthetics: Deep navy/black background (#030712),
  *    crisp supply-chain cards, SVG telemetry flows, high contrast typography.
  */
@@ -16,8 +16,6 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { motion, useReducedMotion } from 'framer-motion';
 import {
-  ChevronLeft,
-  ChevronRight,
   ArrowUpRight,
   Radio,
   Layers,
@@ -479,28 +477,6 @@ export const OrionCircular3DTelemetry: React.FC = () => {
               </button>
             );
           })}
-
-          <div className="h-4 w-px bg-white/20 mx-1 shrink-0" />
-
-          {/* Previous / Next Chevron Navigation Arrows Only (Play/Pause removed) */}
-          <div className="flex items-center gap-1 shrink-0">
-            <button
-              type="button"
-              onClick={previous}
-              className="w-7 h-7 rounded-lg flex items-center justify-center text-slate-300 hover:text-white hover:bg-white/10 transition cursor-pointer"
-              aria-label="Previous scenario"
-            >
-              <ChevronLeft className="w-3.5 h-3.5" />
-            </button>
-            <button
-              type="button"
-              onClick={next}
-              className="w-7 h-7 rounded-lg flex items-center justify-center text-slate-300 hover:text-white hover:bg-white/10 transition cursor-pointer"
-              aria-label="Next scenario"
-            >
-              <ChevronRight className="w-3.5 h-3.5" />
-            </button>
-          </div>
         </div>
 
         {/* =====================================================================

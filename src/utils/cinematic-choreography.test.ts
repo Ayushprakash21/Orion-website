@@ -10,7 +10,7 @@ import {
   evaluateVehicleKinematics,
   clamp01,
   smoothstep,
-} from './cinematic-choreography';
+} from './cinematic-choreography.ts';
 
 describe('Orion-9 Continuous 3D Miniature World & Process Choreography', () => {
   it('orchestrates the 5-stage 3.8s Orion-9 logo reveal sequence, 8s ambient loop, and respects prefers-reduced-motion', () => {

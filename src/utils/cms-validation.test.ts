@@ -8,8 +8,8 @@ import {
   validateNavigationConfig,
   validateHomepageConfig,
   validateSeoConfig,
-} from './cms-validation';
-import { DEFAULT_SITE_CONFIG } from '../data/defaultSiteConfig';
+} from './cms-validation.ts';
+import { DEFAULT_SITE_CONFIG } from '../data/defaultSiteConfig.ts';
 
 test('isSafeCmsUrl allows https, localhost, anchors, and relative paths while rejecting dangerous protocols', () => {
   assert.equal(isSafeCmsUrl('https://orion-9.ayushprakash0021.workers.dev/'), true);

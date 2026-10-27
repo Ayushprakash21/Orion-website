@@ -1,9 +1,13 @@
 import { describe, it } from 'node:test';
 import assert from 'node:assert';
-import featureCatalogData from '../data/docs/feature-catalog.json';
-import navigationData from '../data/docs/navigation.json';
-import coverageData from '../data/docs/coverage.json';
-import articlesBundleData from '../data/docs/articles-bundle.json';
+import fs from 'node:fs';
+import path from 'node:path';
+
+const readJson = (relPath: string): any => JSON.parse(fs.readFileSync(path.resolve(process.cwd(), relPath), 'utf-8'));
+const featureCatalogData: any[] = readJson('src/data/docs/feature-catalog.json');
+const navigationData: any[] = readJson('src/data/docs/navigation.json');
+const coverageData: any = readJson('src/data/docs/coverage.json');
+const articlesBundleData: Record<string, string> = readJson('src/data/docs/articles-bundle.json');
 
 describe('Orion-9 Interactive Documentation System Validation', () => {
   it('1. verifies all navigation paths resolve to existing articles in the bundle', () => {
@@ -11,8 +15,8 @@ describe('Orion-9 Interactive Documentation System Validation', () => {
     assert.ok(bundleKeys.length >= 40, `Expected at least 40 articles, got ${bundleKeys.length}`);
 
     let resolvedCount = 0;
-    navigationData.forEach((section) => {
-      section.items.forEach((item) => {
+    navigationData.forEach((section: any) => {
+      section.items.forEach((item: any) => {
         const key = item.path.replace(/^\/docs\//, '');
         assert.ok(
           (articlesBundleData as Record<string, string>)[key] !== undefined,
@@ -75,7 +79,7 @@ describe('Orion-9 Interactive Documentation System Validation', () => {
     });
 
     // Search articles
-    Object.entries(articlesBundleData).forEach(([key, content]) => {
+    Object.entries(articlesBundleData).forEach(([key, content]: [string, string]) => {
       if (content.includes(query)) {
         matches.push(key);
       }
