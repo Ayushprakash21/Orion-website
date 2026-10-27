@@ -244,17 +244,6 @@ export const OrionNovaDownloadButton: React.FC<OrionNovaDownloadButtonProps> = (
           </AnimatePresence>
         </motion.button>
       </div>
-
-      {errorMessage && (
-        <motion.p
-          initial={{ opacity: 0, y: -4 }}
-          animate={{ opacity: 1, y: 0 }}
-          className="text-xs text-rose-400 mt-2 flex items-center gap-1.5"
-        >
-          <AlertCircle className="w-3.5 h-3.5" />
-          <span>{errorMessage}</span>
-        </motion.p>
-      )}
     </div>
   );
 };

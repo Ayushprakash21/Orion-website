@@ -418,7 +418,7 @@ export const OrionCircular3DTelemetry: React.FC = () => {
     <section
       id="control-tower"
       aria-label="Orion-9 Supply Chain Telemetry Experience"
-      className="relative w-full overflow-hidden bg-[#030712] text-white pt-20 sm:pt-28 pb-16 sm:pb-20 scroll-mt-28 border-t border-white/10"
+      className="relative w-full overflow-hidden bg-[#030712] text-white pt-28 sm:pt-36 lg:pt-40 pb-20 sm:pb-24 scroll-mt-24 sm:scroll-mt-28 border-t border-white/10"
     >
       {/* Background Soft Cyber Glows */}
       <div
@@ -432,17 +432,17 @@ export const OrionCircular3DTelemetry: React.FC = () => {
 
       <div className="relative max-w-[1380px] mx-auto px-4 sm:px-8 z-10 flex flex-col items-center">
         {/* Top Section Header */}
-        <div className="flex flex-col items-center text-center max-w-2xl mb-8">
-          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-sky-500/10 border border-sky-400/30 text-[11px] font-mono uppercase tracking-wider text-sky-400 font-semibold mb-2.5">
-            <Radio className="w-3 h-3 text-sky-400 animate-pulse" />
+        <div className="flex flex-col items-center text-center max-w-3xl mb-8 sm:mb-10 px-4">
+          <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-sky-500/10 border border-sky-400/30 text-[11px] font-mono uppercase tracking-wider text-sky-400 font-semibold mb-3.5 sm:mb-4 shadow-xs">
+            <Radio className="w-3.5 h-3.5 text-sky-400 animate-pulse" />
             <span>ORION-9 OS TELEMETRY</span>
           </div>
 
-          <h2 className="text-2xl sm:text-3xl md:text-4xl font-extrabold tracking-tight text-white leading-tight">
+          <h2 className="text-2xl sm:text-3xl md:text-4xl lg:text-[40px] font-extrabold tracking-tight text-white leading-tight sm:leading-[1.18] max-w-2xl">
             From corridor anomaly to verified execution.
           </h2>
 
-          <p className="text-xs sm:text-sm text-slate-400 mt-2 max-w-md">
+          <p className="text-xs sm:text-sm text-slate-400 mt-2.5 sm:mt-3 max-w-md sm:max-w-lg leading-relaxed">
             Inspect real-time multimodal intelligence across global corridors.
           </p>
         </div>

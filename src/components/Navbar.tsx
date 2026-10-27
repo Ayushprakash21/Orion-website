@@ -46,19 +46,22 @@ export const Navbar: React.FC<NavbarProps> = ({ onNavigate, onOpenDownload }) =>
     setMobileMenuOpen(false);
     if (href.startsWith('#')) {
       const sectionId = href.replace('#', '');
-      if (window.location.pathname !== '/') {
-        handleRoute(`/${href}`);
-        setTimeout(() => {
-          const el = document.getElementById(sectionId);
-          if (el) el.scrollIntoView({ behavior: 'smooth' });
-        }, 150);
-      } else {
-        const el = document.getElementById(sectionId);
+      const scrollToSection = (id: string) => {
+        const el = document.getElementById(id);
         if (el) {
-          el.scrollIntoView({ behavior: 'smooth' });
+          const navHeight = 92;
+          const targetTop = el.getBoundingClientRect().top + window.scrollY - navHeight;
+          window.scrollTo({ top: Math.max(0, targetTop), behavior: 'smooth' });
         } else {
           window.scrollTo({ top: 0, behavior: 'smooth' });
         }
+      };
+
+      if (window.location.pathname !== '/') {
+        handleRoute(`/${href}`);
+        setTimeout(() => scrollToSection(sectionId), 150);
+      } else {
+        scrollToSection(sectionId);
       }
     } else {
       handleRoute(href);

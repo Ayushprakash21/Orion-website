@@ -10,7 +10,6 @@ import {
   DesktopDownloadError,
 } from '../services/downloadService';
 import {
-  Download,
   ShieldCheck,
   CheckCircle2,
   Copy,
@@ -18,13 +17,9 @@ import {
   Laptop,
   Apple,
   X,
-  FileCheck,
-  HardDrive,
-  Info,
   Lock,
   ArrowRight,
   AlertTriangle,
-  Loader2,
   Terminal,
 } from 'lucide-react';
 
@@ -189,53 +184,59 @@ export const DesktopDownloadModal: React.FC<DesktopDownloadModalProps> = ({
 
   return (
     <div
-      className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-black/60 backdrop-blur-xl animate-in fade-in duration-200 overflow-y-auto"
+      className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-5 bg-black/75 backdrop-blur-xl animate-in fade-in duration-200 overflow-y-auto"
       role="dialog"
       aria-modal="true"
       aria-labelledby="download-modal-title"
       onClick={onClose}
     >
       <div
-        className="relative w-[calc(100vw-24px)] sm:w-full max-w-lg lg:max-w-xl max-h-[calc(100dvh-28px)] sm:max-h-[88vh] liquid-glass-elevated liquid-glass-interactive border border-[var(--glass-border)] rounded-2xl sm:rounded-3xl shadow-2xl overflow-hidden flex flex-col text-[var(--orion-text-primary)] animate-in zoom-in-95 duration-200 my-auto"
+        className="relative w-[calc(100vw-24px)] sm:w-full max-w-xl lg:max-w-[620px] max-h-[calc(100dvh-24px)] sm:max-h-[88vh] liquid-glass-elevated liquid-glass-interactive rounded-3xl border border-white/15 dark:border-white/10 shadow-[0_25px_70px_rgba(0,0,0,0.85)] flex flex-col text-[var(--orion-text-primary)] animate-in zoom-in-95 duration-200 my-auto overflow-hidden"
         onClick={(e) => e.stopPropagation()}
       >
         {/* macOS Window Header Bar */}
-        <div className="flex items-center justify-between px-3.5 sm:px-6 py-3 sm:py-4 border-b border-[var(--glass-border-subtle)] bg-white/40 dark:bg-black/30 shrink-0">
-          <div className="flex items-center gap-2 sm:gap-3 min-w-0">
-            {/* macOS Window Traffic Lights - hidden on narrow screens */}
-            <div className="hidden sm:flex items-center gap-1.5 mr-1 shrink-0">
+        <div className="flex items-center justify-between px-4 sm:px-6 py-3.5 sm:py-4 border-b border-white/10 bg-slate-900/80 backdrop-blur-md shrink-0 select-none">
+          <div className="flex items-center gap-2.5 sm:gap-3.5 min-w-0">
+            {/* macOS Traffic Lights */}
+            <div className="flex items-center gap-1.5 shrink-0 mr-0.5">
               <button
                 type="button"
                 onClick={onClose}
                 className="w-3 h-3 rounded-full bg-[#FF5F56] border border-[#E0443E] hover:opacity-80 transition cursor-pointer"
-                aria-label="Close"
+                aria-label="Close dialog"
+                title="Close"
               />
               <span className="w-3 h-3 rounded-full bg-[#FFBD2E] border border-[#DEA123]" />
               <span className="w-3 h-3 rounded-full bg-[#27C93F] border border-[#1AAB29]" />
             </div>
 
-            <div className="w-7 h-7 sm:w-8 sm:h-8 rounded-xl liquid-glass-subtle flex items-center justify-center text-[var(--orion-accent)] shadow-2xs shrink-0">
+            <div className="h-4 w-[1px] bg-white/15 shrink-0 hidden min-[360px]:block" aria-hidden="true" />
+
+            {/* Application Icon */}
+            <div className="w-7 h-7 sm:w-8 sm:h-8 rounded-xl bg-sky-500/10 border border-sky-400/25 flex items-center justify-center text-sky-400 shadow-2xs shrink-0">
               {selectedPlatform === 'windows' ? (
-                <Laptop className="w-4 h-4 text-[var(--orion-accent)]" />
+                <Laptop className="w-4 h-4 text-sky-400" />
               ) : (
-                <Apple className="w-4 h-4 text-[var(--orion-accent)]" />
+                <Apple className="w-4 h-4 text-sky-400" />
               )}
             </div>
-            <div className="min-w-0 flex items-center gap-1.5 sm:gap-2 flex-wrap">
+
+            {/* Product Title + Badges on Single Baseline */}
+            <div className="min-w-0 flex items-center gap-1.5 sm:gap-2">
               <h3
                 id="download-modal-title"
-                className="text-sm sm:text-base font-bold text-[var(--orion-text-primary)] tracking-tight truncate"
+                className="text-sm sm:text-base font-bold text-white tracking-tight truncate"
               >
                 Orion-9 Desktop
               </h3>
-              <span className="px-1.5 py-0.5 rounded-full text-[9px] sm:text-[10px] font-mono font-semibold liquid-glass-badge text-[var(--orion-accent)] shrink-0">
+              <span className="px-2 py-0.5 rounded-full text-[10px] font-mono font-semibold bg-white/10 text-sky-300 border border-white/10 shrink-0">
                 v{activeRelease.version}
               </span>
               <span
-                className={`px-1.5 py-0.5 rounded-full text-[9px] sm:text-[10px] font-mono font-bold uppercase shrink-0 ${
+                className={`px-2 py-0.5 rounded-full text-[10px] font-mono font-bold uppercase tracking-wider shrink-0 ${
                   activeRelease.status === 'published'
-                    ? 'bg-emerald-500/15 text-emerald-500 border border-emerald-500/20'
-                    : 'bg-amber-500/15 text-amber-500 border border-amber-500/20'
+                    ? 'bg-emerald-500/15 text-emerald-400 border border-emerald-500/25'
+                    : 'bg-amber-500/15 text-amber-400 border border-amber-500/25'
                 }`}
               >
                 {activeRelease.status}
@@ -243,68 +244,69 @@ export const DesktopDownloadModal: React.FC<DesktopDownloadModalProps> = ({
             </div>
           </div>
 
+          {/* Window Close Button */}
           <button
             type="button"
             onClick={onClose}
-            className="w-8 h-8 rounded-full liquid-glass-button flex items-center justify-center text-[var(--orion-text-muted)] hover:text-[var(--orion-text-primary)] transition-colors cursor-pointer shrink-0 ml-2"
+            className="w-7 h-7 sm:w-8 sm:h-8 rounded-full bg-white/5 hover:bg-white/15 border border-white/10 flex items-center justify-center text-slate-400 hover:text-white transition-colors cursor-pointer shrink-0 ml-2"
             aria-label="Close dialog"
           >
             <X className="w-4 h-4" />
           </button>
         </div>
 
-        {/* Modal Body */}
-        <div className="p-3.5 sm:p-6 space-y-4 sm:space-y-5 overflow-y-auto min-h-0 flex-1 overscroll-contain">
+        {/* Modal Content Area (Scrollable on short screens) */}
+        <div className="p-4 sm:p-6 space-y-4 sm:space-y-4.5 overflow-y-auto min-h-0 flex-1 custom-scrollbar">
           {/* Segmented Platform Switcher */}
-          <div className="flex items-center justify-between gap-1.5 sm:gap-2 p-1.5 liquid-glass-subtle rounded-2xl border border-[var(--glass-border-subtle)]">
+          <div className="flex items-center p-1 rounded-2xl bg-black/50 border border-white/10 shadow-inner">
             <button
               type="button"
               onClick={() => handlePlatformChange('windows')}
-              className={`flex-1 flex items-center justify-center gap-1.5 sm:gap-2 py-2 sm:py-2.5 px-2 sm:px-4 rounded-xl text-[11px] sm:text-xs font-semibold transition-all cursor-pointer ${
+              className={`flex-1 h-10 sm:h-11 flex items-center justify-center gap-2 rounded-xl text-xs font-semibold transition-all cursor-pointer ${
                 selectedPlatform === 'windows'
-                  ? 'bg-[var(--orion-surface)] text-[var(--orion-text-primary)] shadow-sm'
-                  : 'text-[var(--orion-text-muted)] hover:text-[var(--orion-text-primary)]'
+                  ? 'bg-gradient-to-b from-white/20 to-white/10 text-white shadow-md border border-white/25'
+                  : 'text-slate-400 hover:text-white hover:bg-white/5'
               }`}
             >
-              <Laptop className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-[var(--orion-accent)] shrink-0" />
-              <span className="truncate">Windows (.exe)</span>
+              <Laptop className={`w-4 h-4 ${selectedPlatform === 'windows' ? 'text-sky-400' : 'text-slate-400'}`} />
+              <span>Windows (.exe)</span>
             </button>
             <button
               type="button"
               onClick={() => handlePlatformChange('macos')}
-              className={`flex-1 flex items-center justify-center gap-1.5 sm:gap-2 py-2 sm:py-2.5 px-2 sm:px-4 rounded-xl text-[11px] sm:text-xs font-semibold transition-all cursor-pointer ${
+              className={`flex-1 h-10 sm:h-11 flex items-center justify-center gap-2 rounded-xl text-xs font-semibold transition-all cursor-pointer ${
                 selectedPlatform === 'macos'
-                  ? 'bg-[var(--orion-surface)] text-[var(--orion-text-primary)] shadow-sm'
-                  : 'text-[var(--orion-text-muted)] hover:text-[var(--orion-text-primary)]'
+                  ? 'bg-gradient-to-b from-white/20 to-white/10 text-white shadow-md border border-white/25'
+                  : 'text-slate-400 hover:text-white hover:bg-white/5'
               }`}
             >
-              <Apple className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-[var(--orion-accent)] shrink-0" />
-              <span className="truncate">macOS (.dmg)</span>
+              <Apple className={`w-4 h-4 ${selectedPlatform === 'macos' ? 'text-sky-400' : 'text-slate-400'}`} />
+              <span>macOS (.dmg)</span>
             </button>
           </div>
 
           {/* Authentication Gate */}
           {!isAuthenticated ? (
-            <div className="p-3.5 sm:p-4 rounded-2xl bg-amber-500/10 border border-amber-500/20 text-left space-y-2.5 sm:space-y-3">
-              <div className="flex items-start gap-2.5 sm:gap-3">
-                <div className="w-7 h-7 sm:w-8 sm:h-8 rounded-xl bg-amber-500/20 text-amber-500 flex items-center justify-center shrink-0 mt-0.5">
-                  <Lock className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
+            <div className="p-4 rounded-2xl bg-amber-950/30 border border-amber-500/25 text-left space-y-3">
+              <div className="flex items-start gap-3">
+                <div className="w-8 h-8 rounded-xl bg-amber-500/20 text-amber-400 flex items-center justify-center shrink-0 mt-0.5 border border-amber-500/30">
+                  <Lock className="w-4 h-4" />
                 </div>
                 <div className="space-y-1 min-w-0">
-                  <h4 className="text-[11px] sm:text-xs font-bold text-amber-600 dark:text-amber-400 uppercase font-mono tracking-wider">
+                  <h4 className="text-xs font-bold text-amber-400 uppercase font-mono tracking-wider">
                     Operator Authentication Required
                   </h4>
-                  <p className="text-[11px] sm:text-xs text-amber-700 dark:text-amber-300 leading-relaxed">
+                  <p className="text-xs text-amber-200/90 leading-relaxed">
                     To prevent unverified distribution and preserve cryptographic boundary controls, Orion-9 workstation installers require an authenticated operator profile.
                   </p>
                 </div>
               </div>
 
-              <div className="flex flex-col sm:flex-row items-center gap-2 pt-1">
+              <div className="flex flex-col sm:flex-row items-center gap-2.5 pt-1">
                 <button
                   type="button"
                   onClick={() => handleNavigateAuth('login')}
-                  className="w-full sm:flex-1 inline-flex items-center justify-center gap-2 px-4 py-2 sm:py-2.5 rounded-xl bg-gradient-to-r from-[#0284C7] to-[#0369A1] text-white text-xs font-semibold shadow-md transition-all cursor-pointer"
+                  className="w-full sm:flex-1 inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl bg-gradient-to-r from-[#0284C7] to-[#0369A1] hover:from-[#0369A1] hover:to-[#075985] text-white text-xs font-semibold shadow-md transition-all cursor-pointer"
                 >
                   <span>Sign In to Download</span>
                   <ArrowRight className="w-3.5 h-3.5" />
@@ -312,143 +314,150 @@ export const DesktopDownloadModal: React.FC<DesktopDownloadModalProps> = ({
                 <button
                   type="button"
                   onClick={() => handleNavigateAuth('signup')}
-                  className="w-full sm:w-auto px-4 py-2 sm:py-2.5 rounded-xl liquid-glass-button text-xs font-semibold text-[var(--orion-text-primary)] transition-colors cursor-pointer text-center"
+                  className="w-full sm:w-auto px-4 py-2.5 rounded-xl bg-white/5 hover:bg-white/10 border border-white/10 text-xs font-semibold text-white transition-colors cursor-pointer text-center"
                 >
                   Create Account
                 </button>
               </div>
             </div>
           ) : (
-            <div className="p-3 sm:p-3.5 rounded-2xl bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-between gap-2 text-xs text-emerald-600 dark:text-emerald-400">
-              <div className="flex items-center gap-2 min-w-0">
-                <CheckCircle2 className="w-4 h-4 text-emerald-500 shrink-0" />
-                <span className="truncate">
+            <div className="px-3.5 py-2.5 rounded-2xl bg-emerald-950/30 border border-emerald-500/25 flex items-center justify-between gap-3 text-xs shadow-xs">
+              <div className="flex items-center gap-2.5 min-w-0">
+                <CheckCircle2 className="w-4 h-4 text-emerald-400 shrink-0" />
+                <span className="truncate text-slate-300">
                   Operator Session:{' '}
-                  <strong className="font-mono">{user?.email || username}</strong>
+                  <strong className="font-mono text-emerald-300 font-semibold truncate">
+                    {user?.email || username}
+                  </strong>
                 </span>
               </div>
-              <span className="text-[10px] font-mono uppercase bg-emerald-500/20 px-2 py-0.5 rounded-md font-semibold shrink-0">
+              <span className="text-[10px] font-mono uppercase bg-emerald-500/20 text-emerald-300 px-2 py-0.5 rounded-md font-bold border border-emerald-500/30 shrink-0">
                 Authorized
               </span>
             </div>
           )}
 
-          {/* Metadata Grid in Liquid Glass (Responsive 1/2/4 columns) */}
-          <div className="grid grid-cols-1 min-[340px]:grid-cols-2 sm:grid-cols-4 gap-2 sm:gap-2.5">
-            <div className="p-2.5 sm:p-3 rounded-xl liquid-glass-card">
-              <span className="text-[9px] sm:text-[10px] font-mono font-bold text-[var(--orion-text-muted)] uppercase tracking-wider block">
-                Platform
+          {/* Metadata Grid (4 Uniform Responsive Cards) */}
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 sm:gap-2.5">
+            <div className="p-3 sm:p-3.5 rounded-xl bg-slate-900/60 border border-white/10 flex flex-col justify-between min-h-[66px]">
+              <span className="text-[10px] font-mono font-bold text-slate-400 uppercase tracking-wider block">
+                PLATFORM
               </span>
-              <span className="text-xs font-semibold text-[var(--orion-text-primary)] mt-0.5 block truncate">
+              <span className="text-xs sm:text-[13px] font-semibold text-white tracking-tight mt-1 truncate">
                 {activeRelease.platform}
               </span>
             </div>
-            <div className="p-2.5 sm:p-3 rounded-xl liquid-glass-card">
-              <span className="text-[9px] sm:text-[10px] font-mono font-bold text-[var(--orion-text-muted)] uppercase tracking-wider block">
-                Format
+            <div className="p-3 sm:p-3.5 rounded-xl bg-slate-900/60 border border-white/10 flex flex-col justify-between min-h-[66px]">
+              <span className="text-[10px] font-mono font-bold text-slate-400 uppercase tracking-wider block">
+                FORMAT
               </span>
-              <span className="text-xs font-semibold text-[var(--orion-text-primary)] mt-0.5 block truncate">
+              <span className="text-xs sm:text-[13px] font-semibold text-white tracking-tight mt-1 truncate">
                 {activeRelease.format.toUpperCase()}
               </span>
             </div>
-            <div className="p-2.5 sm:p-3 rounded-xl liquid-glass-card">
-              <span className="text-[9px] sm:text-[10px] font-mono font-bold text-[var(--orion-text-muted)] uppercase tracking-wider block">
-                Package Size
+            <div className="p-3 sm:p-3.5 rounded-xl bg-slate-900/60 border border-white/10 flex flex-col justify-between min-h-[66px]">
+              <span className="text-[10px] font-mono font-bold text-slate-400 uppercase tracking-wider block">
+                PACKAGE SIZE
               </span>
-              <span className="text-xs font-semibold text-[var(--orion-text-primary)] mt-0.5 block truncate">
+              <span className="text-xs sm:text-[13px] font-semibold text-white tracking-tight mt-1 truncate">
                 {(activeRelease.sizeBytes / (1024 * 1024)).toFixed(2)} MB
               </span>
             </div>
-            <div className="p-2.5 sm:p-3 rounded-xl liquid-glass-card">
-              <span className="text-[9px] sm:text-[10px] font-mono font-bold text-[var(--orion-text-muted)] uppercase tracking-wider block">
-                Min OS
+            <div
+              className="p-3 sm:p-3.5 rounded-xl bg-slate-900/60 border border-white/10 flex flex-col justify-between min-h-[66px]"
+              title={activeRelease.minimumOs}
+            >
+              <span className="text-[10px] font-mono font-bold text-slate-400 uppercase tracking-wider block">
+                MIN OS
               </span>
-              <span className="text-xs font-semibold text-[var(--orion-text-primary)] mt-0.5 block truncate">
+              <span className="text-xs sm:text-[13px] font-semibold text-white tracking-tight mt-1 truncate">
                 {activeRelease.minimumOs}
               </span>
             </div>
           </div>
 
-          {/* Cryptographic SHA-256 Card in Terminal Glass */}
-          <div className="p-3.5 sm:p-4 rounded-2xl bg-black/40 dark:bg-black/60 border border-[var(--glass-border)] space-y-2.5">
-            <div className="flex items-center justify-between gap-2 text-xs">
-              <span className="font-mono font-bold text-sky-400 flex items-center gap-1.5 text-[10px] sm:text-[11px] truncate">
-                <ShieldCheck className="w-3.5 h-3.5 text-sky-400 shrink-0" />
-                <span className="truncate">SHA-256 INTEGRITY HASH</span>
+          {/* Cryptographic SHA-256 Card in Terminal Obsidian Glass */}
+          <div className="p-3.5 sm:p-4 rounded-2xl bg-slate-950/90 border border-white/10 shadow-inner space-y-3">
+            <div className="flex items-center justify-between gap-2">
+              <span className="font-mono font-bold text-sky-400 flex items-center gap-1.5 text-[11px] tracking-wider truncate">
+                <ShieldCheck className="w-4 h-4 text-sky-400 shrink-0" />
+                <span>SHA-256 INTEGRITY HASH</span>
               </span>
               <button
                 type="button"
                 onClick={handleCopyHash}
-                className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-white/10 hover:bg-white/20 text-[10px] sm:text-[11px] font-medium text-white transition-colors cursor-pointer border border-white/10 shrink-0"
+                className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-white/5 hover:bg-white/15 text-[11px] font-medium text-slate-300 hover:text-white transition-colors cursor-pointer border border-white/10 shrink-0"
               >
                 {copiedHash ? (
                   <>
-                    <Check className="w-3 h-3 text-emerald-400" />
+                    <Check className="w-3.5 h-3.5 text-emerald-400" />
                     <span className="text-emerald-400 font-semibold">Copied!</span>
                   </>
                 ) : (
                   <>
-                    <Copy className="w-3 h-3 text-slate-400" />
+                    <Copy className="w-3.5 h-3.5 text-slate-400" />
                     <span>Copy Hash</span>
                   </>
                 )}
               </button>
             </div>
-            <div className="p-2.5 bg-black/60 rounded-xl border border-white/10 font-mono text-[10px] sm:text-[11px] text-slate-300 break-all select-all leading-relaxed">
+
+            <div className="p-2.5 bg-black/70 rounded-xl border border-white/10 font-mono text-[10px] sm:text-[11px] text-slate-300 select-all break-all leading-relaxed">
               {activeRelease.sha256}
             </div>
-            <div className="flex flex-col gap-1 text-[10px] sm:text-[11px] text-slate-400 font-mono">
-              <div className="flex items-center gap-1.5 text-slate-300">
-                <Terminal className="w-3 h-3 text-sky-400 shrink-0" />
+
+            <div className="space-y-1.5 text-slate-400 font-mono">
+              <div className="flex items-center gap-1.5 text-slate-300 text-[11px]">
+                <Terminal className="w-3.5 h-3.5 text-sky-400 shrink-0" />
                 <span>Verify terminal command:</span>
               </div>
-              <div className="p-2 rounded-lg bg-black/40 border border-white/5 text-sky-300 break-all font-mono text-[10px] select-all">
+              <div className="p-2 rounded-lg bg-black/60 border border-white/5 font-mono text-[10px] text-sky-300 select-all break-all">
                 {getVerificationCommand()}
               </div>
             </div>
           </div>
 
-          {/* Error Banner */}
+          {/* Error Banner in Flow */}
           {downloadError && (
-            <div className="p-3 sm:p-3.5 rounded-2xl bg-rose-500/10 border border-rose-500/20 text-left text-xs text-rose-500 flex items-start gap-2">
-              <AlertTriangle className="w-4 h-4 shrink-0 mt-0.5" />
-              <div>
-                <strong className="font-semibold block">Download Aborted:</strong>
-                <span>{downloadError}</span>
+            <div className="p-3.5 rounded-2xl bg-rose-950/40 border border-rose-500/30 text-left text-xs text-rose-300 flex items-start gap-2.5 leading-relaxed">
+              <AlertTriangle className="w-4 h-4 text-rose-400 shrink-0 mt-0.5" />
+              <div className="space-y-0.5 min-w-0">
+                <strong className="font-semibold text-rose-300 block">Download Aborted:</strong>
+                <span className="break-words">{downloadError}</span>
               </div>
             </div>
           )}
 
-          {/* Success Banner */}
+          {/* Success Banner in Flow */}
           {downloadSuccess && (
-            <div className="p-3 sm:p-3.5 rounded-2xl bg-emerald-500/10 border border-emerald-500/20 text-left text-xs text-emerald-500 flex items-center gap-2">
-              <CheckCircle2 className="w-4 h-4 shrink-0" />
+            <div className="p-3.5 rounded-2xl bg-emerald-950/40 border border-emerald-500/30 text-left text-xs text-emerald-300 flex items-center gap-2.5">
+              <CheckCircle2 className="w-4 h-4 text-emerald-400 shrink-0" />
               <span>Installer binary stream verified. Check your downloads directory.</span>
             </div>
           )}
+        </div>
 
-          {/* NovaDownload Integrated Action Controls */}
-          <div className="pt-1 sm:pt-2 flex flex-col sm:flex-row items-center gap-2.5 sm:gap-3">
-            <div className="w-full sm:flex-1">
-              <OrionNovaDownloadButton
-                filename={activeRelease.filename}
-                version={activeRelease.version}
-                platform={selectedPlatform}
-                isAuthenticated={isAuthenticated}
-                onDownload={handleAuthenticatedDownload}
-                onNavigateAuth={handleNavigateAuth}
-                disabled={activeRelease.status === 'disabled' || activeRelease.status === 'retired' || isDownloading}
-              />
-            </div>
-
-            <button
-              type="button"
-              onClick={onClose}
-              className="w-full sm:w-auto px-5 py-2.5 sm:py-3.5 rounded-xl liquid-glass-button text-xs font-semibold text-[var(--orion-text-secondary)] hover:text-[var(--orion-text-primary)] transition-colors cursor-pointer text-center"
-            >
-              Close
-            </button>
+        {/* Pinned Modal Action Footer */}
+        <div className="p-3.5 sm:p-5 border-t border-white/10 bg-slate-900/70 backdrop-blur-md shrink-0 flex flex-col sm:flex-row items-center gap-3">
+          <div className="w-full sm:flex-1">
+            <OrionNovaDownloadButton
+              filename={activeRelease.filename}
+              version={activeRelease.version}
+              platform={selectedPlatform}
+              isAuthenticated={isAuthenticated}
+              onDownload={handleAuthenticatedDownload}
+              onNavigateAuth={handleNavigateAuth}
+              disabled={activeRelease.status === 'disabled' || activeRelease.status === 'retired' || isDownloading}
+            />
           </div>
+
+          <button
+            type="button"
+            onClick={onClose}
+            className="w-full sm:w-auto px-6 py-3 rounded-xl bg-white/5 hover:bg-white/10 border border-white/10 text-xs font-semibold text-slate-300 hover:text-white transition-colors cursor-pointer text-center shrink-0"
+          >
+            Close
+          </button>
         </div>
       </div>
     </div>

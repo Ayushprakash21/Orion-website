@@ -48,7 +48,11 @@ const AppContent: React.FC = () => {
         const hash = window.location.hash.replace('#', '');
         setTimeout(() => {
           const el = document.getElementById(hash);
-          if (el) el.scrollIntoView({ behavior: 'smooth' });
+          if (el) {
+            const navHeight = 92;
+            const targetTop = el.getBoundingClientRect().top + window.scrollY - navHeight;
+            window.scrollTo({ top: Math.max(0, targetTop), behavior: 'smooth' });
+          }
         }, 150);
       }
     };
@@ -68,7 +72,11 @@ const AppContent: React.FC = () => {
       const hash = path.split('#')[1];
       setTimeout(() => {
         const el = document.getElementById(hash);
-        if (el) el.scrollIntoView({ behavior: 'smooth' });
+        if (el) {
+          const navHeight = 92;
+          const targetTop = el.getBoundingClientRect().top + window.scrollY - navHeight;
+          window.scrollTo({ top: Math.max(0, targetTop), behavior: 'smooth' });
+        }
       }, 150);
     } else {
       window.scrollTo({ top: 0, behavior: 'smooth' });
