@@ -26,8 +26,10 @@ class MockR2Bucket implements R2Bucket {
   async get(key: string): Promise<any> {
     const item = this.store.get(key);
     if (!item) return null;
+    const size = typeof item.body === 'string' ? item.body.length : (item.body as any)?.byteLength || 0;
     return {
       body: item.body,
+      size,
       httpMetadata: (item.metadata as any)?.httpMetadata,
       httpEtag: 'mock-etag-1234',
     };
@@ -388,5 +390,22 @@ describe('Cloudflare R2 Brand Uploader — Master CORS, Auth & Pipeline Test Sui
     assert.ok(msgPreflight.includes('Network or CORS failure'));
     assert.ok(msgPreflight.includes('orion9-r2-brand-uploader.ayushprakash0021.workers.dev'));
     assert.ok(msgPreflight.includes('CORS origin permissions'));
+  });
+
+  it('19. HEAD requests to /downloads/* return headers without body', async () => {
+    const bucket = new MockR2Bucket();
+    const payload = new Uint8Array([1, 2, 3, 4, 5]).buffer;
+    await bucket.put('downloads/test.exe', payload);
+
+    const headReq = new Request('https://orion9-r2-brand-uploader.workers.dev/downloads/test.exe', {
+      method: 'HEAD',
+    });
+    const headRes = await worker.fetch(headReq, { BRAND_ASSETS: bucket });
+    assert.strictEqual(headRes.status, 200);
+    assert.strictEqual(headRes.headers.get('Content-Type'), 'application/vnd.microsoft.portable-executable');
+    assert.strictEqual(headRes.headers.get('Content-Length'), '5');
+    assert.strictEqual(headRes.headers.get('Access-Control-Allow-Origin'), '*');
+    const body = await headRes.text();
+    assert.strictEqual(body, '');
   });
 });

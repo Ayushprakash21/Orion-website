@@ -14,6 +14,7 @@ export interface R2ObjectMetadata {
   httpMetadata?: { contentType?: string; cacheControl?: string };
   customMetadata?: Record<string, string>;
   httpEtag?: string;
+  size?: number;
 }
 
 export interface R2ObjectBody extends R2ObjectMetadata {
@@ -202,7 +203,7 @@ export default {
     // 3. Public Asset CDN Delivery Route: /cdn/*, /branding/logos/*, /branding/creator/*, or /downloads/*
     // Enables direct, zero-configuration public streaming of stored logos, creator assets, and workstation binaries
     if (
-      request.method === 'GET' &&
+      (request.method === 'GET' || request.method === 'HEAD') &&
       (url.pathname.startsWith('/cdn/') ||
         url.pathname.startsWith('/branding/logos/') ||
         url.pathname.startsWith('/branding/creator/') ||
@@ -234,7 +235,8 @@ export default {
         key.startsWith('branding/logos/') ||
         key.startsWith('branding/creator/') ||
         key.startsWith('downloads/') ||
-        key.startsWith('releases/');
+        key.startsWith('releases/') ||
+        key.startsWith('media/');
 
       if (!isAllowed) {
         return jsonResponse(
@@ -270,6 +272,7 @@ export default {
       if (ext === '.exe') inferredType = 'application/vnd.microsoft.portable-executable';
       else if (ext === '.msi') inferredType = 'application/x-msi';
       else if (ext === '.dmg') inferredType = 'application/x-apple-diskimage';
+      else if (ext === '.mp4') inferredType = 'video/mp4';
 
       const responseHeaders = new Headers(corsHeaders);
       responseHeaders.set('Access-Control-Allow-Origin', '*');
@@ -282,6 +285,16 @@ export default {
       );
       if (object.httpEtag) {
         responseHeaders.set('ETag', object.httpEtag);
+      }
+      if (typeof object.size === 'number') {
+        responseHeaders.set('Content-Length', String(object.size));
+      }
+
+      if (request.method === 'HEAD') {
+        return new Response(null, {
+          status: 200,
+          headers: responseHeaders,
+        });
       }
 
       return new Response(object.body, {
