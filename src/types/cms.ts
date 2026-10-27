@@ -212,6 +212,18 @@ export interface DesktopReleaseRecord {
   updatedBy?: string;
 }
 
+export interface CreatorProfileConfig {
+  name: string;
+  role: string;
+  quote: string;
+  repository: string;
+  status: string;
+  avatarUrl: string | null;
+  avatarMetadata?: LogoPlacementMetadata | null;
+  updatedAt?: string;
+  updatedBy?: string;
+}
+
 export interface SiteConfigurationBundle {
   branding: BrandingConfig;
   navigation: NavigationConfig;
@@ -221,4 +233,5 @@ export interface SiteConfigurationBundle {
   authSettings: AuthSettingsConfig;
   mediaLibrary: MediaAssetItem[];
   desktopReleases?: DesktopReleaseRecord[];
+  creatorProfile: CreatorProfileConfig;
 }

@@ -36,6 +36,8 @@ interface AboutPageProps {
 export const AboutPage: React.FC<AboutPageProps> = ({ onNavigate, onOpenDownload }) => {
   const { activeConfig } = useSiteConfig();
   const companyName = activeConfig.branding.companyName || 'Orion-9';
+  const creator = activeConfig.creatorProfile;
+  const [avatarLoadFailed, setAvatarLoadFailed] = useState<boolean>(false);
 
   const [activeSection, setActiveSection] = useState<string>('overview');
 
@@ -520,26 +522,46 @@ export const AboutPage: React.FC<AboutPageProps> = ({ onNavigate, onOpenDownload
 
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
             {/* Creator Card */}
-            <div className="lg:col-span-4 liquid-glass-elevated rounded-3xl p-6 sm:p-8 border border-[var(--glass-border)] shadow-xl space-y-5">
-              <div className="w-20 h-20 rounded-2xl bg-gradient-to-br from-[#0284C7] to-[#070B19] text-white flex items-center justify-center font-bold text-2xl shadow-lg shadow-sky-600/20">
-                AP
-              </div>
+            <div
+              data-testid="about-creator-card"
+              className="lg:col-span-4 liquid-glass-elevated rounded-3xl p-6 sm:p-8 border border-[var(--glass-border)] shadow-xl space-y-5"
+            >
+              {creator?.avatarUrl && !avatarLoadFailed ? (
+                <img
+                  data-testid="about-creator-avatar"
+                  src={creator.avatarUrl}
+                  alt={creator?.name || 'Ayush Prakash'}
+                  onError={() => setAvatarLoadFailed(true)}
+                  className="w-20 h-20 rounded-2xl object-cover shadow-lg shadow-sky-600/20 border border-[var(--glass-border)]"
+                />
+              ) : (
+                <div
+                  data-testid="about-creator-avatar-fallback"
+                  className="w-20 h-20 rounded-2xl bg-gradient-to-br from-[#0284C7] to-[#070B19] text-white flex items-center justify-center font-bold text-2xl shadow-lg shadow-sky-600/20"
+                >
+                  AP
+                </div>
+              )}
 
               <div>
-                <h3 className="text-xl font-bold text-[var(--orion-text-primary)]">Ayush Prakash</h3>
+                <h3 className="text-xl font-bold text-[var(--orion-text-primary)]">
+                  {creator?.name || 'Ayush Prakash'}
+                </h3>
                 <p className="text-xs font-mono text-[var(--orion-text-muted)] uppercase tracking-wider mt-0.5">
-                  Creator &amp; Supply Chain OS Architect
+                  {creator?.role || 'Creator & Supply Chain OS Architect'}
                 </p>
               </div>
 
               <div className="p-3.5 rounded-xl bg-[var(--orion-alt-bg)]/80 border border-[var(--glass-border-subtle)] text-xs text-[var(--orion-text-secondary)] italic space-y-1">
                 <Quote className="w-4 h-4 text-[#0284C7]" />
-                <p>&ldquo;What if the supply chain had an operating system?&rdquo;</p>
+                <p>&ldquo;{creator?.quote || 'What if the supply chain had an operating system?'}&rdquo;</p>
               </div>
 
               <div className="pt-2 border-t border-[var(--glass-border-subtle)] text-[11px] font-mono text-[var(--orion-text-muted)] space-y-1">
-                <div>Source: <code className="text-[var(--orion-text-primary)]">Ayushprakash21/orion-9</code></div>
-                <div>Status: Primary System Maintainer</div>
+                <div>
+                  Source: <code className="text-[var(--orion-text-primary)]">{creator?.repository || 'Ayushprakash21/orion-9'}</code>
+                </div>
+                <div>Status: {creator?.status || 'Primary System Maintainer'}</div>
               </div>
             </div>
 

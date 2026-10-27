@@ -136,11 +136,13 @@ export default {
       );
     }
 
-    // 3. Public Asset CDN Delivery Route: /cdn/* or /branding/logos/*
-    // Enables direct, zero-configuration public streaming of stored logos even before a custom domain is attached
+    // 3. Public Asset CDN Delivery Route: /cdn/*, /branding/logos/*, or /branding/creator/*
+    // Enables direct, zero-configuration public streaming of stored logos & creator assets even before a custom domain is attached
     if (
       request.method === 'GET' &&
-      (url.pathname.startsWith('/cdn/') || url.pathname.startsWith('/branding/logos/'))
+      (url.pathname.startsWith('/cdn/') ||
+        url.pathname.startsWith('/branding/logos/') ||
+        url.pathname.startsWith('/branding/creator/'))
     ) {
       if (!env.BRAND_ASSETS) {
         return new Response('Cloudflare R2 bucket binding is not configured.', {
@@ -152,11 +154,11 @@ export default {
       let key = url.pathname.replace(/^\/cdn\//, '');
       if (key.startsWith('/')) key = key.slice(1);
 
-      // Security Guard: Prevent directory traversal & restrict strictly to public branding/logos/
+      // Security Guard: Prevent directory traversal & restrict strictly to public branding/logos/ and branding/creator/
       if (
         key.includes('..') ||
         key.includes('\\') ||
-        !key.startsWith('branding/logos/')
+        (!key.startsWith('branding/logos/') && !key.startsWith('branding/creator/'))
       ) {
         return new Response('Access denied: Invalid or unauthorized asset path.', {
           status: 403,
@@ -322,12 +324,13 @@ export default {
       }
 
       // 4. Generate predictable, collision-resistant versioned key
-      const safePlacement = ['shared', 'header', 'auth', 'footer', 'default'].includes(placement)
+      const safePlacement = ['shared', 'header', 'auth', 'footer', 'default', 'creator'].includes(placement)
         ? placement
         : 'shared';
       const cleanFileName = file.name.replace(/[^a-zA-Z0-9._-]/g, '_');
       const randomSuffix = crypto.randomUUID().slice(0, 8);
-      const objectKey = `branding/logos/${safePlacement}_${Date.now()}_${randomSuffix}_${cleanFileName}`;
+      const prefix = safePlacement === 'creator' ? 'branding/creator' : 'branding/logos';
+      const objectKey = `${prefix}/${safePlacement}_${Date.now()}_${randomSuffix}_${cleanFileName}`;
 
       // 5. Save to Cloudflare R2
       try {

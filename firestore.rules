@@ -52,7 +52,8 @@ service cloud.firestore {
         'seo',
         'authSettings',
         'mediaLibrary',
-        'desktopReleases'
+        'desktopReleases',
+        'creatorProfile'
       ];
 
       allow create, update: if isAdmin() &&
@@ -64,7 +65,8 @@ service cloud.firestore {
           'seo',
           'authSettings',
           'mediaLibrary',
-          'desktopReleases'
+          'desktopReleases',
+        'creatorProfile'
         ] &&
         request.resource.data.keys().hasAll(['updatedAt', 'updatedBy']) &&
         isValidString(request.resource.data.updatedBy, 2, 160);
@@ -85,7 +87,8 @@ service cloud.firestore {
           'seo',
           'authSettings',
           'mediaLibrary',
-          'desktopReleases'
+          'desktopReleases',
+        'creatorProfile'
         ];
       allow delete: if isAdmin();
     }

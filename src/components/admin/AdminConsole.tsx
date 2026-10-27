@@ -11,6 +11,7 @@ import {
   Eye,
   KeyRound,
   Users,
+  User,
   History,
   Settings,
   LogOut,
@@ -41,6 +42,7 @@ import {
   validateHomepageConfig,
   validateSeoConfig,
   validateFooterConfig,
+  validateCreatorProfileConfig,
   isSafeCmsUrl,
   sanitizeCmsText,
 } from '../../utils/cms-validation';
@@ -61,15 +63,18 @@ import {
   DesktopPlatform,
   DesktopPackageFormat,
   DesktopReleaseStatus,
+  CreatorProfileConfig,
 } from '../../types/cms';
-import { DEFAULT_DESKTOP_RELEASES } from '../../data/defaultSiteConfig';
+import { DEFAULT_DESKTOP_RELEASES, DEFAULT_CREATOR_PROFILE } from '../../data/defaultSiteConfig';
 import { LogoManagementSection } from './LogoManagementSection';
+import { CreatorProfileSection } from './CreatorProfileSection';
 
 type AdminTabId =
   | 'overview'
   | 'content'
   | 'sections'
   | 'branding'
+  | 'creator'
   | 'navigation'
   | 'cta'
   | 'media'
@@ -155,6 +160,10 @@ export function AdminConsole({ onNavigate }: AdminConsoleProps) {
   const [releasesForm, setReleasesForm] = useState<DesktopReleaseRecord[]>(
     draftConfig.desktopReleases || DEFAULT_DESKTOP_RELEASES
   );
+  const [isSavingCreator, setIsSavingCreator] = useState(false);
+  const [creatorForm, setCreatorForm] = useState<CreatorProfileConfig>(
+    draftConfig.creatorProfile || DEFAULT_CREATOR_PROFILE
+  );
 
   // New desktop release form inputs
   const [newRelVersion, setNewRelVersion] = useState('');
@@ -200,6 +209,9 @@ export function AdminConsole({ onNavigate }: AdminConsoleProps) {
     if (!isSavingBranding) {
       setBrandingForm(draftConfig.branding);
     }
+    if (!isSavingCreator) {
+      setCreatorForm(draftConfig.creatorProfile || DEFAULT_CREATOR_PROFILE);
+    }
     setNavForm(draftConfig.navigation);
     setHomeForm(draftConfig.homepage);
     setFooterForm(draftConfig.footer);
@@ -207,7 +219,7 @@ export function AdminConsole({ onNavigate }: AdminConsoleProps) {
     setAuthSettingsForm(draftConfig.authSettings);
     setMediaForm(draftConfig.mediaLibrary);
     setReleasesForm(draftConfig.desktopReleases || DEFAULT_DESKTOP_RELEASES);
-  }, [draftConfig, isSavingBranding]);
+  }, [draftConfig, isSavingBranding, isSavingCreator]);
 
   // Redirect unauthenticated visitors to /admin/login
   useEffect(() => {
@@ -331,6 +343,37 @@ export function AdminConsole({ onNavigate }: AdminConsoleProps) {
       }
     } finally {
       setIsSavingBranding(false);
+    }
+  };
+
+  const handleSaveCreatorProfile = async (publish: boolean) => {
+    setIsSavingCreator(true);
+    try {
+      const check = validateCreatorProfileConfig(creatorForm);
+      if (!check.valid) {
+        showBanner('error', check.errors.join(' '));
+        return;
+      }
+      const action = publish ? publishSection : saveDraftSection;
+      const res = await action(
+        'creatorProfile',
+        creatorForm,
+        publish
+          ? 'Published creator photograph and attribution to public About page'
+          : 'Saved creator profile draft'
+      );
+      if (res.success) {
+        showBanner(
+          'success',
+          publish
+            ? 'Creator Profile published live successfully.'
+            : 'Creator Profile saved to draft.'
+        );
+      } else {
+        showBanner('error', res.error || 'Failed to save Creator Profile.');
+      }
+    } finally {
+      setIsSavingCreator(false);
     }
   };
 
@@ -632,6 +675,7 @@ export function AdminConsole({ onNavigate }: AdminConsoleProps) {
     { id: 'content', label: 'Website content', icon: FileText },
     { id: 'sections', label: 'Homepage sections', icon: Layers },
     { id: 'branding', label: 'Branding & Identity', icon: Palette },
+    { id: 'creator', label: 'Creator profile', icon: User },
     { id: 'navigation', label: 'Navigation management', icon: Compass },
     { id: 'cta', label: 'CTA management', icon: MousePointerClick },
     { id: 'media', label: 'Media library', icon: ImageIcon },
@@ -1207,6 +1251,17 @@ export function AdminConsole({ onNavigate }: AdminConsoleProps) {
               setBrandingForm={setBrandingForm}
               onSave={handleSaveBranding}
               isSaving={isSavingBranding}
+              showBanner={showBanner}
+            />
+          )}
+
+          {/* 4.1 CREATOR PROFILE */}
+          {activeTab === 'creator' && (
+            <CreatorProfileSection
+              creatorForm={creatorForm}
+              setCreatorForm={setCreatorForm}
+              onSave={handleSaveCreatorProfile}
+              isSaving={isSavingCreator}
               showBanner={showBanner}
             />
           )}

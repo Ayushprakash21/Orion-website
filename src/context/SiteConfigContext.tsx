@@ -9,6 +9,7 @@ import {
   AuthSettingsConfig,
   MediaAssetItem,
   AuditLogEntry,
+  CreatorProfileConfig,
 } from '../types/cms';
 import { DEFAULT_SITE_CONFIG } from '../data/defaultSiteConfig';
 import {
@@ -16,6 +17,8 @@ import {
   normalizeBrandingConfig,
   validateBrandingConfig,
   validateStoragePayloadSafeguards,
+  validateCreatorProfileConfig,
+  normalizeCreatorProfileConfig,
 } from '../utils/cms-validation';
 import {
   initializeFirebase,
@@ -82,6 +85,7 @@ function loadStoredBundle(key: string, fallback: SiteConfigurationBundle): SiteC
       authSettings: { ...fallback.authSettings, ...(parsed.authSettings || {}) },
       mediaLibrary: parsed.mediaLibrary || fallback.mediaLibrary,
       desktopReleases: parsed.desktopReleases || fallback.desktopReleases || [],
+      creatorProfile: normalizeCreatorProfileConfig(parsed.creatorProfile || fallback.creatorProfile),
     };
   } catch {
     return fallback;
@@ -157,6 +161,7 @@ export function SiteConfigProvider({ children }: { children: React.ReactNode }) 
         'seo',
         'authSettings',
         'desktopReleases',
+        'creatorProfile',
       ];
 
       const nextPublished: SiteConfigurationBundle = { ...DEFAULT_SITE_CONFIG };
@@ -171,6 +176,8 @@ export function SiteConfigProvider({ children }: { children: React.ReactNode }) 
             (nextPublished as unknown as Record<string, unknown>)[sec] =
               sec === 'branding'
                 ? normalizeBrandingConfig({ ...(DEFAULT_SITE_CONFIG.branding), ...docData })
+                : sec === 'creatorProfile'
+                ? normalizeCreatorProfileConfig({ ...(DEFAULT_SITE_CONFIG.creatorProfile), ...docData })
                 : {
                     ...(DEFAULT_SITE_CONFIG[sec] as object),
                     ...docData,
@@ -202,6 +209,8 @@ export function SiteConfigProvider({ children }: { children: React.ReactNode }) 
                 (nextDrafts as unknown as Record<string, unknown>)[sec] =
                   sec === 'branding'
                     ? normalizeBrandingConfig({ ...(DEFAULT_SITE_CONFIG.branding), ...draftData })
+                    : sec === 'creatorProfile'
+                    ? normalizeCreatorProfileConfig({ ...(DEFAULT_SITE_CONFIG.creatorProfile), ...draftData })
                     : {
                         ...(DEFAULT_SITE_CONFIG[sec] as object),
                         ...draftData,
@@ -292,9 +301,14 @@ export function SiteConfigProvider({ children }: { children: React.ReactNode }) 
     data: SiteConfigurationBundle[K],
     summary: string
   ): Promise<{ success: boolean; error?: string }> => {
-    // 1. Validation for branding
+    // 1. Validation for branding & creatorProfile
     if (section === 'branding') {
       const check = validateBrandingConfig(data as BrandingConfig);
+      if (!check.valid) {
+        return { success: false, error: check.errors.join(' ') };
+      }
+    } else if (section === 'creatorProfile') {
+      const check = validateCreatorProfileConfig(data as CreatorProfileConfig);
       if (!check.valid) {
         return { success: false, error: check.errors.join(' ') };
       }
@@ -302,7 +316,11 @@ export function SiteConfigProvider({ children }: { children: React.ReactNode }) 
 
     // 2. Normalization & Sanitization
     const normalizedData =
-      section === 'branding' ? normalizeBrandingConfig(data as BrandingConfig) : data;
+      section === 'branding'
+        ? normalizeBrandingConfig(data as BrandingConfig)
+        : section === 'creatorProfile'
+        ? normalizeCreatorProfileConfig(data as CreatorProfileConfig)
+        : data;
 
     const payload = sanitizeForFirestore({
       ...(typeof normalizedData === 'object' && !Array.isArray(normalizedData)
@@ -366,9 +384,14 @@ export function SiteConfigProvider({ children }: { children: React.ReactNode }) 
     data: SiteConfigurationBundle[K],
     summary: string
   ): Promise<{ success: boolean; error?: string }> => {
-    // 1. Validation for branding
+    // 1. Validation for branding & creatorProfile
     if (section === 'branding') {
       const check = validateBrandingConfig(data as BrandingConfig);
+      if (!check.valid) {
+        return { success: false, error: check.errors.join(' ') };
+      }
+    } else if (section === 'creatorProfile') {
+      const check = validateCreatorProfileConfig(data as CreatorProfileConfig);
       if (!check.valid) {
         return { success: false, error: check.errors.join(' ') };
       }
@@ -376,7 +399,11 @@ export function SiteConfigProvider({ children }: { children: React.ReactNode }) 
 
     // 2. Normalization & Sanitization
     const normalizedData =
-      section === 'branding' ? normalizeBrandingConfig(data as BrandingConfig) : data;
+      section === 'branding'
+        ? normalizeBrandingConfig(data as BrandingConfig)
+        : section === 'creatorProfile'
+        ? normalizeCreatorProfileConfig(data as CreatorProfileConfig)
+        : data;
 
     const payload = sanitizeForFirestore({
       ...(typeof normalizedData === 'object' && !Array.isArray(normalizedData)

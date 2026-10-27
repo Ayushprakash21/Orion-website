@@ -1,4 +1,4 @@
-import type { SiteConfigurationBundle, DesktopReleaseRecord, LogoPlacementConfig } from '../types/cms.ts';
+import type { SiteConfigurationBundle, DesktopReleaseRecord, LogoPlacementConfig, CreatorProfileConfig } from '../types/cms.ts';
 import { DEFAULT_ORION_APP_URL } from '../utils/auth-validation.ts';
 
 export const DEFAULT_DESKTOP_RELEASES: DesktopReleaseRecord[] = [
@@ -119,6 +119,16 @@ export const DEFAULT_LOGO_PLACEMENT_CONFIG: LogoPlacementConfig = {
   sizeBytes: null,
   uploadedAt: null,
   updatedBy: null,
+};
+
+export const DEFAULT_CREATOR_PROFILE: CreatorProfileConfig = {
+  name: 'Ayush Prakash',
+  role: 'Creator & Supply Chain OS Architect',
+  quote: 'What if the supply chain had an operating system?',
+  repository: 'Ayushprakash21/orion-9',
+  status: 'Primary System Maintainer',
+  avatarUrl: null,
+  avatarMetadata: null,
 };
 
 export const DEFAULT_SITE_CONFIG: SiteConfigurationBundle = {
@@ -305,4 +315,5 @@ export const DEFAULT_SITE_CONFIG: SiteConfigurationBundle = {
     },
   ],
   desktopReleases: DEFAULT_DESKTOP_RELEASES,
+  creatorProfile: DEFAULT_CREATOR_PROFILE,
 };

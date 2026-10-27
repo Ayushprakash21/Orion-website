@@ -5,8 +5,13 @@ import type {
   SeoConfig,
   FooterConfig,
   LogoPlacementConfig,
+  CreatorProfileConfig,
 } from '../types/cms.ts';
-import { DEFAULT_SITE_CONFIG, DEFAULT_LOGO_PLACEMENT_CONFIG } from '../data/defaultSiteConfig.ts';
+import {
+  DEFAULT_SITE_CONFIG,
+  DEFAULT_LOGO_PLACEMENT_CONFIG,
+  DEFAULT_CREATOR_PROFILE,
+} from '../data/defaultSiteConfig.ts';
 
 /**
  * Validates that a URL is safe for use in CTAs, navigation links, or media assets.
@@ -502,5 +507,46 @@ export function normalizeBrandingConfig(raw?: Partial<BrandingConfig> | null): B
     darkSurfaceColor: cfg.darkSurfaceColor ?? fallback.darkSurfaceColor,
     updatedAt: cfg.updatedAt || new Date().toISOString(),
     updatedBy: cfg.updatedBy || 'admin',
+  };
+}
+
+export function validateCreatorProfileConfig(config: CreatorProfileConfig): {
+  valid: boolean;
+  errors: string[];
+} {
+  const errors: string[] = [];
+  if (!config) {
+    return { valid: false, errors: ['Creator profile configuration is missing.'] };
+  }
+  if (!config.name || config.name.trim().length < 2 || config.name.length > 80) {
+    errors.push('Creator name must be between 2 and 80 characters.');
+  }
+  if (!config.role || config.role.trim().length < 2 || config.role.length > 100) {
+    errors.push('Role title must be between 2 and 100 characters.');
+  }
+  if (config.avatarUrl && !isSafeLogoUrl(config.avatarUrl)) {
+    errors.push('Creator avatar URL is invalid or unsafe.');
+  }
+  return {
+    valid: errors.length === 0,
+    errors,
+  };
+}
+
+export function normalizeCreatorProfileConfig(
+  raw?: Partial<CreatorProfileConfig> | null
+): CreatorProfileConfig {
+  const fallback = DEFAULT_CREATOR_PROFILE;
+  if (!raw) return { ...fallback };
+  return {
+    name: (raw.name || fallback.name).trim(),
+    role: (raw.role || fallback.role).trim(),
+    quote: (raw.quote || fallback.quote).trim(),
+    repository: (raw.repository || fallback.repository).trim(),
+    status: (raw.status || fallback.status).trim(),
+    avatarUrl: raw.avatarUrl ? raw.avatarUrl.trim() : null,
+    avatarMetadata: raw.avatarMetadata || null,
+    updatedAt: raw.updatedAt || new Date().toISOString(),
+    updatedBy: raw.updatedBy || 'admin',
   };
 }

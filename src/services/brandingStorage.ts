@@ -319,7 +319,7 @@ export function classifyStorageError(storageErr: unknown): string {
  * NEVER silently falls back to Base64 or Firebase Storage on failure.
  */
 export async function uploadBrandingLogoAsset(
-  placement: 'header' | 'auth' | 'footer' | 'default' | 'shared',
+  placement: 'header' | 'auth' | 'footer' | 'default' | 'shared' | 'creator',
   file: File,
   onProgress?: (progressPct: number) => void,
   explicitAuthToken?: string
@@ -485,4 +485,22 @@ export async function uploadBrandingLogoAsset(
     const userMessage = classifyStorageError(err);
     throw new Error(userMessage);
   }
+}
+
+/**
+ * Validates a creator photograph file before upload (file format, size <= 5MB, SVG sanitization, dimensions).
+ */
+export const validateCreatorImageFile = validateLogoFile;
+
+/**
+ * Uploads a validated creator photograph to Cloudflare R2 bucket `orion9-brand-assets`
+ * via the authenticated Orion-9 R2 worker upload endpoint.
+ * Enforces file size <= 5MB, supported formats (PNG, JPEG, WebP, SVG), SVG sanitization, and admin authentication.
+ */
+export async function uploadCreatorProfileImage(
+  file: File,
+  onProgress?: (progressPct: number) => void,
+  explicitAuthToken?: string
+): Promise<LogoPlacementMetadata> {
+  return uploadBrandingLogoAsset('creator', file, onProgress, explicitAuthToken);
 }
