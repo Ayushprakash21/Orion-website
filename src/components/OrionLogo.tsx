@@ -431,14 +431,14 @@ export const OrionHeroBrandLockup: React.FC<OrionHeroBrandLockupProps> = ({
       >
         <h1
           data-testid="orion-hero-editorial-headline"
-          className="font-editorial text-2xl sm:text-3xl md:text-4xl lg:text-[40px] font-extrabold tracking-[-0.03em] leading-[1.12] text-[var(--orion-text-primary)]"
+          className="font-editorial text-2xl sm:text-3xl md:text-4xl lg:text-[40px] font-extrabold tracking-[-0.03em] leading-[1.12] text-[var(--orion-text-primary)] dark:text-[#070B19]"
         >
           {headlineText}
         </h1>
 
         <p
           data-testid="orion-hero-supporting-description"
-          className="text-xs sm:text-sm text-[var(--orion-text-secondary)] mt-2.5 max-w-xl mx-auto leading-relaxed"
+          className="text-xs sm:text-sm text-[var(--orion-text-secondary)] dark:text-[#475569] mt-2.5 max-w-xl mx-auto leading-relaxed"
         >
           {supportingParagraph}
         </p>
