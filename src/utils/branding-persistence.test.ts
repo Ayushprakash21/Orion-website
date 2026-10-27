@@ -15,6 +15,7 @@ import {
   validateStoragePayloadSafeguards,
   validateBrandingConfig,
   normalizeBrandingConfig,
+  sanitizeForFirestore,
   isSafeLogoUrl,
 } from './cms-validation.ts';
 import { DEFAULT_SITE_CONFIG, DEFAULT_LOGO_PLACEMENT_CONFIG } from '../data/defaultSiteConfig.ts';
@@ -272,5 +273,65 @@ describe('Cloudflare R2 Brand Logo Upload & Persistence Test Suite', () => {
     assert.equal(isSafeLogoUrl(cdnUrl), true);
     assert.equal(isSafeLogoUrl('javascript:alert(1)'), false);
     assert.equal(isSafeLogoUrl('data:text/html,<script>alert(1)</script>'), false);
+  });
+
+  // 18. Complete R2 upload payload processing, draft staging, publish live, and Firestore sanitization
+  it('18. Complete R2 upload payload processing, draft staging, publish live, and Firestore sanitization', () => {
+    const r2UploadResponse = {
+      success: true,
+      url: 'https://orion9-r2-brand-uploader.ayushprakash0021.workers.dev/cdn/branding/logos/shared_1793110218740_9fca0704_orion9-logo.svg',
+      key: 'branding/logos/shared_1793110218740_9fca0704_orion9-logo.svg',
+      dimensions: '512 × 512 px',
+      fileType: 'image/svg+xml',
+      sizeBytes: 2042,
+      uploadedAt: '2026-10-27T14:10:19.462Z',
+      originalFilename: 'orion9-logo.svg',
+    };
+
+    // 1. Placement metadata creation (with potential undefined fields from client state)
+    const placementConfig: LogoPlacementConfig = {
+      useCustom: true,
+      customUrl: r2UploadResponse.url,
+      url: r2UploadResponse.url,
+      originalFilename: r2UploadResponse.originalFilename,
+      dimensions: r2UploadResponse.dimensions,
+      fileType: r2UploadResponse.fileType,
+      sizeBytes: r2UploadResponse.sizeBytes,
+      uploadedAt: r2UploadResponse.uploadedAt,
+      updatedBy: null,
+    };
+
+    // 2. Draft branding form update
+    const stagedDraft: BrandingConfig = {
+      ...DEFAULT_SITE_CONFIG.branding,
+      sharedLogo: r2UploadResponse.url,
+      sharedLogoConfig: placementConfig,
+      headerLogo: r2UploadResponse.url,
+      headerLogoConfig: { ...placementConfig },
+      authLogo: r2UploadResponse.url,
+      authLogoConfig: { ...placementConfig },
+      footerLogo: r2UploadResponse.url,
+      footerLogoConfig: { ...placementConfig },
+    };
+
+    // 3. Validation
+    const validation = validateBrandingConfig(stagedDraft);
+    assert.equal(validation.valid, true);
+
+    // 4. Firestore sanitization (strip undefined, validate safe URLs)
+    const rawWithUndefined = {
+      ...stagedDraft,
+      unsupportedField: undefined,
+    };
+    const sanitized = sanitizeForFirestore(rawWithUndefined) as unknown as BrandingConfig;
+    assert.equal('unsupportedField' in sanitized, false);
+    assert.equal(sanitized.sharedLogo, r2UploadResponse.url);
+
+    // 5. Normalization & Shared Resolution
+    const normalized = normalizeBrandingConfig(sanitized);
+    assert.equal(normalized.sharedLogo, r2UploadResponse.url);
+    assert.equal(normalized.headerLogo, r2UploadResponse.url);
+    assert.equal(normalized.authLogo, r2UploadResponse.url);
+    assert.equal(normalized.footerLogo, r2UploadResponse.url);
   });
 });
