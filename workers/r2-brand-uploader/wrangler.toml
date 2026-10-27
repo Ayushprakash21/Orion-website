@@ -1,6 +1,7 @@
 name = "orion9-r2-brand-uploader"
 main = "src/index.ts"
 compatibility_date = "2024-04-01"
+account_id = "dd579baef921a84503c3989aa829d7d3"
 
 # Cloudflare R2 Bucket Binding for Orion-9 Brand Assets
 [[r2_buckets]]
