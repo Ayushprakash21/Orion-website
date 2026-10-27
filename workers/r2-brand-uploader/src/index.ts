@@ -152,12 +152,26 @@ export default {
       let key = url.pathname.replace(/^\/cdn\//, '');
       if (key.startsWith('/')) key = key.slice(1);
 
+      // Security Guard: Prevent directory traversal & restrict strictly to public branding/logos/
+      if (
+        key.includes('..') ||
+        key.includes('\\') ||
+        !key.startsWith('branding/logos/')
+      ) {
+        return new Response('Access denied: Invalid or unauthorized asset path.', {
+          status: 403,
+          headers: corsHeaders,
+        });
+      }
+
       const object = await env.BRAND_ASSETS.get(key);
       if (!object) {
         return new Response('Asset not found.', { status: 404, headers: corsHeaders });
       }
 
       const responseHeaders = new Headers(corsHeaders);
+      responseHeaders.set('Access-Control-Allow-Origin', '*');
+      responseHeaders.set('X-Content-Type-Options', 'nosniff');
       responseHeaders.set(
         'Content-Type',
         object.httpMetadata?.contentType || 'application/octet-stream'
