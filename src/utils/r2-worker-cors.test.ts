@@ -114,6 +114,34 @@ describe('Cloudflare R2 Brand Uploader — Master CORS, Auth & Pipeline Test Sui
     assert.equal(body.code, 'cors_forbidden');
   });
 
+  it('3b. Arbitrary .ai.studio and .run.app suffixes are rejected (no suffix wildcards)', async () => {
+    const bucket = new MockR2Bucket();
+    const env = createTestEnv(bucket);
+
+    const disallowedOrigins = [
+      'https://attacker.ai.studio',
+      'https://orion-9.ai.studio',
+      'https://random-app.run.app',
+      'https://phishing-ai.studio',
+    ];
+
+    for (const origin of disallowedOrigins) {
+      assert.equal(isOriginAllowed(origin, env), false, `Origin ${origin} should be rejected`);
+
+      const req = new Request('https://orion9-r2-brand-uploader.ayushprakash0021.workers.dev/api/upload-logo', {
+        method: 'OPTIONS',
+        headers: {
+          Origin: origin,
+          'Access-Control-Request-Method': 'POST',
+        },
+      });
+
+      const res = await worker.fetch(req, env);
+      assert.equal(res.status, 403, `Preflight for ${origin} should return 403`);
+      assert.equal(res.headers.get('Access-Control-Allow-Origin'), null, `Preflight for ${origin} must not emit allow-origin header`);
+    }
+  });
+
   it('4. POST from unapproved origin is rejected with 403 before parsing body or authenticating', async () => {
     const bucket = new MockR2Bucket();
     const env = createTestEnv(bucket);

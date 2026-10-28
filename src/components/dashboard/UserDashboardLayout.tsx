@@ -19,7 +19,7 @@ import {
   X,
   Sliders,
   Sparkles,
-  ArrowLeft,
+  Globe,
 } from 'lucide-react';
 
 interface UserDashboardLayoutProps {
@@ -80,8 +80,8 @@ export const UserDashboardLayout: React.FC<UserDashboardLayoutProps> = ({
     onNavigate(path);
   };
 
-  const displayName = user?.displayName || username || user?.email?.split('@')[0] || 'Operator';
-  const roleLabel = isAdmin ? 'System Administrator' : 'Enterprise Operator';
+  const displayName = user?.displayName || username || user?.email?.split('@')[0] || 'User';
+  const roleLabel = isAdmin ? 'System Administrator' : 'Enterprise User';
 
   return (
     <div className="min-h-screen bg-[var(--orion-canvas)] text-[var(--orion-text-primary)] flex flex-col font-sans transition-colors duration-300">
@@ -121,8 +121,8 @@ export const UserDashboardLayout: React.FC<UserDashboardLayoutProps> = ({
               onClick={() => onNavigate('/')}
               className="hidden md:inline-flex items-center gap-1.5 text-xs text-[var(--orion-text-muted)] hover:text-[var(--orion-text-primary)] transition-colors cursor-pointer"
             >
-              <ArrowLeft className="w-3.5 h-3.5" />
-              <span>Public Site</span>
+              <Globe className="w-3.5 h-3.5" />
+              <span>Visit Website</span>
             </button>
           </div>
 
@@ -135,7 +135,7 @@ export const UserDashboardLayout: React.FC<UserDashboardLayoutProps> = ({
                   key={tab.path}
                   type="button"
                   onClick={() => handleTabClick(tab.path)}
-                  className={`flex items-center gap-2 px-3.5 py-1.5 rounded-xl text-xs font-medium cursor-pointer macos-segmented-pill ${
+                  className={`flex items-center gap-2 px-3.5 py-1.5 rounded-xl text-xs font-medium cursor-pointer macos-segmented-pill whitespace-nowrap ${
                     tab.isActive ? 'active' : ''
                   }`}
                 >
@@ -252,7 +252,7 @@ export const UserDashboardLayout: React.FC<UserDashboardLayoutProps> = ({
                 }}
                 className="w-full py-2 px-3 rounded-xl liquid-glass-button text-xs font-medium text-[var(--orion-text-primary)] text-center cursor-pointer"
               >
-                Return to Public Website
+                Visit Orion-9 Homepage
               </button>
               {isAdmin && (
                 <button
