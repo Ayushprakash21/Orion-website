@@ -123,12 +123,19 @@ export const DEFAULT_LOGO_PLACEMENT_CONFIG: LogoPlacementConfig = {
 
 export const DEFAULT_CREATOR_PROFILE: CreatorProfileConfig = {
   name: 'Ayush Prakash',
-  role: 'Creator & Supply Chain OS Architect',
+  role: 'CREATOR & SUPPLY CHAIN OS ARCHITECT',
   quote: 'What if the supply chain had an operating system?',
   repository: 'Ayushprakash21/orion-9',
-  status: 'Primary System Maintainer',
-  avatarUrl: null,
-  avatarMetadata: null,
+  status: 'Creator & Architect',
+  avatarUrl: 'https://orion9-r2-brand-uploader.ayushprakash0021.workers.dev/cdn/branding/creator/creator_1793142386775_044ada53_wall.png',
+  avatarMetadata: {
+    url: 'https://orion9-r2-brand-uploader.ayushprakash0021.workers.dev/cdn/branding/creator/creator_1793142386775_044ada53_wall.png',
+    fileType: 'image/png',
+    dimensions: '1088 × 1446 px',
+    sizeBytes: 3040243,
+    originalFilename: 'wall.png',
+    uploadedAt: '2026-10-27T23:06:27.130Z',
+  },
 };
 
 export const DEFAULT_SITE_CONFIG: SiteConfigurationBundle = {

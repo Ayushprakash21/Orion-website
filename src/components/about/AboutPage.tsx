@@ -547,74 +547,81 @@ export const AboutPage: React.FC<AboutPageProps> = ({ onNavigate, onOpenDownload
             <h2 className="text-2xl sm:text-4xl font-editorial font-bold text-[var(--orion-text-primary)]">
               Created by Ayush Prakash
             </h2>
-            <p className="text-sm sm:text-base text-[var(--orion-text-secondary)] leading-relaxed">
-              The project creator, system architect, and origin vision documented in the authoritative Orion-9 operating system repository.
+            <p className="text-sm sm:text-base text-[var(--orion-text-secondary)] leading-relaxed font-sans">
+              The creator, system architect, and origin vision behind the Orion-9 operating environment.
             </p>
           </div>
 
-          <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
-            {/* Creator Card */}
+          <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-stretch">
+            {/* Rebuilt Centered Creator Card */}
             <div
               data-testid="about-creator-card"
-              className="lg:col-span-4 liquid-glass-elevated rounded-3xl p-6 sm:p-8 border border-[var(--glass-border)] shadow-xl space-y-5"
+              className="lg:col-span-5 liquid-glass-elevated rounded-3xl p-6 sm:p-8 border border-[var(--glass-border)] shadow-xl flex flex-col justify-between items-center text-center space-y-6"
             >
-              {creator?.avatarUrl && !avatarLoadFailed ? (
-                <img
-                  data-testid="about-creator-avatar"
-                  src={creator.avatarUrl}
-                  alt={creator?.name || 'Ayush Prakash'}
-                  onError={() => setAvatarLoadFailed(true)}
-                  className="w-20 h-20 rounded-2xl object-cover shadow-lg shadow-sky-600/20 border border-[var(--glass-border)]"
-                />
-              ) : (
-                <div
-                  data-testid="about-creator-avatar-fallback"
-                  className="w-20 h-20 rounded-2xl bg-gradient-to-br from-[#0284C7] to-[#070B19] text-white flex items-center justify-center font-bold text-2xl shadow-lg shadow-sky-600/20"
-                >
-                  AP
-                </div>
-              )}
+              {/* Top Section: Centered photograph, name, role */}
+              <div className="w-full flex flex-col items-center space-y-4">
+                {creator?.avatarUrl && !avatarLoadFailed ? (
+                  <div className="relative group">
+                    <img
+                      data-testid="about-creator-avatar"
+                      src={creator.avatarUrl}
+                      alt={creator?.name || 'Ayush Prakash'}
+                      onError={() => setAvatarLoadFailed(true)}
+                      className="w-36 h-36 sm:w-48 sm:h-48 lg:w-60 lg:h-60 rounded-3xl object-cover object-center shadow-2xl shadow-sky-950/30 border border-[var(--glass-border)] transition-transform duration-300 group-hover:scale-[1.02]"
+                    />
+                  </div>
+                ) : (
+                  <div
+                    data-testid="about-creator-avatar-fallback"
+                    className="w-36 h-36 sm:w-48 sm:h-48 lg:w-60 lg:h-60 rounded-3xl bg-gradient-to-br from-[#0284C7] to-[#070B19] text-white flex items-center justify-center font-bold text-4xl shadow-2xl shadow-sky-950/30 border border-[var(--glass-border)]"
+                  >
+                    AP
+                  </div>
+                )}
 
-              <div>
-                <h3 className="text-xl font-bold text-[var(--orion-text-primary)]">
-                  {creator?.name || 'Ayush Prakash'}
-                </h3>
-                <p className="text-xs font-mono text-[var(--orion-text-muted)] uppercase tracking-wider mt-0.5">
-                  {creator?.role || 'Creator & Supply Chain OS Architect'}
+                <div className="space-y-1">
+                  <h3 className="text-2xl sm:text-3xl font-editorial font-bold text-[var(--orion-text-primary)] tracking-tight">
+                    {creator?.name || 'Ayush Prakash'}
+                  </h3>
+                  <p className="text-xs sm:text-sm font-mono text-[var(--orion-accent)] font-semibold uppercase tracking-wider">
+                    {creator?.role || 'CREATOR & SUPPLY CHAIN OS ARCHITECT'}
+                  </p>
+                </div>
+              </div>
+
+              {/* Middle Section: Restrained elegant quote card */}
+              <div className="w-full p-4 sm:p-5 rounded-2xl liquid-glass-subtle border border-[var(--glass-border-subtle)] text-xs sm:text-sm text-[var(--orion-text-secondary)] italic text-center">
+                <p className="leading-relaxed">
+                  &ldquo;{creator?.quote || 'What if the supply chain had an operating system?'}&rdquo;
                 </p>
               </div>
 
-              <div className="p-3.5 rounded-xl bg-[var(--orion-alt-bg)]/80 border border-[var(--glass-border-subtle)] text-xs text-[var(--orion-text-secondary)] italic space-y-1">
-                <Quote className="w-4 h-4 text-[#0284C7]" />
-                <p>&ldquo;{creator?.quote || 'What if the supply chain had an operating system?'}&rdquo;</p>
-              </div>
-
-              <div className="pt-2 border-t border-[var(--glass-border-subtle)] text-[11px] font-mono text-[var(--orion-text-muted)] space-y-1">
-                <div>
-                  Source: <code className="text-[var(--orion-text-primary)]">{creator?.repository || 'Ayushprakash21/orion-9'}</code>
-                </div>
-                <div>Status: {creator?.status || 'Primary System Maintainer'}</div>
+              {/* Bottom Section: Subtle brand foundation label */}
+              <div className="pt-2 text-[11px] font-mono text-[var(--orion-text-muted)] tracking-wider uppercase">
+                Enterprise SCM Operating System &middot; Orion-9
               </div>
             </div>
 
             {/* Founder Note Card */}
-            <div className="lg:col-span-8 liquid-glass-card rounded-3xl p-6 sm:p-8 border border-[var(--glass-border)] shadow-lg space-y-4">
-              <h3 className="text-xs font-mono font-bold uppercase tracking-wider text-[#0284C7] border-l-2 border-[#0284C7] pl-3">
-                FOUNDER NOTE &middot; ARCHITECTURAL PHILOSOPHY
-              </h3>
+            <div className="lg:col-span-7 liquid-glass-card rounded-3xl p-6 sm:p-8 sm:p-10 border border-[var(--glass-border)] shadow-lg flex flex-col justify-between space-y-6">
+              <div className="space-y-4">
+                <h3 className="text-xs font-mono font-bold uppercase tracking-wider text-[#0284C7] border-l-2 border-[#0284C7] pl-3">
+                  FOUNDER NOTE &middot; ARCHITECTURAL PHILOSOPHY
+                </h3>
 
-              <div className="text-xs sm:text-sm text-[var(--orion-text-secondary)] leading-relaxed space-y-4 font-sans">
-                <p>
-                  &ldquo;Orion-9 was created out of a fundamental observation: modern supply chains run the world, yet they are managed using tools designed in the 1990s—fragmented ERP systems, endless disconnected spreadsheets, email threads, and frantic firefighting. Enterprise supply chains are not a collection of static tables; they are dynamic, high-velocity networks of signals, events, constraints, and operational dependencies.&rdquo;
-                </p>
-                <p>
-                  &ldquo;Orion-9 was born to bridge this gap: building a true Operating System for the supply chain where data is unified, events trigger real-time awareness, AI governs risks, decisions create measurable outcomes, and the entire system continuously learns from every action.&rdquo;
-                </p>
+                <div className="text-xs sm:text-sm text-[var(--orion-text-secondary)] leading-relaxed space-y-4 font-sans">
+                  <p>
+                    &ldquo;Orion-9 was created out of a fundamental observation: modern supply chains run the world, yet they are managed using tools designed in the 1990s—fragmented ERP systems, endless disconnected spreadsheets, email threads, and frantic firefighting. Enterprise supply chains are not a collection of static tables; they are dynamic, high-velocity networks of signals, events, constraints, and operational dependencies.&rdquo;
+                  </p>
+                  <p>
+                    &ldquo;Orion-9 was born to bridge this gap: building a true Operating System for the supply chain where data is unified, events trigger real-time awareness, AI governs risks, decisions create measurable outcomes, and the entire system continuously learns from every action.&rdquo;
+                  </p>
+                </div>
               </div>
 
-              <div className="pt-4 border-t border-[var(--glass-border-subtle)] flex flex-wrap items-center justify-between text-xs font-mono text-[var(--orion-text-muted)]">
-                <span>Repository Authority: Ayushprakash21/orion-9</span>
-                <span className="text-emerald-600 font-medium">Verified Source</span>
+              <div className="pt-4 border-t border-[var(--glass-border-subtle)] flex items-center justify-between text-xs font-mono text-[var(--orion-text-muted)]">
+                <span className="font-semibold text-[var(--orion-text-primary)]">Ayush Prakash</span>
+                <span className="text-[var(--orion-accent)]">Creator &amp; Architect</span>
               </div>
             </div>
           </div>

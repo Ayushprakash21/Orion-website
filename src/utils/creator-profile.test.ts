@@ -38,24 +38,22 @@ import type { CreatorProfileConfig, SiteConfigurationBundle } from '../types/cms
 
 test('Orion-9 Creator Profile & Cloudflare R2 Upload Test Suite', async (t) => {
   // 1. Default Profile Integrity
-  await t.test('1. Default creator profile attribution is strictly grounded in repository authority', () => {
+  await t.test('1. Default creator profile attribution is strictly grounded in creator identity', () => {
     assert.equal(DEFAULT_CREATOR_PROFILE.name, 'Ayush Prakash');
-    assert.equal(DEFAULT_CREATOR_PROFILE.role, 'Creator & Supply Chain OS Architect');
+    assert.equal(DEFAULT_CREATOR_PROFILE.role, 'CREATOR & SUPPLY CHAIN OS ARCHITECT');
     assert.equal(DEFAULT_CREATOR_PROFILE.quote, 'What if the supply chain had an operating system?');
-    assert.equal(DEFAULT_CREATOR_PROFILE.repository, 'Ayushprakash21/orion-9');
-    assert.equal(DEFAULT_CREATOR_PROFILE.status, 'Primary System Maintainer');
-    assert.equal(DEFAULT_CREATOR_PROFILE.avatarUrl, null);
-    assert.equal(DEFAULT_CREATOR_PROFILE.avatarMetadata, null);
+    assert.equal(DEFAULT_CREATOR_PROFILE.status, 'Creator & Architect');
+    assert.ok(DEFAULT_CREATOR_PROFILE.avatarUrl?.includes('creator_1793142386775_044ada53_wall.png'));
   });
 
   // 2. Profile Validation Logic
   await t.test('2. Creator profile validation rejects empty names, roles, or malicious URLs', () => {
     const validConfig: CreatorProfileConfig = {
       name: 'Ayush Prakash',
-      role: 'Creator & Supply Chain OS Architect',
+      role: 'CREATOR & SUPPLY CHAIN OS ARCHITECT',
       quote: 'What if the supply chain had an operating system?',
       repository: 'Ayushprakash21/orion-9',
-      status: 'Primary System Maintainer',
+      status: 'Creator & Architect',
       avatarUrl: 'https://orion9-r2-brand-uploader.ayushprakash0021.workers.dev/cdn/branding/creator/creator_test.png',
     };
 

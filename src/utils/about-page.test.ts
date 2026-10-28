@@ -90,7 +90,7 @@ test('Orion-9 About Page & Footer Column Replacement Test Suite', async (t) => {
     }
   });
 
-  await t.test('5. Creator attribution is strictly grounded in Ayush Prakash and repository founder note', () => {
+  await t.test('5. Creator attribution strictly identifies Ayush Prakash as Creator & Architect', () => {
     assert.ok(
       aboutSource.includes('Ayush Prakash'),
       'AboutPage must identify creator as Ayush Prakash'
@@ -100,8 +100,21 @@ test('Orion-9 About Page & Footer Column Replacement Test Suite', async (t) => {
       'AboutPage must include the foundational question'
     );
     assert.ok(
-      aboutSource.includes('Creator & Supply Chain OS Architect') || aboutSource.includes('Creator &amp; Supply Chain OS Architect'),
-      'AboutPage must include the architect title'
+      /creators*(&|&amp;)s*supplys*chains*oss*architect/i.test(aboutSource),
+      'AboutPage must include the creator & architect title'
+    );
+    // Explicitly verify internal technical comments and maintainer labels are REMOVED from public UI
+    assert.ok(
+      !aboutSource.includes('Primary System Maintainer'),
+      'AboutPage must not contain Primary System Maintainer'
+    );
+    assert.ok(
+      !aboutSource.includes('Repository Authority:'),
+      'AboutPage must not expose Repository Authority in public UI'
+    );
+    assert.ok(
+      !aboutSource.includes('Verified Source'),
+      'AboutPage must not expose Verified Source badge in public UI'
     );
   });
 
