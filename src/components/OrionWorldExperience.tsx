@@ -50,6 +50,7 @@ import {
   type Scene3DRig,
 } from '../utils/end-to-end-supply-chain-craft';
 import { useSiteConfig } from '../context/SiteConfigContext';
+import { useTheme } from '../context/ThemeContext';
 import { OrionHeroBrandLockup } from './OrionLogo';
 import { ArrowRight } from 'lucide-react';
 
@@ -75,9 +76,16 @@ const STATION_LOCATIONS = [
 
 export const OrionWorldExperience: React.FC = () => {
   const { activeConfig } = useSiteConfig();
+  const { theme } = useTheme();
+  const isDark = theme === 'dark';
   const prefersReducedMotion = useReducedMotion();
   const containerRef = useRef<HTMLDivElement | null>(null);
   const canvasMountRef = useRef<HTMLDivElement | null>(null);
+
+  // Dynamic Theme 3D refs
+  const sceneRef = useRef<THREE.Scene | null>(null);
+  const groundMatRef = useRef<THREE.MeshStandardMaterial | null>(null);
+  const hemiLightRef = useRef<THREE.HemisphereLight | null>(null);
 
   // Scroll tracking & smoothed camera interpolation
   const scrollProgressRef = useRef<number>(0);
@@ -227,10 +235,12 @@ export const OrionWorldExperience: React.FC = () => {
     const width = mount.clientWidth || window.innerWidth;
     const height = mount.clientHeight || window.innerHeight;
 
+    const currentIsDark = document.documentElement.classList.contains('dark');
     const scene = new THREE.Scene();
-    const skyColor = new THREE.Color(0xe6f3fb);
+    sceneRef.current = scene;
+    const skyColor = new THREE.Color(currentIsDark ? 0x000000 : 0xe6f3fb);
     scene.background = skyColor;
-    scene.fog = new THREE.Fog(0xe6f3fb, 65, 185);
+    scene.fog = new THREE.Fog(currentIsDark ? 0x000000 : 0xe6f3fb, 65, 185);
 
     const isMobile = width < 768;
     const initialChoreo = evaluateWorldScrollState(0);
@@ -271,7 +281,12 @@ export const OrionWorldExperience: React.FC = () => {
     const envTexture = setupStudioEnvironment(renderer, scene);
 
     // Calibrated studio lighting: directional key + cool ice-blue shadow fill
-    const hemiLight = new THREE.HemisphereLight(0xffffff, 0x99bdd8, 0.92);
+    const hemiLight = new THREE.HemisphereLight(
+      currentIsDark ? 0x38bdf8 : 0xffffff,
+      currentIsDark ? 0x000000 : 0x99bdd8,
+      currentIsDark ? 0.65 : 0.92
+    );
+    hemiLightRef.current = hemiLight;
     hemiLight.position.set(0, 60, 0);
     scene.add(hemiLight);
 
@@ -299,15 +314,21 @@ export const OrionWorldExperience: React.FC = () => {
     const groundGeo = new THREE.PlaneGeometry(360, 240);
     groundGeo.rotateX(-Math.PI / 2);
     const groundMat = new THREE.MeshStandardMaterial({
-      color: 0xdfeff9,
+      color: currentIsDark ? 0x080808 : 0xdfeff9,
       roughness: 0.85,
       metalness: 0.04,
     });
+    groundMatRef.current = groundMat;
     const groundMesh = new THREE.Mesh(groundGeo, groundMat);
     groundMesh.receiveShadow = !isSoftwareGl;
     scene.add(groundMesh);
 
-    const gridHelper = new THREE.GridHelper(300, 75, 0xbfd8ea, 0xcfe4f2);
+    const gridHelper = new THREE.GridHelper(
+      300,
+      75,
+      currentIsDark ? 0x1e293b : 0xbfd8ea,
+      currentIsDark ? 0x0a101d : 0xcfe4f2
+    );
     gridHelper.position.set(28, 0.025, 0);
     scene.add(gridHelper);
 
@@ -534,6 +555,22 @@ export const OrionWorldExperience: React.FC = () => {
     };
   }, []);
 
+  // Synchronize 3D Scene Background & Lighting on Dynamic Theme Toggle
+  useEffect(() => {
+    if (!sceneRef.current) return;
+    const sky = isDark ? 0x000000 : 0xe6f3fb;
+    sceneRef.current.background = new THREE.Color(sky);
+    sceneRef.current.fog = new THREE.Fog(sky, 65, 185);
+    if (groundMatRef.current) {
+      groundMatRef.current.color.setHex(isDark ? 0x080808 : 0xdfeff9);
+    }
+    if (hemiLightRef.current) {
+      hemiLightRef.current.color.setHex(isDark ? 0x38bdf8 : 0xffffff);
+      hemiLightRef.current.groundColor.setHex(isDark ? 0x000000 : 0x99bdd8);
+      hemiLightRef.current.intensity = isDark ? 0.65 : 0.92;
+    }
+  }, [isDark]);
+
   const heroLine1 =
     activeConfig.homepage.heroHeadlineLine1 || 'The New Standard in';
   const heroLine2 =
@@ -543,7 +580,7 @@ export const OrionWorldExperience: React.FC = () => {
     <section
       id="process"
       ref={containerRef}
-      className="relative w-full h-[480vh] bg-[#E6F3FB] select-none overflow-visible"
+      className="relative w-full h-[480vh] bg-[#E6F3FB] dark:bg-black select-none overflow-visible transition-colors duration-300"
       aria-label="Orion-9 3D Supply Chain Operating World and Process"
     >
       {/* Sticky Full-Viewport 3D Stage */}
@@ -582,12 +619,12 @@ export const OrionWorldExperience: React.FC = () => {
             <button
               type="button"
               onClick={() => scrollToNormalizedProgress(0.18)}
-              className="px-5 py-2.5 rounded-lg bg-white border border-[#BDD6E8] text-xs font-semibold text-[#070B19] hover:border-[#070B19] transition-colors cursor-pointer shadow-xs flex items-center gap-2"
+              className="px-5 py-2.5 rounded-lg bg-white dark:bg-[#0B0B0B] border border-[#BDD6E8] dark:border-white/10 text-xs font-semibold text-[#070B19] dark:text-[#F5F5F7] hover:border-[#070B19] dark:hover:border-white/30 transition-colors cursor-pointer shadow-xs flex items-center gap-2"
             >
               <span>Scroll to Discover Our Process</span>
               <ArrowRight className="w-3.5 h-3.5 text-[#0284C7]" />
             </button>
-            <div className="w-px h-6 sm:h-8 bg-[#070B19]/40 mt-1" />
+            <div className="w-px h-6 sm:h-8 bg-[#070B19]/40 dark:bg-white/20 mt-1" />
           </div>
         </div>
 
@@ -618,7 +655,7 @@ export const OrionWorldExperience: React.FC = () => {
                 className="w-2 h-2 sm:w-2.5 sm:h-2.5 rounded-full bg-[#0284C7] shadow-[0_0_10px_rgba(2,132,199,0.75)] shrink-0"
                 aria-hidden="true"
               />
-              <h2 className="font-editorial text-lg sm:text-2xl md:text-[26px] font-bold tracking-[-0.015em] text-[#070B19] select-none whitespace-nowrap drop-shadow-xs">
+              <h2 className="font-editorial text-lg sm:text-2xl md:text-[26px] font-bold tracking-[-0.015em] text-[#070B19] dark:text-[#F5F5F7] select-none whitespace-nowrap drop-shadow-xs">
                 {STAGE_HEADINGS[hudState.activeStage7Index] || STAGE_HEADINGS[0]}
               </h2>
             </motion.div>

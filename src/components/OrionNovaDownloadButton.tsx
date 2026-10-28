@@ -75,6 +75,8 @@ export const OrionNovaDownloadButton: React.FC<OrionNovaDownloadButtonProps> = (
           onClick={handleClick}
           disabled={disabled || isLoading}
           layout
+          whileHover={disabled || isLoading ? undefined : { scale: 1.025, y: -1.5 }}
+          whileTap={disabled || isLoading ? undefined : { scale: 0.952, y: 0.5 }}
           animate={{
             width: isIdle || isComplete ? '100%' : '52px',
             height: '50px',

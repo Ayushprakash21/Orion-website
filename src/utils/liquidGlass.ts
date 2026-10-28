@@ -59,7 +59,7 @@ export function initLiquidGlassEngine(): () => void {
   const findGlassTarget = (target: EventTarget | null): HTMLElement | null => {
     if (!(target instanceof HTMLElement)) return null;
     return target.closest<HTMLElement>(
-      '.liquid-glass-interactive, .liquid-glass-card, .liquid-glass-elevated, .liquid-glass-clear, [data-liquid-glass]'
+      '.liquid-glass-interactive, .liquid-glass-card, .liquid-glass-elevated, .liquid-glass-clear, .liquid-glass-dock, [data-liquid-glass]'
     );
   };
 

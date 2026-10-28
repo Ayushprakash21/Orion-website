@@ -53,7 +53,7 @@ export const FinalCTA: React.FC<FinalCTAProps> = ({
           <button
             type="button"
             onClick={onLaunchApp}
-            className="w-full sm:w-auto inline-flex items-center justify-center gap-2.5 px-8 py-4 bg-[var(--orion-text-primary)] text-[var(--orion-surface)] font-medium text-sm rounded-full hover:bg-[var(--orion-accent)] hover:text-white transition-all shadow-lg active:scale-[0.99] group cursor-pointer"
+            className="w-full sm:w-auto inline-flex items-center justify-center gap-2.5 px-8 py-4 bg-[var(--orion-text-primary)] text-[var(--orion-surface)] font-medium text-sm rounded-full hover:bg-[var(--orion-accent)] hover:text-white transition-all shadow-lg group cursor-pointer"
           >
             <span>Launch Orion-9 OS</span>
             <ArrowRight className="w-4 h-4 text-[#A8C2D2] transition-transform group-hover:translate-x-1" />

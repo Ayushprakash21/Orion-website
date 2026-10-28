@@ -63,15 +63,17 @@ export const DisruptionSimulatorModal: React.FC<DisruptionSimulatorModalProps> =
       <div className="relative w-full max-w-4xl liquid-glass-elevated liquid-glass-interactive border border-[var(--glass-border)] rounded-3xl shadow-2xl p-6 sm:p-8 max-h-[92vh] overflow-y-auto text-[var(--orion-text-primary)]">
         {/* macOS Traffic Lights Header & Close */}
         <div className="flex items-center justify-between pb-5 mb-5 border-b border-[var(--glass-border-subtle)]">
-          <div className="flex items-center gap-2">
-            <button
-              type="button"
-              onClick={onClose}
-              className="w-3 h-3 rounded-full bg-[#FF5F56] border border-[#E0443E] hover:opacity-80 transition cursor-pointer"
-              aria-label="Close"
-            />
-            <span className="w-3 h-3 rounded-full bg-[#FFBD2E] border border-[#DEA123]" />
-            <span className="w-3 h-3 rounded-full bg-[#27C93F] border border-[#1AAB29]" />
+          <div className="flex items-center gap-2.5">
+            <div className="macos-traffic-lights">
+              <button
+                type="button"
+                onClick={onClose}
+                className="macos-traffic-light close"
+                aria-label="Close"
+              />
+              <span className="macos-traffic-light minimize" />
+              <span className="macos-traffic-light zoom" />
+            </div>
             <span className="ml-2 text-[10px] font-mono uppercase tracking-wider text-[var(--orion-accent)] font-semibold">
               SIMULATOR · ORION-SOLVER V9.2
             </span>

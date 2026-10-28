@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { ChevronDown, ShieldCheck } from 'lucide-react';
 import { OrionCircular3DTelemetry } from './OrionCircular3DTelemetry';
+import { SectionBadge } from './SectionBadge';
 
 const FAQ_ITEMS = [
   {
@@ -45,10 +46,9 @@ export const ControlTowerAndFaq: React.FC = () => {
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-12 lg:gap-16 items-start">
           {/* Left Column: Heading */}
           <div className="lg:col-span-5 space-y-4">
-            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full liquid-glass-badge text-[11px] font-mono uppercase tracking-wider text-[var(--orion-accent)] font-semibold">
-              <ShieldCheck className="w-3.5 h-3.5" />
-              <span>Enterprise FAQ</span>
-            </div>
+            <SectionBadge icon={<ShieldCheck className="w-3.5 h-3.5 sm:w-4 sm:h-4" />}>
+              Enterprise FAQ
+            </SectionBadge>
             <h2 className="font-editorial text-3xl sm:text-4xl lg:text-[42px] font-bold tracking-tight leading-tight text-[var(--orion-text-primary)]">
               Operational readiness, answered clearly.
             </h2>

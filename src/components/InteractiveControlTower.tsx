@@ -72,7 +72,7 @@ export const InteractiveControlTower: React.FC = () => {
             <button
               type="button"
               onClick={() => setIsSimulatorOpen(true)}
-              className="flex items-center gap-2 px-5 py-3 rounded-full bg-[var(--orion-text-primary)] text-[var(--orion-surface)] font-semibold text-xs hover:bg-[var(--orion-accent)] hover:text-white transition-all shadow-md active:scale-[0.98] cursor-pointer"
+              className="flex items-center gap-2 px-5 py-3 rounded-full bg-[var(--orion-text-primary)] text-[var(--orion-surface)] font-semibold text-xs hover:bg-[var(--orion-accent)] hover:text-white transition-all shadow-md cursor-pointer"
             >
               <AlertTriangle className="w-3.5 h-3.5 text-[#A8C2D2]" />
               <span>Open Scenario Solver</span>

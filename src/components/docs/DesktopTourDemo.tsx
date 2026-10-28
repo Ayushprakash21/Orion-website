@@ -294,13 +294,13 @@ export const DesktopTourDemo: React.FC<{ onNavigate?: (path: string) => void }> 
       </div>
 
       {/* Simulated Interactive OS Desktop Stage */}
-      <div className="relative w-full h-[360px] sm:h-[420px] bg-[#070B19] overflow-hidden select-none border-b border-[var(--glass-border-subtle)]">
+      <div className="relative w-full h-[360px] sm:h-[420px] bg-black overflow-hidden select-none border-b border-[var(--glass-border-subtle)]">
         {/* Subtle Background Grid & Vignette */}
-        <div className="absolute inset-0 bg-[radial-gradient(#1e293b_1px,transparent_1px)] [background-size:24px_24px] opacity-40" />
-        <div className="absolute inset-0 bg-gradient-to-t from-[#070B19] via-transparent to-[#070B19]/50 pointer-events-none" />
+        <div className="absolute inset-0 bg-[radial-gradient(rgba(255,255,255,0.08)_1px,transparent_1px)] [background-size:24px_24px] opacity-40" />
+        <div className="absolute inset-0 bg-gradient-to-t from-black via-transparent to-black/60 pointer-events-none" />
 
         {/* Top Simulated System Bar */}
-        <div className="absolute top-0 left-0 right-0 h-7 bg-[#0A101D]/90 border-b border-white/10 px-3.5 flex items-center justify-between text-[11px] font-mono text-slate-300 z-10 backdrop-blur-md">
+        <div className="absolute top-0 left-0 right-0 h-7 bg-black/80 border-b border-white/10 px-3.5 flex items-center justify-between text-[11px] font-mono text-slate-300 z-10 backdrop-blur-md">
           <div className="flex items-center gap-2.5">
             <span className="font-bold text-white tracking-wide">ORION-9</span>
             <span className="opacity-70">File</span>
@@ -330,14 +330,16 @@ export const DesktopTourDemo: React.FC<{ onNavigate?: (path: string) => void }> 
               animate={prefersReduced ? { opacity: 1 } : { opacity: 1, scale: 1, y: 0 }}
               exit={prefersReduced ? { opacity: 0 } : { opacity: 0, scale: 0.95, y: -10 }}
               transition={{ duration: 0.35, ease: [0.16, 1, 0.3, 1] }}
-              className="w-full max-w-xl rounded-2xl liquid-glass-elevated liquid-glass-interactive shadow-[0_20px_60px_rgba(0,0,0,0.6)] overflow-hidden"
+              className="w-full max-w-xl rounded-2xl liquid-glass-elevated liquid-glass-interactive shadow-[0_20px_60px_rgba(0,0,0,0.85)] overflow-hidden"
             >
               {/* Window Titlebar */}
-              <div className="flex items-center justify-between px-4 py-2.5 border-b border-[var(--glass-border-subtle)] bg-white/20 dark:bg-black/40">
-                <div className="flex items-center gap-2">
-                  <span className="w-2.5 h-2.5 rounded-full bg-rose-500/80" />
-                  <span className="w-2.5 h-2.5 rounded-full bg-amber-500/80" />
-                  <span className="w-2.5 h-2.5 rounded-full bg-emerald-500/80" />
+              <div className="flex items-center justify-between px-4 py-2.5 border-b border-[var(--glass-border-subtle)] bg-white/20 dark:bg-black/50">
+                <div className="flex items-center gap-2.5">
+                  <div className="macos-traffic-lights">
+                    <span className="macos-traffic-light close" />
+                    <span className="macos-traffic-light minimize" />
+                    <span className="macos-traffic-light zoom" />
+                  </div>
                   <span className="ml-2 font-mono text-xs text-slate-200 font-semibold">
                     {activeStep.simulatedVisual.label}
                   </span>
@@ -378,8 +380,8 @@ export const DesktopTourDemo: React.FC<{ onNavigate?: (path: string) => void }> 
           </div>
         </div>
 
-        {/* Bottom Simulated Dock with Role A Clear Glass */}
-        <div className="absolute bottom-2.5 left-1/2 -translate-x-1/2 px-3 py-1.5 rounded-2xl liquid-glass-clear flex items-center gap-2.5 z-10 shadow-lg">
+        {/* Bottom Simulated Dock with Layered Translucent Glass */}
+        <div className="absolute bottom-2.5 left-1/2 -translate-x-1/2 px-3 py-1.5 rounded-2xl liquid-glass-dock flex items-center gap-2.5 z-10 shadow-lg">
           {TOUR_STEPS.map((st, i) => {
             const isCur = i === currentStepIndex;
             return (
@@ -388,13 +390,16 @@ export const DesktopTourDemo: React.FC<{ onNavigate?: (path: string) => void }> 
                 type="button"
                 onClick={() => setCurrentStepIndex(i)}
                 aria-label={`Jump to ${st.title}`}
-                className={`w-7 h-7 rounded-xl flex items-center justify-center transition cursor-pointer text-xs font-mono ${
+                className={`dock-item relative w-7 h-7 rounded-xl flex items-center justify-center cursor-pointer text-xs font-mono ${
                   isCur
-                    ? 'bg-[#0284C7] text-white font-bold shadow-md scale-110'
+                    ? 'bg-[#0284C7] text-white font-bold shadow-md'
                     : 'text-slate-400 hover:text-white hover:bg-white/10'
                 }`}
               >
                 {st.number}
+                {isCur && (
+                  <span className="absolute -bottom-1 w-1 h-1 rounded-full bg-[#38BDF8] shadow-[0_0_6px_#38BDF8]" />
+                )}
               </button>
             );
           })}

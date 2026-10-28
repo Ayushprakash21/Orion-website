@@ -51,7 +51,7 @@ export const Hero: React.FC = () => {
               <button
                 type="button"
                 onClick={() => launchOrion(hp.secondaryCtaUrl || destinationUrl)}
-                className="group inline-flex items-center gap-2.5 px-7 py-3.5 rounded-full bg-[var(--orion-text-primary)] text-[var(--orion-surface)] font-medium text-sm hover:bg-[var(--orion-accent)] hover:text-white transition-all shadow-lg active:scale-[0.99] cursor-pointer"
+                className="group inline-flex items-center gap-2.5 px-7 py-3.5 rounded-full bg-[var(--orion-text-primary)] text-[var(--orion-surface)] font-medium text-sm hover:bg-[var(--orion-accent)] hover:text-white transition-all shadow-lg cursor-pointer"
               >
                 <span>Launch Orion-9 OS</span>
                 <ArrowRight className="w-4 h-4 text-[#A8C2D2] transition-transform group-hover:translate-x-1" />
@@ -59,7 +59,7 @@ export const Hero: React.FC = () => {
 
               <a
                 href="#problem"
-                className="inline-flex items-center gap-2 px-6 py-3.5 rounded-full liquid-glass-button text-[var(--orion-text-primary)] font-medium text-sm transition-all shadow-xs active:scale-[0.99]"
+                className="inline-flex items-center gap-2 px-6 py-3.5 rounded-full liquid-glass-button text-[var(--orion-text-primary)] font-medium text-sm transition-all shadow-xs"
               >
                 <Compass className="w-4 h-4 text-[#294D6B]" />
                 <span>Explore the Platform</span>

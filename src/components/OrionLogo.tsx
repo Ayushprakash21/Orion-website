@@ -3,9 +3,9 @@ import { useOptionalSiteConfig } from '../context/SiteConfigContext';
 import type { HeroIntroSequenceState } from '../utils/cinematic-choreography';
 import { Orion3DLogo } from './Orion3DLogo';
 
-interface OrionLogoProps {
+export interface OrionLogoProps {
   companyName?: string;
-  size?: 'sm' | 'md' | 'lg';
+  size?: 'sm' | 'md' | 'lg' | 'xl';
   tone?: 'dark' | 'light';
   showMark?: boolean;
   className?: string;
@@ -64,22 +64,30 @@ export const OrionLogo: React.FC<OrionLogoProps> = ({
     sm: 'w-7 h-7',
     md: 'w-8 h-8',
     lg: 'w-9 h-9',
+    xl: 'w-11 h-11 sm:w-12 sm:h-12 lg:w-14 lg:h-14',
   };
 
   const textSizes = {
     sm: 'text-base',
     md: 'text-lg',
     lg: 'text-xl',
+    xl: 'text-xl sm:text-[22px] lg:text-2xl',
   };
 
   const primaryStroke = isLight ? '#FFFFFF' : '#070B19';
   const badgeBg = isLight ? '#FFFFFF' : '#070B19';
 
   return (
-    <span className={`inline-flex items-center gap-2.5 select-none ${className}`}>
+    <span
+      className={`inline-flex items-center ${
+        size === 'xl' ? 'gap-3 sm:gap-3.5' : 'gap-2.5'
+      } select-none ${className}`}
+    >
       {showMark && (
         <span
-          className={`${markSizes[size]} rounded-lg flex items-center justify-center shrink-0 shadow-2xs border border-[#38BDF8]/30 overflow-hidden p-0.5`}
+          className={`${markSizes[size]} ${
+            size === 'xl' ? 'rounded-xl p-1 sm:p-1.5' : 'rounded-lg p-0.5'
+          } flex items-center justify-center shrink-0 shadow-2xs border border-[#38BDF8]/30 overflow-hidden`}
           style={{ backgroundColor: badgeBg }}
           aria-hidden="true"
         >
@@ -135,7 +143,7 @@ export const OrionLogo: React.FC<OrionLogoProps> = ({
         </span>
       )}
       <span
-        className={`font-wordmark ${textSizes[size]} font-black tracking-[-0.02em] leading-none whitespace-nowrap`}
+        className={`font-wordmark ${textSizes[size]} font-bold tracking-[-0.02em] leading-none whitespace-nowrap`}
         style={{ color: primaryStroke }}
       >
         <span>ORION</span>
@@ -351,7 +359,8 @@ export const OrionHeroBrandLockup: React.FC<OrionHeroBrandLockupProps> = ({
                 x="500"
                 y="850"
                 textAnchor="middle"
-                fill="#070E1C"
+                fill="currentColor"
+                className="text-[#070E1C] dark:text-[#F5F5F7]"
                 style={{
                   fontFamily: "system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif",
                   fontWeight: 800,
@@ -431,14 +440,14 @@ export const OrionHeroBrandLockup: React.FC<OrionHeroBrandLockupProps> = ({
       >
         <h1
           data-testid="orion-hero-editorial-headline"
-          className="font-editorial text-2xl sm:text-3xl md:text-4xl lg:text-[40px] font-extrabold tracking-[-0.03em] leading-[1.12] text-[var(--orion-text-primary)] dark:text-[#070B19]"
+          className="font-editorial text-2xl sm:text-3xl md:text-4xl lg:text-[40px] font-extrabold tracking-[-0.03em] leading-[1.12] text-[var(--orion-text-primary)]"
         >
           {headlineText}
         </h1>
 
         <p
           data-testid="orion-hero-supporting-description"
-          className="text-xs sm:text-sm text-[var(--orion-text-secondary)] dark:text-[#475569] mt-2.5 max-w-xl mx-auto leading-relaxed"
+          className="text-xs sm:text-sm text-[var(--orion-text-secondary)] mt-2.5 max-w-xl mx-auto leading-relaxed"
         >
           {supportingParagraph}
         </p>

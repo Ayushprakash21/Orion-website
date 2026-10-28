@@ -145,13 +145,13 @@ export const Footer: React.FC<FooterProps> = ({ onNavigate, onOpenDownload }) =>
             >
               <OrionLogo
                 companyName={companyName}
-                size="md"
+                size="xl"
                 tone={theme === 'dark' ? 'light' : 'dark'}
                 placement="footer"
               />
             </a>
 
-            <p className="text-sm text-[var(--orion-text-secondary)] leading-relaxed max-w-xs">
+            <p className="text-sm text-[var(--orion-text-secondary)] leading-relaxed max-w-xs sm:max-w-sm pt-1">
               An intelligent operating system for global supply chains. Real-time multi-modal telemetry, canonical graph resolution, and Zero-Trust autonomous execution.
             </p>
           </div>

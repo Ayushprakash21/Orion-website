@@ -15,6 +15,7 @@
 
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { motion, useReducedMotion } from 'framer-motion';
+import { SectionBadge } from './SectionBadge';
 import {
   ArrowUpRight,
   Radio,
@@ -433,10 +434,12 @@ export const OrionCircular3DTelemetry: React.FC = () => {
       <div className="relative max-w-[1380px] mx-auto px-4 sm:px-8 z-10 flex flex-col items-center">
         {/* Top Section Header */}
         <div className="flex flex-col items-center text-center max-w-3xl mb-8 sm:mb-10 px-4">
-          <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-sky-500/10 border border-sky-400/30 text-[11px] font-mono uppercase tracking-wider text-sky-400 font-semibold mb-3.5 sm:mb-4 shadow-xs">
-            <Radio className="w-3.5 h-3.5 text-sky-400 animate-pulse" />
-            <span>ORION-9 OS TELEMETRY</span>
-          </div>
+          <SectionBadge
+            icon={<Radio className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-sky-400 animate-pulse" />}
+            className="mb-3.5 sm:mb-4 bg-sky-500/10 border-sky-400/30 text-sky-400"
+          >
+            ORION-9 OS TELEMETRY
+          </SectionBadge>
 
           <h2 className="text-2xl sm:text-3xl md:text-4xl lg:text-[40px] font-extrabold tracking-tight text-white leading-tight sm:leading-[1.18] max-w-2xl">
             From corridor anomaly to verified execution.
