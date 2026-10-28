@@ -176,41 +176,74 @@ export interface AuditLogEntry {
   timestamp: string;
 }
 
-export type DesktopPlatform =
+export type ReleasePlatform =
   | 'windows-x64'
   | 'windows-arm64'
   | 'macos-universal'
   | 'macos-arm64'
-  | 'macos-x64';
+  | 'macos-x64'
+  | 'android-universal'
+  | 'android-arm64'
+  | 'ios-universal'
+  | 'ios-arm64';
 
-export type DesktopPackageFormat = 'exe' | 'msi' | 'dmg' | 'pkg';
+export type DesktopPlatform = ReleasePlatform;
 
-export type DesktopReleaseStatus = 'draft' | 'published' | 'disabled' | 'retired';
+export type ReleasePackageFormat = 'exe' | 'msi' | 'dmg' | 'pkg' | 'apk' | 'ipa';
+export type DesktopPackageFormat = ReleasePackageFormat;
 
-export interface DesktopReleaseRecord {
+export type ReleasePublicationStatus =
+  | 'not_uploaded'
+  | 'uploading'
+  | 'unverified'
+  | 'verified'
+  | 'published'
+  | 'superseded'
+  | 'archived'
+  | 'failed'
+  | 'draft'
+  | 'disabled'
+  | 'retired';
+
+export type DesktopReleaseStatus = ReleasePublicationStatus;
+
+export type ReleaseChannel = 'stable' | 'beta' | 'internal';
+
+export interface AppReleaseRecord {
   id: string;
+  productId?: string;
+  productName?: string;
   version: string;
   releaseDate: string;
-  platform: DesktopPlatform;
-  format: DesktopPackageFormat;
-  status: DesktopReleaseStatus;
+  platform: ReleasePlatform;
+  format: ReleasePackageFormat;
+  status: ReleasePublicationStatus;
   filename: string;
+  objectKey?: string;
   sizeBytes: number;
   sha256: string;
   downloadUrl: string;
-  channel: 'stable' | 'beta';
+  channel: ReleaseChannel;
   isLatest: boolean;
   releaseNotes: string[];
   minimumOs: string;
   downloadCount: number;
-  preflightGates: {
-    peValidated: boolean;
-    shaVerified: boolean;
-    signatureChecked: boolean;
+  externalUrl?: string;
+  uploadedAt?: string;
+  publishedAt?: string;
+  createdBy?: string;
+  publishedBy?: string;
+  preflightGates?: {
+    peValidated?: boolean;
+    formatValidated?: boolean;
+    shaVerified?: boolean;
+    signatureChecked?: boolean;
   };
   updatedAt?: string;
   updatedBy?: string;
 }
+
+export type DesktopReleaseRecord = AppReleaseRecord;
 
 export interface CreatorProfileConfig {
   name: string;
@@ -233,5 +266,6 @@ export interface SiteConfigurationBundle {
   authSettings: AuthSettingsConfig;
   mediaLibrary: MediaAssetItem[];
   desktopReleases?: DesktopReleaseRecord[];
+  releases?: AppReleaseRecord[];
   creatorProfile: CreatorProfileConfig;
 }

@@ -35,6 +35,104 @@ export class DesktopDownloadError extends Error {
 }
 
 /**
+ * Authoritative Cloudflare R2 worker CDN base endpoint for desktop workstation binaries.
+ */
+export const DEFAULT_RELEASE_CDN_BASE =
+  'https://orion9-r2-brand-uploader.ayushprakash0021.workers.dev';
+
+/**
+ * Resolves a release download URL to an authentic, absolute streaming endpoint.
+ * Protects against relative routes (/downloads/...) falling through to the SPA HTML host.
+ */
+export function resolveReleaseDownloadUrl(downloadUrl: string): string {
+  if (!downloadUrl) return '';
+  const trimmed = downloadUrl.trim();
+  if (trimmed.startsWith('http://') || trimmed.startsWith('https://')) {
+    return trimmed;
+  }
+
+  const env =
+    (import.meta as unknown as { env?: Record<string, string | undefined> })?.env || {};
+  const configuredCdn = env.VITE_RELEASE_CDN_BASE?.trim() || env.VITE_R2_PUBLIC_BASE_URL?.trim();
+  const cdnBase = (configuredCdn || DEFAULT_RELEASE_CDN_BASE).replace(/\/+$/, '');
+  const cleanPath = trimmed.startsWith('/') ? trimmed : `/${trimmed}`;
+  return `${cdnBase}${cleanPath}`;
+}
+
+export interface ReleaseAvailabilityResult {
+  available: boolean;
+  status?: number;
+  sizeBytes?: number;
+  error?: string;
+  isHtmlFallback?: boolean;
+}
+
+/**
+ * Probes the distribution server using a lightweight HEAD request to verify that the
+ * binary actually exists on the CDN/R2 before permitting download initiation.
+ */
+export async function checkReleaseAvailability(
+  release: DesktopReleaseRecord,
+  signal?: AbortSignal
+): Promise<ReleaseAvailabilityResult> {
+  const resolvedUrl = resolveReleaseDownloadUrl(release.downloadUrl);
+  try {
+    const res = await fetch(resolvedUrl, {
+      method: 'HEAD',
+      headers: {
+        Accept:
+          'application/octet-stream, application/vnd.microsoft.portable-executable, application/x-apple-diskimage, application/x-msi, */*',
+      },
+      signal,
+    });
+
+    const ct = (res.headers.get('content-type') || '').toLowerCase();
+    const cl = res.headers.get('content-length');
+    const size = cl ? parseInt(cl, 10) : undefined;
+
+    // Detect and reject HTML fallback responses
+    if (ct.includes('text/html') || ct.includes('application/xhtml+xml')) {
+      return {
+        available: false,
+        status: res.status,
+        isHtmlFallback: true,
+        error: `Endpoint returned HTML fallback (${ct}) instead of authentic desktop installer binary.`,
+      };
+    }
+
+    if (res.status === 200) {
+      return {
+        available: true,
+        status: 200,
+        sizeBytes: size,
+      };
+    }
+
+    if (res.status === 404) {
+      return {
+        available: false,
+        status: 404,
+        error: `Release artifact "${release.filename}" is currently not deployed on the distribution server (HTTP 404).`,
+      };
+    }
+
+    return {
+      available: false,
+      status: res.status,
+      error: `Distribution storage server returned status ${res.status} ${res.statusText}.`,
+    };
+  } catch (err: unknown) {
+    if ((err as Error)?.name === 'AbortError') {
+      return { available: false, error: 'Availability check was cancelled.' };
+    }
+    return {
+      available: false,
+      error: `Could not reach release distribution server: ${(err as Error).message}`,
+    };
+  }
+}
+
+/**
  * Validates whether a desktop release is eligible for distribution based on status and user role.
  */
 export function validateReleaseForDownload(
@@ -137,16 +235,11 @@ export interface StreamInstallerOptions {
 export async function downloadDesktopInstaller(
   release: DesktopReleaseRecord,
   options: StreamInstallerOptions = {}
-): Promise<{ success: boolean; bytesReceived: number }> {
+): Promise<{ success: boolean; bytesReceived: number; sha256Matched?: boolean }> {
   const { signal, onProgress } = options;
 
-  // Resolve download URL (ensure relative URLs resolve against current origin)
-  let resolvedUrl = release.downloadUrl;
-  if (!resolvedUrl.startsWith('http://') && !resolvedUrl.startsWith('https://')) {
-    if (typeof window !== 'undefined') {
-      resolvedUrl = new URL(release.downloadUrl, window.location.origin).toString();
-    }
-  }
+  // Resolve download URL to authoritative CDN
+  const resolvedUrl = resolveReleaseDownloadUrl(release.downloadUrl);
 
   let response: Response;
   try {
@@ -230,6 +323,36 @@ export async function downloadDesktopInstaller(
     });
   }
 
+  // Cryptographic SHA-256 integrity verification if Web Crypto API is available
+  let sha256Matched = false;
+  if (typeof crypto !== 'undefined' && crypto.subtle && release.sha256) {
+    try {
+      const fullBuffer = new Uint8Array(receivedBytes);
+      let offset = 0;
+      for (const chunk of chunks) {
+        fullBuffer.set(chunk, offset);
+        offset += chunk.length;
+      }
+      const digestBuffer = await crypto.subtle.digest('SHA-256', fullBuffer);
+      const hashArray = Array.from(new Uint8Array(digestBuffer));
+      const calculatedHex = hashArray.map((b) => b.toString(16).padStart(2, '0')).join('');
+
+      if (calculatedHex.toLowerCase() !== release.sha256.toLowerCase()) {
+        throw new DesktopDownloadError({
+          type: 'checksum_mismatch',
+          message: `Cryptographic SHA-256 integrity check failed. Expected ${release.sha256}, but downloaded payload computed ${calculatedHex}.`,
+        });
+      }
+      sha256Matched = true;
+    } catch (cryptoErr) {
+      if (cryptoErr instanceof DesktopDownloadError) {
+        throw cryptoErr;
+      }
+      // If subtle crypto fails for another reason, do not block delivery
+      console.warn('Subtle crypto SHA-256 calculation note:', cryptoErr);
+    }
+  }
+
   // Trigger browser download via Blob
   const blob = new Blob(chunks as BlobPart[], {
     type: response.headers.get('content-type') || 'application/octet-stream',
@@ -243,9 +366,13 @@ export async function downloadDesktopInstaller(
     link.download = release.filename;
     document.body.appendChild(link);
     link.click();
-    window.URL.revokeObjectURL(objectUrl);
-    document.body.removeChild(link);
+    setTimeout(() => {
+      window.URL.revokeObjectURL(objectUrl);
+      if (link.parentNode) {
+        link.parentNode.removeChild(link);
+      }
+    }, 1500);
   }
 
-  return { success: true, bytesReceived: receivedBytes };
+  return { success: true, bytesReceived: receivedBytes, sha256Matched };
 }

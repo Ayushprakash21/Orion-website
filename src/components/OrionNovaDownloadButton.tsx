@@ -1,11 +1,11 @@
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Download, Lock, Check, AlertCircle } from 'lucide-react';
+import { Download, Lock, Check } from 'lucide-react';
 
 export interface OrionNovaDownloadButtonProps {
   filename: string;
   version: string;
-  platform: 'windows' | 'macos';
+  platform: 'windows' | 'macos' | 'android' | 'ios' | string;
   isAuthenticated: boolean;
   onDownload: () => Promise<void>;
   onNavigateAuth: (mode: 'login' | 'signup') => void;
@@ -22,7 +22,6 @@ export const OrionNovaDownloadButton: React.FC<OrionNovaDownloadButtonProps> = (
   disabled = false,
 }) => {
   const [status, setStatus] = useState<'idle' | 'morphing' | 'loading' | 'complete'>('idle');
-  const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
   // Transition from morphing to loading after morph duration
   useEffect(() => {
@@ -49,7 +48,6 @@ export const OrionNovaDownloadButton: React.FC<OrionNovaDownloadButtonProps> = (
     }
 
     // Start download flow
-    setErrorMessage(null);
     setStatus('morphing');
 
     try {
@@ -59,9 +57,7 @@ export const OrionNovaDownloadButton: React.FC<OrionNovaDownloadButtonProps> = (
       setTimeout(() => {
         setStatus((curr) => (curr === 'complete' ? 'idle' : curr));
       }, 4200);
-    } catch (err: unknown) {
-      const msg = err instanceof Error ? err.message : 'Download failed';
-      setErrorMessage(msg);
+    } catch {
       setStatus('idle');
     }
   };
@@ -73,27 +69,27 @@ export const OrionNovaDownloadButton: React.FC<OrionNovaDownloadButtonProps> = (
 
   return (
     <div className="w-full flex flex-col items-center">
-      <div className="w-full flex items-center justify-center min-h-[56px]">
+      <div className="w-full flex items-center justify-center min-h-[52px]">
         <motion.button
           type="button"
           onClick={handleClick}
           disabled={disabled || isLoading}
           layout
           animate={{
-            width: isIdle || isComplete ? '100%' : '56px',
-            height: '52px',
-            borderRadius: isIdle || isComplete ? '16px' : '28px',
+            width: isIdle || isComplete ? '100%' : '52px',
+            height: '50px',
+            borderRadius: isIdle || isComplete ? '16px' : '26px',
           }}
           transition={{
             duration: 0.65,
             ease: [0.22, 1, 0.36, 1],
           }}
-          className={`relative overflow-hidden flex items-center justify-center font-medium text-xs select-none cursor-pointer transition-colors border shadow-lg ${
+          className={`relative overflow-hidden flex items-center justify-center font-bold text-sm select-none cursor-pointer transition-colors shadow-xs ${
             !isAuthenticated
-              ? 'bg-gradient-to-r from-sky-600 to-sky-700 hover:from-sky-500 hover:to-sky-600 border-sky-400/30 text-white'
+              ? 'bg-[#0284C7] hover:bg-[#0369A1] text-white'
               : isComplete
-              ? 'bg-emerald-950/80 border-emerald-400/50 text-emerald-300 shadow-[0_0_25px_rgba(16,185,129,0.25)]'
-              : 'bg-gradient-to-r from-[#0284C7] to-[#0369A1] hover:from-[#0369A1] hover:to-[#075985] border-sky-400/40 text-white shadow-[0_4px_24px_rgba(2,132,199,0.3)]'
+              ? 'bg-[#059669] hover:bg-[#047857] text-white shadow-[0_0_20px_rgba(5,150,105,0.3)]'
+              : 'bg-[#0284C7] hover:bg-[#0369A1] text-white shadow-[0_4px_14px_rgba(2,132,199,0.35)]'
           } ${disabled ? 'opacity-60 cursor-not-allowed' : ''}`}
         >
           {/* Subtle Glass Shimmer */}
@@ -107,20 +103,20 @@ export const OrionNovaDownloadButton: React.FC<OrionNovaDownloadButtonProps> = (
                 initial={{ opacity: 0, scale: 0.7 }}
                 animate={{ opacity: 1, scale: 1 }}
                 exit={{ opacity: 0, scale: 0.5 }}
-                className="flex items-center gap-2.5 px-4"
+                className="flex items-center justify-center gap-2 px-4 w-full"
               >
                 {!isAuthenticated ? (
                   <>
-                    <Lock className="w-4 h-4 text-sky-200 shrink-0" />
-                    <span className="font-semibold tracking-wide truncate">
+                    <Lock className="w-4 h-4 text-white/90 shrink-0" />
+                    <span className="font-bold tracking-tight truncate">
                       Authenticate to Download {filename}
                     </span>
                   </>
                 ) : (
                   <>
-                    <Download className="w-4 h-4 text-sky-200 shrink-0" />
-                    <span className="font-semibold tracking-wide truncate">
-                      Download {filename} <span className="opacity-80 font-mono text-[10px] ml-1">(v{version})</span>
+                    <Download className="w-4 h-4 text-white shrink-0" />
+                    <span className="font-bold tracking-tight truncate">
+                      Download {filename} <span className="font-normal opacity-90 text-xs ml-1">(v{version})</span>
                     </span>
                   </>
                 )}
@@ -143,7 +139,7 @@ export const OrionNovaDownloadButton: React.FC<OrionNovaDownloadButtonProps> = (
                   duration: 0.65,
                   ease: [0.22, 1, 0.36, 1],
                 }}
-                className="absolute inset-0 flex items-center justify-center text-sky-300"
+                className="absolute inset-0 flex items-center justify-center text-white"
               >
                 <svg viewBox="0 0 24 24" className="w-6 h-6" fill="none">
                   <path
@@ -174,21 +170,21 @@ export const OrionNovaDownloadButton: React.FC<OrionNovaDownloadButtonProps> = (
                 className="absolute inset-0 flex items-center justify-center"
               >
                 {/* SVG Progress Ring */}
-                <svg viewBox="0 0 56 56" className="absolute inset-0 w-full h-full -rotate-90">
+                <svg viewBox="0 0 52 52" className="absolute inset-0 w-full h-full -rotate-90">
                   <circle
-                    cx="28"
-                    cy="28"
-                    r="23"
+                    cx="26"
+                    cy="26"
+                    r="21"
                     fill="none"
-                    stroke="rgba(255,255,255,0.15)"
+                    stroke="rgba(255,255,255,0.2)"
                     strokeWidth="2.5"
                   />
                   <motion.circle
-                    cx="28"
-                    cy="28"
-                    r="23"
+                    cx="26"
+                    cy="26"
+                    r="21"
                     fill="none"
-                    stroke="#38BDF8"
+                    stroke="#FFFFFF"
                     strokeWidth="2.5"
                     strokeLinecap="round"
                     pathLength="1"
@@ -199,16 +195,13 @@ export const OrionNovaDownloadButton: React.FC<OrionNovaDownloadButtonProps> = (
                       repeat: Infinity,
                       ease: 'easeInOut',
                     }}
-                    style={{
-                      filter: 'drop-shadow(0 0 6px rgba(56, 189, 248, 0.85))',
-                    }}
                   />
                 </svg>
 
                 {/* Inner Pulsing Diamond */}
                 <motion.svg
                   viewBox="0 0 24 24"
-                  className="w-5 h-5 text-sky-300"
+                  className="w-5 h-5 text-white"
                   fill="none"
                   animate={{ scale: [0.9, 1.08, 0.9] }}
                   transition={{ duration: 1.2, repeat: Infinity, ease: 'easeInOut' }}
@@ -231,13 +224,13 @@ export const OrionNovaDownloadButton: React.FC<OrionNovaDownloadButtonProps> = (
                 key="complete-view"
                 initial={{ opacity: 0, scale: 0.85 }}
                 animate={{ opacity: 1, scale: 1 }}
-                className="flex items-center gap-2.5 px-4"
+                className="flex items-center gap-2 px-4"
               >
-                <div className="w-5 h-5 rounded-full bg-emerald-500/20 border border-emerald-400 flex items-center justify-center">
-                  <Check className="w-3.5 h-3.5 text-emerald-400" />
+                <div className="w-5 h-5 rounded-full bg-white/20 border border-white/60 flex items-center justify-center">
+                  <Check className="w-3.5 h-3.5 text-white" />
                 </div>
-                <span className="font-semibold text-emerald-300 tracking-wide">
-                  Installer Stream Verified · Ready
+                <span className="font-bold text-white tracking-tight">
+                  Installer Verified · Ready
                 </span>
               </motion.div>
             )}

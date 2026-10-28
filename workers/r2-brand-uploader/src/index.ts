@@ -39,9 +39,81 @@ export interface Env {
   R2_PUBLIC_BASE_URL?: string;
   FIREBASE_PROJECT_ID?: string;
   ALLOWED_ORIGINS?: string;
+  MAX_RELEASE_FILE_SIZE_BYTES?: string | number;
 }
 
-const MAX_FILE_SIZE_BYTES = 5 * 1024 * 1024; // 5 MB
+const MAX_FILE_SIZE_BYTES = 5 * 1024 * 1024; // 5 MB for logos
+export const MAX_DESKTOP_RELEASE_SIZE_BYTES = 200 * 1024 * 1024; // 200 MB for Desktop (.exe, .dmg)
+export const MAX_MOBILE_RELEASE_SIZE_BYTES = 150 * 1024 * 1024; // 150 MB for Mobile (.apk, .ipa)
+
+export const ALLOWED_RELEASE_EXTENSIONS: Record<string, Set<string>> = {
+  windows: new Set(['.exe', '.msi']),
+  macos: new Set(['.dmg', '.pkg']),
+  android: new Set(['.apk']),
+  ios: new Set(['.ipa']),
+};
+
+/**
+ * Validates binary magic byte signatures to prevent masqueraded files (e.g., text/html renamed to .exe).
+ */
+export function validateBinaryMagicBytes(
+  buffer: Uint8Array,
+  extension: string
+): { valid: boolean; error?: string } {
+  if (buffer.length < 4) {
+    return { valid: false, error: 'Binary file is too small or truncated.' };
+  }
+  const ext = extension.toLowerCase();
+  const isHtml =
+    buffer[0] === 0x3c &&
+    (buffer[1] === 0x21 || buffer[1] === 0x68 || buffer[1] === 0x48 || buffer[1] === 0x3f);
+  if (isHtml) {
+    return {
+      valid: false,
+      error: `File header inspection failed: Payload contains HTML text instead of genuine ${ext} binary.`,
+    };
+  }
+  if (ext === '.exe') {
+    if (buffer[0] !== 0x4d || buffer[1] !== 0x5a) {
+      return {
+        valid: false,
+        error: 'Corrupt or invalid Windows executable: Missing authentic PE "MZ" header signature.',
+      };
+    }
+  } else if (ext === '.msi') {
+    if (buffer[0] !== 0xd0 || buffer[1] !== 0xcf || buffer[2] !== 0x11 || buffer[3] !== 0xe0) {
+      return {
+        valid: false,
+        error: 'Invalid Windows Installer package: Missing authentic OLE compound file signature.',
+      };
+    }
+  } else if (ext === '.apk') {
+    if (buffer[0] !== 0x50 || buffer[1] !== 0x4b || buffer[2] !== 0x03 || buffer[3] !== 0x04) {
+      return {
+        valid: false,
+        error: 'Invalid Android APK: Missing authentic ZIP/APK archive header signature (PK..).',
+      };
+    }
+  } else if (ext === '.ipa') {
+    if (buffer[0] !== 0x50 || buffer[1] !== 0x4b || buffer[2] !== 0x03 || buffer[3] !== 0x04) {
+      return {
+        valid: false,
+        error: 'Invalid iOS IPA package: Missing authentic ZIP/IPA archive header signature (PK..).',
+      };
+    }
+  }
+  return { valid: true };
+}
+
+/**
+ * Calculates SHA-256 hex string directly from raw binary bytes using Web Crypto API.
+ */
+export async function computeSha256Hex(buffer: ArrayBuffer): Promise<string> {
+  const digest = await crypto.subtle.digest('SHA-256', buffer);
+  const hashArray = Array.from(new Uint8Array(digest));
+  return hashArray.map((b) => b.toString(16).padStart(2, '0')).join('');
+}
+
 
 const ALLOWED_MIME_TYPES = new Set([
   'image/png',
@@ -255,6 +327,9 @@ export default {
       if (ext === '.exe') inferredType = 'application/vnd.microsoft.portable-executable';
       else if (ext === '.msi') inferredType = 'application/x-msi';
       else if (ext === '.dmg') inferredType = 'application/x-apple-diskimage';
+      else if (ext === '.pkg') inferredType = 'application/octet-stream';
+      else if (ext === '.apk') inferredType = 'application/vnd.android.package-archive';
+      else if (ext === '.ipa') inferredType = 'application/octet-stream';
       else if (ext === '.mp4') inferredType = 'video/mp4';
 
       const responseHeaders = new Headers(corsHeaders);
@@ -491,6 +566,338 @@ export default {
           sizeBytes: fileBuffer.byteLength,
           uploadedAt: new Date().toISOString(),
           originalFilename: file.name,
+        },
+        200,
+        corsHeaders,
+        requestId
+      );
+    }
+
+    // 5. Authenticated Application Release Upload Endpoint: POST /api/releases/upload or /api/upload-release
+    if (
+      request.method === 'POST' &&
+      (url.pathname === '/api/releases/upload' || url.pathname === '/api/upload-release')
+    ) {
+      const requestOrigin = request.headers.get('Origin');
+      if (requestOrigin && !isOriginAllowed(requestOrigin, env)) {
+        return jsonResponse(
+          { error: 'Origin not permitted by CORS security policy.', code: 'cors_forbidden' },
+          403,
+          corsHeaders
+        );
+      }
+
+      if (!env.BRAND_ASSETS) {
+        return jsonResponse(
+          {
+            error:
+              'Cloudflare R2 bucket binding "BRAND_ASSETS" is missing in worker configuration.',
+            code: 'r2_binding_missing',
+          },
+          503,
+          corsHeaders
+        );
+      }
+
+      const authHeader = request.headers.get('Authorization');
+      if (!authHeader) {
+        return jsonResponse(
+          {
+            error:
+              'Authentication required: Missing Authorization header. Please sign in as an administrator.',
+            code: 'unauthenticated',
+          },
+          401,
+          corsHeaders
+        );
+      }
+
+      const origin = (request.headers.get('Origin') || '').toLowerCase();
+      const isLocalDevOrigin =
+        origin.startsWith('http://localhost') ||
+        origin.startsWith('http://127.0.0.1') ||
+        origin.startsWith('http://[::1]') ||
+        origin.startsWith('http://0.0.0.0') ||
+        /^http:\/\/(10\.|172\.(1[6-9]|2\d|3[01])\.|192\.168\.)/.test(origin);
+
+      const authResult = await verifyFirebaseAdminToken(
+        authHeader,
+        env.FIREBASE_PROJECT_ID || 'orion9-dev-db-2026',
+        Boolean(isLocalDevOrigin)
+      );
+
+      if (!authResult.valid || !authResult.user?.isAdmin) {
+        return jsonResponse(
+          {
+            error: authResult.error || 'Permission denied: Administrator role required.',
+            code: authResult.status === 401 ? 'unauthenticated' : 'unauthorized',
+          },
+          authResult.status,
+          corsHeaders
+        );
+      }
+
+      let formData: FormData;
+      try {
+        formData = await request.formData();
+      } catch (err) {
+        return jsonResponse(
+          {
+            error: 'Failed to parse multipart form data: ' + (err as Error).message,
+            code: 'invalid_form_data',
+          },
+          400,
+          corsHeaders
+        );
+      }
+
+      const fileEntry = formData.get('file');
+      const platform = ((formData.get('platform') as string) || 'windows-x64').trim().toLowerCase();
+      const version = ((formData.get('version') as string) || '9.0.0').trim();
+      const channel = ((formData.get('channel') as string) || 'stable').trim().toLowerCase();
+      const product = ((formData.get('product') as string) || 'orion-9').trim();
+
+      if (!fileEntry || !(fileEntry instanceof File)) {
+        return jsonResponse(
+          {
+            error: 'No valid binary file found in form payload under "file".',
+            code: 'missing_file',
+          },
+          400,
+          corsHeaders
+        );
+      }
+
+      const file = fileEntry;
+
+      let platformFamily = 'windows';
+      let isMobile = false;
+      if (platform.includes('mac')) {
+        platformFamily = 'macos';
+      } else if (platform.includes('android')) {
+        platformFamily = 'android';
+        isMobile = true;
+      } else if (platform.includes('ios')) {
+        platformFamily = 'ios';
+        isMobile = true;
+      } else {
+        platformFamily = 'windows';
+      }
+
+      const envLimit = env.MAX_RELEASE_FILE_SIZE_BYTES ? Number(env.MAX_RELEASE_FILE_SIZE_BYTES) : undefined;
+      const defaultMax = isMobile ? MAX_MOBILE_RELEASE_SIZE_BYTES : MAX_DESKTOP_RELEASE_SIZE_BYTES;
+      const maxAllowedBytes = envLimit && envLimit > 0 ? envLimit : defaultMax;
+      if (file.size > maxAllowedBytes) {
+        const mb = (file.size / (1024 * 1024)).toFixed(1);
+        const maxMb = (maxAllowedBytes / (1024 * 1024)).toFixed(0);
+        return jsonResponse(
+          {
+            error: `File size (${mb} MB) exceeds maximum allowed size of ${maxMb} MB for ${platformFamily}.`,
+            code: 'file_too_large',
+          },
+          413,
+          corsHeaders
+        );
+      }
+
+      const ext = extractFileExtension(file.name);
+      const allowedExts = ALLOWED_RELEASE_EXTENSIONS[platformFamily];
+      if (!allowedExts || !allowedExts.has(ext)) {
+        return jsonResponse(
+          {
+            error: `Unsupported file extension (${ext}) for ${platformFamily}. Allowed extensions: ${Array.from(allowedExts || []).join(', ')}.`,
+            code: 'unsupported_format',
+          },
+          400,
+          corsHeaders
+        );
+      }
+
+      const fileBuffer = await file.arrayBuffer();
+      const uint8 = new Uint8Array(fileBuffer);
+
+      const magicCheck = validateBinaryMagicBytes(uint8, ext);
+      if (!magicCheck.valid) {
+        return jsonResponse(
+          {
+            error: magicCheck.error || 'Binary header validation failed.',
+            code: 'corrupt_binary',
+          },
+          400,
+          corsHeaders
+        );
+      }
+
+      const calculatedSha256 = await computeSha256Hex(fileBuffer);
+      const cleanVersion = version.replace(/[^a-zA-Z0-9._-]/g, '') || 'v1.0.0';
+      const cleanFilename = file.name.replace(/[^a-zA-Z0-9._-]/g, '_');
+      const objectKey = `releases/${platformFamily}/${cleanVersion}/${cleanFilename}`;
+
+      let inferredType = 'application/octet-stream';
+      if (ext === '.exe') inferredType = 'application/vnd.microsoft.portable-executable';
+      else if (ext === '.msi') inferredType = 'application/x-msi';
+      else if (ext === '.dmg') inferredType = 'application/x-apple-diskimage';
+      else if (ext === '.pkg') inferredType = 'application/octet-stream';
+      else if (ext === '.apk') inferredType = 'application/vnd.android.package-archive';
+      else if (ext === '.ipa') inferredType = 'application/octet-stream';
+
+      try {
+        await env.BRAND_ASSETS.put(objectKey, fileBuffer, {
+          httpMetadata: {
+            contentType: inferredType,
+            cacheControl: 'public, max-age=31536000, immutable',
+          },
+          customMetadata: {
+            platform,
+            platformFamily,
+            version: cleanVersion,
+            channel,
+            product,
+            sha256: calculatedSha256,
+            sizeBytes: String(fileBuffer.byteLength),
+            uploadedBy: authResult.user.email || authResult.user.uid,
+            uploadedAt: new Date().toISOString(),
+            originalFilename: file.name,
+          },
+        });
+      } catch (r2Err: unknown) {
+        console.error('[R2 Worker] Failed to write release to R2:', r2Err);
+        return jsonResponse(
+          {
+            error: `Cloudflare R2 write error: ${(r2Err as Error).message}`,
+            code: 'r2_write_failed',
+          },
+          500,
+          corsHeaders
+        );
+      }
+
+      let publicUrl: string;
+      const configuredBase = env.R2_PUBLIC_BASE_URL?.trim();
+      if (configuredBase && configuredBase.startsWith('http')) {
+        publicUrl = `${configuredBase.replace(/\/$/, '')}/${objectKey}`;
+      } else {
+        publicUrl = `${url.origin}/cdn/${objectKey}`;
+      }
+
+      return jsonResponse(
+        {
+          success: true,
+          url: publicUrl,
+          key: objectKey,
+          filename: cleanFilename,
+          sizeBytes: fileBuffer.byteLength,
+          sha256: calculatedSha256,
+          contentType: inferredType,
+          platform,
+          version: cleanVersion,
+          channel,
+          product,
+          uploadedAt: new Date().toISOString(),
+          verified: true,
+        },
+        200,
+        corsHeaders,
+        requestId
+      );
+    }
+
+    // 6. Verify Release Binary Endpoint: POST /api/releases/verify
+    if (
+      request.method === 'POST' &&
+      url.pathname === '/api/releases/verify'
+    ) {
+      const requestOrigin = request.headers.get('Origin');
+      if (requestOrigin && !isOriginAllowed(requestOrigin, env)) {
+        return jsonResponse(
+          { error: 'Origin not permitted by CORS security policy.', code: 'cors_forbidden' },
+          403,
+          corsHeaders
+        );
+      }
+
+      if (!env.BRAND_ASSETS) {
+        return jsonResponse(
+          { error: 'Cloudflare R2 bucket binding is not configured.', code: 'r2_binding_missing' },
+          503,
+          corsHeaders
+        );
+      }
+
+      const authHeader = request.headers.get('Authorization');
+      if (!authHeader) {
+        return jsonResponse(
+          { error: 'Authentication required: Missing Authorization header.', code: 'unauthenticated' },
+          401,
+          corsHeaders
+        );
+      }
+
+      const origin = (request.headers.get('Origin') || '').toLowerCase();
+      const isLocalDevOrigin =
+        origin.startsWith('http://localhost') ||
+        origin.startsWith('http://127.0.0.1') ||
+        origin.startsWith('http://[::1]') ||
+        origin.startsWith('http://0.0.0.0') ||
+        /^http:\/\/(10\.|172\.(1[6-9]|2\d|3[01])\.|192\.168\.)/.test(origin);
+
+      const authResult = await verifyFirebaseAdminToken(
+        authHeader,
+        env.FIREBASE_PROJECT_ID || 'orion9-dev-db-2026',
+        Boolean(isLocalDevOrigin)
+      );
+
+      if (!authResult.valid || !authResult.user?.isAdmin) {
+        return jsonResponse(
+          {
+            error: authResult.error || 'Permission denied: Administrator role required.',
+            code: authResult.status === 401 ? 'unauthenticated' : 'unauthorized',
+          },
+          authResult.status,
+          corsHeaders
+        );
+      }
+
+      let payload: Record<string, any> = {};
+      try {
+        payload = await request.json();
+      } catch {
+        // ignore
+      }
+
+      const key = payload.key ? String(payload.key).replace(/^\/+/, '') : '';
+      if (!key || key.includes('..') || key.includes('\\')) {
+        return jsonResponse(
+          { error: 'Invalid or missing storage key.', code: 'invalid_key' },
+          400,
+          corsHeaders
+        );
+      }
+
+      const object = await env.BRAND_ASSETS.get(key);
+      if (!object) {
+        return jsonResponse(
+          { error: `Release artifact "${key}" not found in storage.`, code: 'artifact_not_found', status: 404 },
+          404,
+          corsHeaders
+        );
+      }
+
+      const arrayBuffer = await new Response(object.body).arrayBuffer();
+      const calculatedSha256 = await computeSha256Hex(arrayBuffer);
+      const ext = extractFileExtension(key);
+      const magicCheck = validateBinaryMagicBytes(new Uint8Array(arrayBuffer), ext);
+
+      return jsonResponse(
+        {
+          success: true,
+          verified: magicCheck.valid,
+          key,
+          sha256: calculatedSha256,
+          sizeBytes: arrayBuffer.byteLength,
+          contentType: object.httpMetadata?.contentType || 'application/octet-stream',
+          magicValid: magicCheck.valid,
+          magicError: magicCheck.error,
         },
         200,
         corsHeaders,

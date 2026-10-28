@@ -30,6 +30,7 @@ import {
   orderBy,
   limit,
   serverTimestamp,
+  deleteDoc,
 } from 'firebase/firestore';
 
 export interface FirebaseClientConfig {
@@ -287,6 +288,7 @@ export {
   orderBy,
   limit,
   serverTimestamp,
+  deleteDoc,
   type User,
   type Firestore,
 };

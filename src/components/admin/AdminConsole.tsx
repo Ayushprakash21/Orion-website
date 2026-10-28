@@ -68,6 +68,7 @@ import {
 import { DEFAULT_DESKTOP_RELEASES, DEFAULT_CREATOR_PROFILE } from '../../data/defaultSiteConfig';
 import { LogoManagementSection } from './LogoManagementSection';
 import { CreatorProfileSection } from './CreatorProfileSection';
+import { ReleaseManagementSection } from './ReleaseManagementSection';
 
 type AdminTabId =
   | 'overview'
@@ -121,7 +122,18 @@ export function AdminConsole({ onNavigate }: AdminConsoleProps) {
   } = useSiteConfig();
   const { theme, toggleTheme } = useTheme();
 
-  const [activeTab, setActiveTab] = useState<AdminTabId>('overview');
+  const [activeTab, setActiveTab] = useState<AdminTabId>(() => {
+    if (typeof window !== 'undefined') {
+      const tabParam = new URLSearchParams(window.location.search).get('tab');
+      if (tabParam && [
+        'overview', 'content', 'sections', 'branding', 'creator', 'navigation',
+        'cta', 'media', 'seo', 'visibility', 'auth', 'users', 'releases', 'audit', 'system'
+      ].includes(tabParam)) {
+        return tabParam as AdminTabId;
+      }
+    }
+    return 'overview';
+  });
   const [isMobileDrawerOpen, setIsMobileDrawerOpen] = useState(false);
   const [statusBanner, setStatusBanner] = useState<{
     type: 'success' | 'error' | 'warning';
@@ -683,7 +695,7 @@ export function AdminConsole({ onNavigate }: AdminConsoleProps) {
     { id: 'visibility', label: 'Feature visibility', icon: Eye },
     { id: 'auth', label: 'Authentication settings', icon: KeyRound },
     { id: 'users', label: 'User management', icon: Users },
-    { id: 'releases', label: 'Desktop releases', icon: Laptop },
+    { id: 'releases', label: 'Release & Distribution Manager', icon: Laptop },
     { id: 'audit', label: 'Audit log', icon: History },
     { id: 'system', label: 'System settings', icon: Settings },
   ];
@@ -1858,394 +1870,13 @@ export function AdminConsole({ onNavigate }: AdminConsoleProps) {
             </div>
           )}
 
-          {/* DESKTOP RELEASES MANAGER */}
+          {/* RELEASE & DISTRIBUTION MANAGER */}
           {activeTab === 'releases' && (
-            <div className="space-y-6">
-              <div className="liquid-glass-elevated rounded-3xl border border-[var(--glass-border)] shadow-xl p-6 md:p-8 space-y-6">
-                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-[#D5E1E8] pb-5">
-                  <div>
-                    <h2 className="text-base font-semibold text-[#111827] flex items-center gap-2">
-                      <Laptop className="w-5 h-5 text-[#0284C7]" />
-                      <span>Desktop Release Distribution &amp; Lifecycle Manager</span>
-                    </h2>
-                    <p className="text-xs text-[#566575] mt-1">
-                      Manage official Windows (.exe / .msi) and macOS (.dmg / .pkg) installers, SHA-256 integrity hashes, lifecycle states, and download telemetry.
-                    </p>
-                  </div>
-                  <div className="flex items-center gap-2.5 shrink-0">
-                    <button
-                      type="button"
-                      onClick={() => handleSaveReleases(false)}
-                      className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl border border-[#D5E1E8] text-xs font-medium text-[#111827] hover:bg-[#F5F9FB] transition-colors cursor-pointer"
-                    >
-                      <Save className="w-3.5 h-3.5 text-[#566575]" />
-                      <span>Save Draft</span>
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => handleSaveReleases(true)}
-                      className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl bg-[#101820] text-white text-xs font-semibold hover:bg-[#294D6B] transition-colors cursor-pointer shadow-md"
-                    >
-                      <UploadCloud className="w-3.5 h-3.5 text-[#38BDF8]" />
-                      <span>Publish Live Catalog</span>
-                    </button>
-                  </div>
-                </div>
-
-                <div className="space-y-4">
-                  <div className="flex items-center justify-between">
-                    <h3 className="text-xs font-mono uppercase font-bold text-[#64748B] tracking-wider">
-                      Registered Distribution Releases ({releasesForm.length})
-                    </h3>
-                  </div>
-
-                  <div className="space-y-3">
-                    {releasesForm.map((rel) => (
-                      <div
-                        key={rel.id}
-                        className={`p-5 rounded-2xl border transition-all ${
-                          rel.isLatest
-                            ? 'bg-[#F0FDF4] border-emerald-300 shadow-sm'
-                            : rel.status === 'disabled' || rel.status === 'retired'
-                            ? 'bg-[#FFF1F2] border-rose-200 opacity-80'
-                            : rel.status === 'draft'
-                            ? 'bg-[#FFFBEB] border-amber-200'
-                            : 'bg-[#F8FAFC] border-[#E2E8F0]'
-                        }`}
-                      >
-                        <div className="flex flex-col lg:flex-row lg:items-start justify-between gap-4">
-                          <div className="space-y-2">
-                            <div className="flex flex-wrap items-center gap-2">
-                              <span className="text-sm font-bold text-[#070B19]">
-                                v{rel.version}
-                              </span>
-                              <span className="px-2 py-0.5 rounded-full text-[10px] font-mono font-bold bg-[#E0F2FE] text-[#0369A1] border border-[#BAE6FD] flex items-center gap-1">
-                                {rel.platform.startsWith('macos') ? (
-                                  <Apple className="w-3 h-3 text-[#0284C7]" />
-                                ) : (
-                                  <Laptop className="w-3 h-3 text-[#0284C7]" />
-                                )}
-                                <span>{rel.platform}</span>
-                              </span>
-                              <span className="px-2 py-0.5 rounded-full text-[10px] font-mono font-bold bg-[#F1F5F9] text-[#475569] border border-[#CBD5E1]">
-                                {rel.format.toUpperCase()}
-                              </span>
-                              <span
-                                className={`px-2 py-0.5 rounded-full text-[10px] font-mono font-bold uppercase ${
-                                  rel.status === 'published'
-                                    ? 'bg-emerald-100 text-emerald-800 border border-emerald-300'
-                                    : rel.status === 'draft'
-                                    ? 'bg-amber-100 text-amber-800 border border-amber-300'
-                                    : 'bg-rose-100 text-rose-800 border border-rose-300'
-                                }`}
-                              >
-                                {rel.status}
-                              </span>
-                              {rel.isLatest && (
-                                <span className="px-2 py-0.5 rounded-full text-[10px] font-mono font-bold bg-emerald-100 text-emerald-800 border border-emerald-300 flex items-center gap-1">
-                                  <CheckCircle2 className="w-3 h-3 text-emerald-600" />
-                                  <span>LATEST FOR {rel.platform.toUpperCase()}</span>
-                                </span>
-                              )}
-                            </div>
-
-                            <div className="text-xs text-[#475569] font-mono flex flex-wrap items-center gap-x-4 gap-y-1">
-                              <span>Filename: {rel.filename}</span>
-                              <span>Size: {(rel.sizeBytes / (1024 * 1024)).toFixed(2)} MB</span>
-                              <span>Min OS: {rel.minimumOs}</span>
-                              <span>Downloads: {rel.downloadCount || 0}</span>
-                              <span>Released: {rel.releaseDate}</span>
-                            </div>
-                          </div>
-
-                          <div className="flex flex-wrap items-center gap-2 shrink-0">
-                            {/* Lifecycle Status Selector */}
-                            <select
-                              value={rel.status}
-                              onChange={(e) =>
-                                handleSetReleaseStatus(
-                                  rel.id,
-                                  e.target.value as DesktopReleaseStatus
-                                )
-                              }
-                              className="px-2.5 py-1.5 rounded-lg bg-white border border-[#CBD5E1] text-xs font-semibold text-[#070B19] cursor-pointer"
-                              title="Update release status"
-                            >
-                              <option value="published">Published</option>
-                              <option value="draft">Draft</option>
-                              <option value="disabled">Disabled</option>
-                              <option value="retired">Retired</option>
-                            </select>
-
-                            {!rel.isLatest && rel.status === 'published' && (
-                              <button
-                                type="button"
-                                onClick={() => handleToggleLatestRelease(rel.id)}
-                                className="px-3 py-1.5 rounded-lg bg-white border border-[#CBD5E1] text-xs font-semibold text-[#070B19] hover:bg-[#F1F5F9] transition-colors cursor-pointer"
-                              >
-                                Set Latest
-                              </button>
-                            )}
-
-                            <a
-                              href={rel.downloadUrl}
-                              target="_blank"
-                              rel="noopener noreferrer"
-                              className="inline-flex items-center gap-1 px-3 py-1.5 rounded-lg bg-[#070B19] text-white text-xs font-semibold hover:bg-[#1E293B] transition-colors cursor-pointer"
-                            >
-                              <Download className="w-3 h-3 text-[#38BDF8]" />
-                              <span>Verify Binary</span>
-                            </a>
-
-                            <button
-                              type="button"
-                              onClick={() => handleDeleteRelease(rel.id)}
-                              className="p-1.5 rounded-lg text-rose-600 hover:bg-rose-50 transition-colors cursor-pointer"
-                              title="Delete release"
-                            >
-                              <Trash2 className="w-4 h-4" />
-                            </button>
-                          </div>
-                        </div>
-
-                        <div className="mt-3 p-2.5 rounded-xl bg-white border border-[#E2E8F0] flex items-center justify-between gap-3 text-xs font-mono">
-                          <span className="text-[#64748B] shrink-0 font-bold">SHA-256:</span>
-                          <span className="text-[#070B19] break-all truncate">{rel.sha256}</span>
-                        </div>
-
-                        {rel.releaseNotes && rel.releaseNotes.length > 0 && (
-                          <div className="mt-3 text-xs text-[#475569] space-y-1">
-                            <span className="font-semibold text-[#070B19] block">Notes:</span>
-                            <ul className="list-disc list-inside space-y-0.5">
-                              {rel.releaseNotes.map((note, nIdx) => (
-                                <li key={nIdx}>{note}</li>
-                              ))}
-                            </ul>
-                          </div>
-                        )}
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              </div>
-
-              {/* Form to Register a New Release */}
-              <div className="liquid-glass-elevated rounded-3xl border border-[var(--glass-border)] shadow-xl p-6 md:p-8 space-y-5">
-                <div>
-                  <h3 className="text-base font-semibold text-[#111827] flex items-center gap-2">
-                    <Plus className="w-4 h-4 text-[#0284C7]" />
-                    <span>Register New Windows or macOS Desktop Release</span>
-                  </h3>
-                  <p className="text-xs text-[#566575] mt-1">
-                    Add an installer binary package. Supported formats: .exe (Windows NSIS), .msi (Windows Installer), .dmg (macOS Disk Image), .pkg (macOS Installer).
-                  </p>
-                </div>
-
-                <form onSubmit={handleAddDesktopRelease} className="space-y-4">
-                  <div className="grid grid-cols-1 sm:grid-cols-4 gap-4">
-                    <div>
-                      <label className="block text-xs font-mono text-[#566575] mb-1">
-                        Platform *
-                      </label>
-                      <select
-                        value={newRelPlatform}
-                        onChange={(e) => {
-                          const p = e.target.value as DesktopPlatform;
-                          setNewRelPlatform(p);
-                          if (p.startsWith('macos')) {
-                            setNewRelFormat('dmg');
-                            setNewRelFilename(
-                              p === 'macos-arm64' ? 'Orion-9-aarch64.dmg' : 'Orion-9-Universal.dmg'
-                            );
-                            setNewRelMinOs('macOS 12 Monterey or higher');
-                            setNewRelUrl(
-                              p === 'macos-arm64'
-                                ? '/downloads/Orion-9-aarch64.dmg'
-                                : '/downloads/Orion-9-Universal.dmg'
-                            );
-                          } else {
-                            setNewRelFormat('exe');
-                            setNewRelFilename('Orion-9-Setup.exe');
-                            setNewRelMinOs('Windows 10 / 11 64-bit');
-                            setNewRelUrl('/downloads/Orion-9-Setup.exe');
-                          }
-                        }}
-                        className="w-full px-3.5 py-2 rounded-xl bg-[#F5F9FB] border border-[#D5E1E8] text-xs font-semibold"
-                      >
-                        <option value="windows-x64">Windows x64</option>
-                        <option value="windows-arm64">Windows ARM64</option>
-                        <option value="macos-universal">macOS Universal (Apple Silicon &amp; Intel)</option>
-                        <option value="macos-arm64">macOS Apple Silicon (M1-M4)</option>
-                        <option value="macos-x64">macOS Intel x86_64</option>
-                      </select>
-                    </div>
-
-                    <div>
-                      <label className="block text-xs font-mono text-[#566575] mb-1">
-                        Format *
-                      </label>
-                      <select
-                        value={newRelFormat}
-                        onChange={(e) => {
-                          const fmt = e.target.value as DesktopPackageFormat;
-                          setNewRelFormat(fmt);
-                          if (fmt === 'exe') setNewRelFilename('Orion-9-Setup.exe');
-                          else if (fmt === 'msi') setNewRelFilename('Orion-9-Setup.msi');
-                          else if (fmt === 'dmg') setNewRelFilename('Orion-9-Universal.dmg');
-                          else if (fmt === 'pkg') setNewRelFilename('Orion-9-Universal.pkg');
-                        }}
-                        className="w-full px-3.5 py-2 rounded-xl bg-[#F5F9FB] border border-[#D5E1E8] text-xs font-semibold"
-                      >
-                        <option value="exe">EXE (.exe - NSIS)</option>
-                        <option value="msi">MSI (.msi - Enterprise WiX)</option>
-                        <option value="dmg">DMG (.dmg - Apple Disk Image)</option>
-                        <option value="pkg">PKG (.pkg - Apple Package)</option>
-                      </select>
-                    </div>
-
-                    <div>
-                      <label className="block text-xs font-mono text-[#566575] mb-1">
-                        Version *
-                      </label>
-                      <input
-                        type="text"
-                        placeholder="9.0.0"
-                        value={newRelVersion}
-                        onChange={(e) => setNewRelVersion(e.target.value)}
-                        className="w-full px-3.5 py-2 rounded-xl bg-[#F5F9FB] border border-[#D5E1E8] text-xs font-mono"
-                        required
-                      />
-                    </div>
-
-                    <div>
-                      <label className="block text-xs font-mono text-[#566575] mb-1">
-                        Lifecycle Status *
-                      </label>
-                      <select
-                        value={newRelStatus}
-                        onChange={(e) =>
-                          setNewRelStatus(e.target.value as DesktopReleaseStatus)
-                        }
-                        className="w-full px-3.5 py-2 rounded-xl bg-[#F5F9FB] border border-[#D5E1E8] text-xs font-semibold"
-                      >
-                        <option value="published">Published (Live)</option>
-                        <option value="draft">Draft (Admin Only)</option>
-                        <option value="disabled">Disabled</option>
-                        <option value="retired">Retired</option>
-                      </select>
-                    </div>
-                  </div>
-
-                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-                    <div>
-                      <label className="block text-xs font-mono text-[#566575] mb-1">
-                        Installer Filename *
-                      </label>
-                      <input
-                        type="text"
-                        placeholder="Orion-9-Setup.exe"
-                        value={newRelFilename}
-                        onChange={(e) => setNewRelFilename(e.target.value)}
-                        className="w-full px-3.5 py-2 rounded-xl bg-[#F5F9FB] border border-[#D5E1E8] text-xs font-mono"
-                        required
-                      />
-                    </div>
-                    <div>
-                      <label className="block text-xs font-mono text-[#566575] mb-1">
-                        File Size (Bytes) *
-                      </label>
-                      <input
-                        type="number"
-                        placeholder="30336791"
-                        value={newRelSize}
-                        onChange={(e) => setNewRelSize(e.target.value)}
-                        className="w-full px-3.5 py-2 rounded-xl bg-[#F5F9FB] border border-[#D5E1E8] text-xs font-mono"
-                        required
-                      />
-                    </div>
-                    <div>
-                      <label className="block text-xs font-mono text-[#566575] mb-1">
-                        Minimum Supported OS
-                      </label>
-                      <input
-                        type="text"
-                        placeholder="Windows 10 / 11 64-bit"
-                        value={newRelMinOs}
-                        onChange={(e) => setNewRelMinOs(e.target.value)}
-                        className="w-full px-3.5 py-2 rounded-xl bg-[#F5F9FB] border border-[#D5E1E8] text-xs"
-                      />
-                    </div>
-                  </div>
-
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                    <div>
-                      <label className="block text-xs font-mono text-[#566575] mb-1">
-                        Cryptographic SHA-256 Checksum *
-                      </label>
-                      <input
-                        type="text"
-                        placeholder="e2dfeb480522b9da077bb58e0954d6d8e09f1023fb6af28b8b74b2a8dc23ee70"
-                        value={newRelSha}
-                        onChange={(e) => setNewRelSha(e.target.value)}
-                        className="w-full px-3.5 py-2 rounded-xl bg-[#F5F9FB] border border-[#D5E1E8] text-xs font-mono"
-                        required
-                      />
-                    </div>
-                    <div>
-                      <label className="block text-xs font-mono text-[#566575] mb-1">
-                        Download URL *
-                      </label>
-                      <input
-                        type="text"
-                        placeholder="/downloads/Orion-9-Setup.exe"
-                        value={newRelUrl}
-                        onChange={(e) => setNewRelUrl(e.target.value)}
-                        className="w-full px-3.5 py-2 rounded-xl bg-[#F5F9FB] border border-[#D5E1E8] text-xs font-mono"
-                        required
-                      />
-                    </div>
-                  </div>
-
-                  <div>
-                    <label className="block text-xs font-mono text-[#566575] mb-1">
-                      Release Notes (one note per line)
-                    </label>
-                    <textarea
-                      rows={3}
-                      placeholder="Official Orion-9 native package.&#10;Zero-trust execution boundary."
-                      value={newRelNotes}
-                      onChange={(e) => setNewRelNotes(e.target.value)}
-                      className="w-full px-3.5 py-2 rounded-xl bg-[#F5F9FB] border border-[#D5E1E8] text-xs"
-                    />
-                  </div>
-
-                  <div className="flex items-center justify-between pt-2">
-                    <div className="flex items-center gap-3">
-                      <label className="text-xs font-medium text-[#475569] flex items-center gap-2">
-                        <span>Channel:</span>
-                        <select
-                          value={newRelChannel}
-                          onChange={(e) =>
-                            setNewRelChannel(e.target.value as 'stable' | 'beta')
-                          }
-                          className="px-2 py-1 rounded-lg border border-[#D5E1E8] bg-[#F8FAFC] text-xs"
-                        >
-                          <option value="stable">Stable (Production)</option>
-                          <option value="beta">Beta (Preview)</option>
-                        </select>
-                      </label>
-                    </div>
-                    <button
-                      type="submit"
-                      className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-[#070B19] text-white text-xs font-semibold hover:bg-[#1E293B] shadow-md transition-all cursor-pointer"
-                    >
-                      <UploadCloud className="w-4 h-4 text-[#38BDF8]" />
-                      <span>Register Release Record</span>
-                    </button>
-                  </div>
-                </form>
-              </div>
-            </div>
+            <ReleaseManagementSection
+              userEmail={user?.email || undefined}
+              isAdmin={isAdmin}
+              onNotification={showBanner}
+            />
           )}
 
           {/* 13. SYSTEM SETTINGS */}

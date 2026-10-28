@@ -8,6 +8,9 @@ import {
   validateReleaseForDownload,
   verifyBinaryResponseHeaders,
   DesktopDownloadError,
+  resolveReleaseDownloadUrl,
+  checkReleaseAvailability,
+  DEFAULT_RELEASE_CDN_BASE,
 } from '../services/downloadService.ts';
 
 describe('Desktop Installer Download & Binary Pipeline Test Suite', () => {
@@ -219,6 +222,77 @@ describe('Desktop Installer Download & Binary Pipeline Test Suite', () => {
       assert.match(rel.sha256, /^[a-f0-9]{64}$/, 'SHA-256 must be valid lowercase 64-char hex');
       assert.ok(rel.sizeBytes > 0, 'Size must be > 0');
       assert.ok(rel.minimumOs, 'Minimum OS requirement must be defined');
+    }
+  });
+
+  test('13. resolveReleaseDownloadUrl maps relative paths to authoritative CDN and preserves absolute URLs', () => {
+    assert.equal(
+      resolveReleaseDownloadUrl('/downloads/Orion-9-Setup.exe'),
+      `${DEFAULT_RELEASE_CDN_BASE}/downloads/Orion-9-Setup.exe`
+    );
+    assert.equal(
+      resolveReleaseDownloadUrl('downloads/Orion-9-Universal.dmg'),
+      `${DEFAULT_RELEASE_CDN_BASE}/downloads/Orion-9-Universal.dmg`
+    );
+    assert.equal(
+      resolveReleaseDownloadUrl('https://custom-cdn.orion9.com/release.exe'),
+      'https://custom-cdn.orion9.com/release.exe'
+    );
+  });
+
+  test('14. checkReleaseAvailability detects available binaries and rejects HTML fallback or 404', async () => {
+    const originalFetch = globalThis.fetch;
+    try {
+      // Mock 200 binary response
+      globalThis.fetch = async () =>
+        new Response(null, {
+          status: 200,
+          headers: {
+            'content-type': 'application/vnd.microsoft.portable-executable',
+            'content-length': '30336791',
+          },
+        });
+
+      const res200 = await checkReleaseAvailability(winRelease);
+      assert.equal(res200.available, true);
+      assert.equal(res200.status, 200);
+      assert.equal(res200.sizeBytes, 30336791);
+
+      // Mock HTML fallback response
+      globalThis.fetch = async () =>
+        new Response('<html><body>Fallback</body></html>', {
+          status: 200,
+          headers: {
+            'content-type': 'text/html; charset=utf-8',
+          },
+        });
+
+      const resHtml = await checkReleaseAvailability(winRelease);
+      assert.equal(resHtml.available, false);
+      assert.equal(resHtml.isHtmlFallback, true);
+      assert.match(resHtml.error!, /Endpoint returned HTML fallback/);
+
+      // Mock 404 missing response
+      globalThis.fetch = async () =>
+        new Response(JSON.stringify({ error: 'Not found' }), {
+          status: 404,
+          headers: { 'content-type': 'application/json' },
+        });
+
+      const res404 = await checkReleaseAvailability(winRelease);
+      assert.equal(res404.available, false);
+      assert.equal(res404.status, 404);
+      assert.match(res404.error!, /not deployed/);
+    } finally {
+      globalThis.fetch = originalFetch;
+    }
+  });
+
+  test('15. All 4 default desktop releases resolve to genuine CDN storage URLs', () => {
+    for (const rel of DEFAULT_DESKTOP_RELEASES) {
+      const resolved = resolveReleaseDownloadUrl(rel.downloadUrl);
+      assert.ok(resolved.startsWith(DEFAULT_RELEASE_CDN_BASE), `Release ${rel.filename} must resolve to CDN base`);
+      assert.ok(resolved.endsWith(rel.filename), `Release URL must end with filename ${rel.filename}`);
     }
   });
 });
