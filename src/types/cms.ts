@@ -245,6 +245,8 @@ export interface AppReleaseRecord {
 
 export type DesktopReleaseRecord = AppReleaseRecord;
 
+export const MAX_RELEASE_FILE_SIZE_BYTES = 262144000; // 250 MiB (250 MB)
+
 export interface CreatorProfileConfig {
   name: string;
   role: string;

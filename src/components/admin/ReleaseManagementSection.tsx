@@ -49,11 +49,13 @@ import {
   persistReleaseRecord,
   validateReleaseBinaryHeader,
   computeFileSha256,
+  MAX_RELEASE_FILE_SIZE_BYTES,
   MAX_DESKTOP_RELEASE_SIZE_BYTES,
   MAX_MOBILE_RELEASE_SIZE_BYTES,
   PERMITTED_PLATFORM_EXTENSIONS,
   type UploadReleaseProgress,
 } from '../../services/releaseService.ts';
+import { useTheme } from '../../context/ThemeContext.tsx';
 
 interface ReleaseManagementSectionProps {
   userEmail?: string;
@@ -66,6 +68,7 @@ export const ReleaseManagementSection: React.FC<ReleaseManagementSectionProps> =
   isAdmin,
   onNotification,
 }) => {
+  const { theme } = useTheme();
   const [releases, setReleases] = useState<AppReleaseRecord[]>(DEFAULT_DESKTOP_RELEASES);
   const [loading, setLoading] = useState(false);
   const [platformFilter, setPlatformFilter] = useState<'all' | 'windows' | 'macos' | 'android' | 'ios'>('all');
@@ -380,14 +383,14 @@ export const ReleaseManagementSection: React.FC<ReleaseManagementSectionProps> =
     switch (status) {
       case 'published':
         return (
-          <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-bold bg-emerald-100 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-400 border border-emerald-300 dark:border-emerald-800">
+          <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-bold bg-emerald-100 dark:bg-emerald-950/60 text-emerald-800 dark:text-emerald-300 border border-emerald-300 dark:border-emerald-800">
             <CheckCircle2 className="w-3 h-3 shrink-0" />
             PUBLISHED
           </span>
         );
       case 'verified':
         return (
-          <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-bold bg-sky-100 dark:bg-sky-950/60 text-sky-700 dark:text-sky-400 border border-sky-300 dark:border-sky-800">
+          <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-bold bg-sky-100 dark:bg-sky-950/60 text-sky-800 dark:text-sky-300 border border-sky-300 dark:border-sky-800">
             <ShieldCheck className="w-3 h-3 shrink-0" />
             VERIFIED
           </span>
@@ -395,14 +398,14 @@ export const ReleaseManagementSection: React.FC<ReleaseManagementSectionProps> =
       case 'unverified':
       case 'draft':
         return (
-          <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-bold bg-amber-100 dark:bg-amber-950/60 text-amber-700 dark:text-amber-400 border border-amber-300 dark:border-amber-800">
+          <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-bold bg-amber-100 dark:bg-amber-950/60 text-amber-900 dark:text-amber-300 border border-amber-300 dark:border-amber-800">
             <Clock className="w-3 h-3 shrink-0" />
             UNVERIFIED
           </span>
         );
       case 'superseded':
         return (
-          <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-medium bg-purple-100 dark:bg-purple-950/60 text-purple-700 dark:text-purple-400 border border-purple-300 dark:border-purple-800">
+          <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-bold bg-purple-100 dark:bg-purple-950/60 text-purple-800 dark:text-purple-300 border border-purple-300 dark:border-purple-800">
             <RotateCcw className="w-3 h-3 shrink-0" />
             SUPERSEDED
           </span>
@@ -411,28 +414,28 @@ export const ReleaseManagementSection: React.FC<ReleaseManagementSectionProps> =
       case 'retired':
       case 'disabled':
         return (
-          <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-medium bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 border border-slate-300 dark:border-slate-700">
+          <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-bold bg-slate-200 dark:bg-slate-800 text-slate-800 dark:text-slate-300 border border-slate-300 dark:border-slate-700">
             <Archive className="w-3 h-3 shrink-0" />
             ARCHIVED
           </span>
         );
       case 'uploading':
         return (
-          <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-bold bg-blue-100 dark:bg-blue-950/60 text-blue-700 dark:text-blue-400 border border-blue-300 dark:border-blue-800">
+          <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-bold bg-blue-100 dark:bg-blue-950/60 text-blue-800 dark:text-blue-300 border border-blue-300 dark:border-blue-800">
             <RefreshCw className="w-3 h-3 animate-spin shrink-0" />
             UPLOADING
           </span>
         );
       case 'failed':
         return (
-          <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-bold bg-red-100 dark:bg-red-950/60 text-red-700 dark:text-red-400 border border-red-300 dark:border-red-800">
+          <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-bold bg-red-100 dark:bg-red-950/60 text-red-800 dark:text-red-300 border border-red-300 dark:border-red-800">
             <AlertTriangle className="w-3 h-3 shrink-0" />
             FAILED
           </span>
         );
       default:
         return (
-          <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-medium bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 border border-slate-300 dark:border-slate-700">
+          <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-bold bg-slate-200 dark:bg-slate-800 text-slate-800 dark:text-slate-300 border border-slate-300 dark:border-slate-700">
             NOT UPLOADED
           </span>
         );
@@ -449,15 +452,15 @@ export const ReleaseManagementSection: React.FC<ReleaseManagementSectionProps> =
               <span className="px-2.5 py-0.5 rounded-full text-[10px] font-mono font-bold tracking-wider uppercase bg-[#0284C7]/10 text-[#0284C7] border border-[#0284C7]/20">
                 DISTRIBUTION CONTROL PLANE
               </span>
-              <span className="px-2.5 py-0.5 rounded-full text-[10px] font-mono text-emerald-600 dark:text-emerald-400 bg-emerald-500/10 border border-emerald-500/20">
+              <span className="px-2.5 py-0.5 rounded-full text-[10px] font-mono font-bold text-emerald-700 dark:text-emerald-400 bg-emerald-500/10 border border-emerald-500/20">
                 R2 DURABLE STORAGE
               </span>
             </div>
-            <h2 className="text-xl sm:text-2xl font-bold text-[#0F172A] dark:text-white">
+            <h2 className="text-xl sm:text-2xl font-bold text-[#172033] dark:text-white">
               Release & Distribution Manager
             </h2>
-            <p className="text-xs sm:text-sm text-[#475569] dark:text-slate-400 max-w-3xl">
-              Publish, verify, replace and roll back official binaries for Windows (.exe), macOS (.dmg), Android (.apk), and iOS (.ipa). Binary files are stored securely in Cloudflare R2 with real cryptographic SHA-256 integrity hashes.
+            <p className="text-xs sm:text-sm text-[#334155] dark:text-slate-300 max-w-3xl">
+              Publish, verify, replace and roll back official binaries for Windows (.exe), macOS (.dmg), Android (.apk), and iOS (.ipa). Binary files are stored securely in Cloudflare R2 with real cryptographic SHA-256 integrity hashes. Maximum permitted release file size: 250 MB.
             </p>
           </div>
 
@@ -485,25 +488,25 @@ export const ReleaseManagementSection: React.FC<ReleaseManagementSectionProps> =
 
         {/* Status Metrics Bar */}
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 pt-5">
-          <div className="p-3.5 rounded-2xl bg-white/60 dark:bg-slate-800/60 border border-[#E2E8F0] dark:border-slate-700">
-            <div className="text-[10px] font-mono uppercase text-[#64748B] dark:text-slate-400">Total Releases</div>
-            <div className="text-xl font-bold text-[#0F172A] dark:text-white mt-0.5">{releases.length}</div>
+          <div className="p-3.5 rounded-2xl bg-white/70 dark:bg-slate-800/60 border border-[#CBD5E1] dark:border-slate-700 shadow-2xs">
+            <div className="text-[10px] font-mono uppercase font-bold text-[#475569] dark:text-slate-400">Total Releases</div>
+            <div className="text-xl font-bold text-[#172033] dark:text-white mt-0.5">{releases.length}</div>
           </div>
-          <div className="p-3.5 rounded-2xl bg-emerald-50/60 dark:bg-emerald-950/20 border border-emerald-200 dark:border-emerald-800">
-            <div className="text-[10px] font-mono uppercase text-emerald-700 dark:text-emerald-400">Published Active</div>
-            <div className="text-xl font-bold text-emerald-700 dark:text-emerald-400 mt-0.5">
+          <div className="p-3.5 rounded-2xl bg-emerald-50/80 dark:bg-emerald-950/20 border border-emerald-300 dark:border-emerald-800 shadow-2xs">
+            <div className="text-[10px] font-mono uppercase font-bold text-emerald-800 dark:text-emerald-400">Published Active</div>
+            <div className="text-xl font-bold text-emerald-800 dark:text-emerald-400 mt-0.5">
               {releases.filter((r) => r.status === 'published').length}
             </div>
           </div>
-          <div className="p-3.5 rounded-2xl bg-sky-50/60 dark:bg-sky-950/20 border border-sky-200 dark:border-sky-800">
-            <div className="text-[10px] font-mono uppercase text-sky-700 dark:text-sky-400">Verified Staged</div>
-            <div className="text-xl font-bold text-sky-700 dark:text-sky-400 mt-0.5">
+          <div className="p-3.5 rounded-2xl bg-sky-50/80 dark:bg-sky-950/20 border border-sky-300 dark:border-sky-800 shadow-2xs">
+            <div className="text-[10px] font-mono uppercase font-bold text-sky-800 dark:text-sky-400">Verified Staged</div>
+            <div className="text-xl font-bold text-sky-800 dark:text-sky-400 mt-0.5">
               {releases.filter((r) => r.status === 'verified').length}
             </div>
           </div>
-          <div className="p-3.5 rounded-2xl bg-purple-50/60 dark:bg-purple-950/20 border border-purple-200 dark:border-purple-800">
-            <div className="text-[10px] font-mono uppercase text-purple-700 dark:text-purple-400">Mobile (.apk / .ipa)</div>
-            <div className="text-xl font-bold text-purple-700 dark:text-purple-400 mt-0.5">
+          <div className="p-3.5 rounded-2xl bg-purple-50/80 dark:bg-purple-950/20 border border-purple-300 dark:border-purple-800 shadow-2xs">
+            <div className="text-[10px] font-mono uppercase font-bold text-purple-800 dark:text-purple-400">Mobile (.apk / .ipa)</div>
+            <div className="text-xl font-bold text-purple-800 dark:text-purple-400 mt-0.5">
               {releases.filter((r) => r.format === 'apk' || r.format === 'ipa').length}
             </div>
           </div>
@@ -516,29 +519,29 @@ export const ReleaseManagementSection: React.FC<ReleaseManagementSectionProps> =
           onSubmit={handleExecuteUpload}
           className="liquid-glass-elevated rounded-3xl border-2 border-[#0284C7]/40 shadow-2xl p-6 sm:p-8 space-y-6 animate-in fade-in duration-200"
         >
-          <div className="flex items-center justify-between border-b border-[#E2E8F0] dark:border-slate-700 pb-4">
+          <div className="flex items-center justify-between border-b border-[#CBD5E1] dark:border-slate-700 pb-4">
             <div className="flex items-center gap-2.5">
               <div className="w-8 h-8 rounded-xl bg-[#0284C7]/10 flex items-center justify-center text-[#0284C7]">
                 <UploadCloud className="w-4 h-4" />
               </div>
               <div>
-                <h3 className="text-base font-bold text-[#0F172A] dark:text-white">Upload & Distribute New Release</h3>
-                <p className="text-xs text-[#64748B] dark:text-slate-400">
-                  Select target platform, provide version and notes, and stream the genuine binary to Cloudflare R2.
+                <h3 className="text-base font-bold text-[#172033] dark:text-white">Upload & Distribute New Release</h3>
+                <p className="text-xs text-[#475569] dark:text-slate-400">
+                  Select target platform (Windows, macOS, Android, iOS), provide version and notes, and stream genuine binary to Cloudflare R2. Max size: 250 MB.
                 </p>
               </div>
             </div>
             <button
               type="button"
               onClick={() => setShowUploadForm(false)}
-              className="p-1.5 rounded-lg text-slate-400 hover:text-slate-600 dark:hover:text-white cursor-pointer"
+              className="p-1.5 rounded-lg text-slate-500 hover:text-[#172033] dark:hover:text-white cursor-pointer"
             >
               <X className="w-4 h-4" />
             </button>
           </div>
 
           {validationError && (
-            <div className="p-4 rounded-2xl bg-red-50 dark:bg-red-950/50 border border-red-300 dark:border-red-800 flex items-start gap-3 text-red-700 dark:text-red-300 text-xs">
+            <div className="p-4 rounded-2xl bg-red-50 dark:bg-red-950/50 border border-red-300 dark:border-red-800 flex items-start gap-3 text-red-800 dark:text-red-300 text-xs">
               <AlertTriangle className="w-4 h-4 shrink-0 mt-0.5 text-red-600" />
               <div className="space-y-0.5">
                 <span className="font-bold">Validation Warning:</span>
@@ -547,31 +550,129 @@ export const ReleaseManagementSection: React.FC<ReleaseManagementSectionProps> =
             </div>
           )}
 
+          {/* Primary Platform Target Picker Cards */}
+          <div className="space-y-2">
+            <label className="block text-xs font-bold text-[#172033] dark:text-slate-200">
+              Select Target Platform *
+            </label>
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5">
+              {/* Windows */}
+              <button
+                type="button"
+                onClick={() => setFormPlatform('windows-x64')}
+                className={`p-3 rounded-2xl border text-left transition-all cursor-pointer flex flex-col justify-between gap-2 ${
+                  formPlatform.startsWith('windows')
+                    ? 'bg-[#0284C7]/10 border-[#0284C7] ring-2 ring-[#0284C7]/30 dark:bg-sky-950/40'
+                    : 'bg-white dark:bg-slate-800 border-[#CBD5E1] dark:border-slate-700 hover:border-slate-400'
+                }`}
+              >
+                <div className="flex items-center justify-between">
+                  <Laptop className={`w-5 h-5 ${formPlatform.startsWith('windows') ? 'text-[#0284C7]' : 'text-[#475569] dark:text-slate-400'}`} />
+                  <span className="text-[10px] font-mono uppercase px-1.5 py-0.5 rounded bg-slate-100 dark:bg-slate-700 text-[#334155] dark:text-slate-300 font-bold">
+                    .exe
+                  </span>
+                </div>
+                <div>
+                  <div className="text-xs font-bold text-[#172033] dark:text-white">Windows Desktop</div>
+                  <div className="text-[10px] text-[#475569] dark:text-slate-400">x64 & ARM64 binaries</div>
+                </div>
+              </button>
+
+              {/* macOS */}
+              <button
+                type="button"
+                onClick={() => setFormPlatform('macos-universal')}
+                className={`p-3 rounded-2xl border text-left transition-all cursor-pointer flex flex-col justify-between gap-2 ${
+                  formPlatform.startsWith('macos')
+                    ? 'bg-[#0284C7]/10 border-[#0284C7] ring-2 ring-[#0284C7]/30 dark:bg-sky-950/40'
+                    : 'bg-white dark:bg-slate-800 border-[#CBD5E1] dark:border-slate-700 hover:border-slate-400'
+                }`}
+              >
+                <div className="flex items-center justify-between">
+                  <Apple className={`w-5 h-5 ${formPlatform.startsWith('macos') ? 'text-[#0284C7]' : 'text-[#475569] dark:text-slate-400'}`} />
+                  <span className="text-[10px] font-mono uppercase px-1.5 py-0.5 rounded bg-slate-100 dark:bg-slate-700 text-[#334155] dark:text-slate-300 font-bold">
+                    .dmg
+                  </span>
+                </div>
+                <div>
+                  <div className="text-xs font-bold text-[#172033] dark:text-white">macOS Desktop</div>
+                  <div className="text-[10px] text-[#475569] dark:text-slate-400">Universal & Apple Silicon</div>
+                </div>
+              </button>
+
+              {/* Android */}
+              <button
+                type="button"
+                onClick={() => setFormPlatform('android-universal')}
+                className={`p-3 rounded-2xl border text-left transition-all cursor-pointer flex flex-col justify-between gap-2 ${
+                  formPlatform.startsWith('android')
+                    ? 'bg-emerald-500/10 border-emerald-500 ring-2 ring-emerald-500/30 dark:bg-emerald-950/40'
+                    : 'bg-white dark:bg-slate-800 border-[#CBD5E1] dark:border-slate-700 hover:border-slate-400'
+                }`}
+              >
+                <div className="flex items-center justify-between">
+                  <Smartphone className={`w-5 h-5 ${formPlatform.startsWith('android') ? 'text-emerald-600 dark:text-emerald-400' : 'text-[#475569] dark:text-slate-400'}`} />
+                  <span className="text-[10px] font-mono uppercase px-1.5 py-0.5 rounded bg-emerald-100 dark:bg-emerald-900/60 text-emerald-800 dark:text-emerald-300 font-bold">
+                    .apk
+                  </span>
+                </div>
+                <div>
+                  <div className="text-xs font-bold text-[#172033] dark:text-white flex items-center gap-1">
+                    Android APK
+                  </div>
+                  <div className="text-[10px] text-[#475569] dark:text-slate-400">Universal & ARM64 package</div>
+                </div>
+              </button>
+
+              {/* iOS */}
+              <button
+                type="button"
+                onClick={() => setFormPlatform('ios-universal')}
+                className={`p-3 rounded-2xl border text-left transition-all cursor-pointer flex flex-col justify-between gap-2 ${
+                  formPlatform.startsWith('ios')
+                    ? 'bg-[#0284C7]/10 border-[#0284C7] ring-2 ring-[#0284C7]/30 dark:bg-sky-950/40'
+                    : 'bg-white dark:bg-slate-800 border-[#CBD5E1] dark:border-slate-700 hover:border-slate-400'
+                }`}
+              >
+                <div className="flex items-center justify-between">
+                  <Smartphone className={`w-5 h-5 ${formPlatform.startsWith('ios') ? 'text-indigo-600 dark:text-indigo-400' : 'text-[#475569] dark:text-slate-400'}`} />
+                  <span className="text-[10px] font-mono uppercase px-1.5 py-0.5 rounded bg-slate-100 dark:bg-slate-700 text-[#334155] dark:text-slate-300 font-bold">
+                    .ipa
+                  </span>
+                </div>
+                <div>
+                  <div className="text-xs font-bold text-[#172033] dark:text-white">iOS Package</div>
+                  <div className="text-[10px] text-[#475569] dark:text-slate-400">Device & TestFlight IPA</div>
+                </div>
+              </button>
+            </div>
+          </div>
+
           <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
-            {/* Platform Selector */}
+            {/* Architecture / Package Variant */}
             <div>
-              <label className="block text-xs font-bold text-[#334155] dark:text-slate-300 mb-1.5">
-                Target Platform *
+              <label className="block text-xs font-bold text-[#172033] dark:text-slate-200 mb-1.5">
+                Target Architecture & Variant *
               </label>
               <select
                 value={formPlatform}
                 onChange={(e) => setFormPlatform(e.target.value as ReleasePlatform)}
-                className="w-full px-3.5 py-2.5 rounded-xl bg-white dark:bg-slate-800 border border-[#CBD5E1] dark:border-slate-700 text-xs font-semibold text-[#0F172A] dark:text-white cursor-pointer"
+                className="w-full px-3.5 py-2.5 rounded-xl bg-white dark:bg-slate-800 border border-[#CBD5E1] dark:border-slate-700 text-xs font-semibold text-[#172033] dark:text-white cursor-pointer focus:outline-none focus:ring-2 focus:ring-[#0284C7]"
               >
-                <optgroup label="Windows Desktop (.exe)">
-                  <option value="windows-x64">Windows 64-bit (x64) — .exe</option>
-                  <option value="windows-arm64">Windows ARM64 — .exe</option>
+                <optgroup label="Windows Desktop (.exe / .msi)">
+                  <option value="windows-x64">Windows 64-bit (x64) — .exe / .msi</option>
+                  <option value="windows-arm64">Windows ARM64 — .exe / .msi</option>
                 </optgroup>
-                <optgroup label="macOS Desktop (.dmg)">
-                  <option value="macos-universal">macOS Universal (Apple Silicon & Intel) — .dmg</option>
-                  <option value="macos-arm64">macOS Apple Silicon (M1-M4) — .dmg</option>
-                  <option value="macos-x64">macOS Intel (x86_64) — .dmg</option>
+                <optgroup label="macOS Desktop (.dmg / .pkg)">
+                  <option value="macos-universal">macOS Universal (Apple Silicon & Intel) — .dmg / .pkg</option>
+                  <option value="macos-arm64">macOS Apple Silicon (M1-M4) — .dmg / .pkg</option>
+                  <option value="macos-x64">macOS Intel (x86_64) — .dmg / .pkg</option>
                 </optgroup>
-                <optgroup label="Android (.apk)">
+                <optgroup label="Android Mobile (.apk)">
                   <option value="android-universal">Android Universal — .apk</option>
                   <option value="android-arm64">Android ARM64-v8a — .apk</option>
                 </optgroup>
-                <optgroup label="iOS (.ipa)">
+                <optgroup label="iOS Mobile (.ipa)">
                   <option value="ios-universal">iOS Universal — .ipa</option>
                   <option value="ios-arm64">iOS ARM64 (Device) — .ipa</option>
                 </optgroup>
@@ -580,7 +681,7 @@ export const ReleaseManagementSection: React.FC<ReleaseManagementSectionProps> =
 
             {/* Version Input */}
             <div>
-              <label className="block text-xs font-bold text-[#334155] dark:text-slate-300 mb-1.5">
+              <label className="block text-xs font-bold text-[#172033] dark:text-slate-200 mb-1.5">
                 Semantic Version *
               </label>
               <input
@@ -588,19 +689,19 @@ export const ReleaseManagementSection: React.FC<ReleaseManagementSectionProps> =
                 value={formVersion}
                 onChange={(e) => setFormVersion(e.target.value)}
                 placeholder="e.g. 9.1.0"
-                className="w-full px-3.5 py-2.5 rounded-xl bg-white dark:bg-slate-800 border border-[#CBD5E1] dark:border-slate-700 text-xs font-mono font-semibold text-[#0F172A] dark:text-white placeholder:text-slate-400"
+                className="w-full px-3.5 py-2.5 rounded-xl bg-white dark:bg-slate-800 border border-[#CBD5E1] dark:border-slate-700 text-xs font-mono font-semibold text-[#172033] dark:text-white placeholder:text-[#64748B] focus:outline-none focus:ring-2 focus:ring-[#0284C7]"
               />
             </div>
 
             {/* Release Channel */}
             <div>
-              <label className="block text-xs font-bold text-[#334155] dark:text-slate-300 mb-1.5">
+              <label className="block text-xs font-bold text-[#172033] dark:text-slate-200 mb-1.5">
                 Release Channel *
               </label>
               <select
                 value={formChannel}
                 onChange={(e) => setFormChannel(e.target.value as ReleaseChannel)}
-                className="w-full px-3.5 py-2.5 rounded-xl bg-white dark:bg-slate-800 border border-[#CBD5E1] dark:border-slate-700 text-xs font-semibold text-[#0F172A] dark:text-white cursor-pointer"
+                className="w-full px-3.5 py-2.5 rounded-xl bg-white dark:bg-slate-800 border border-[#CBD5E1] dark:border-slate-700 text-xs font-semibold text-[#172033] dark:text-white cursor-pointer focus:outline-none focus:ring-2 focus:ring-[#0284C7]"
               >
                 <option value="stable">Stable (Production Public Distribution)</option>
                 <option value="beta">Beta (Preview & Community Testing)</option>
@@ -612,7 +713,7 @@ export const ReleaseManagementSection: React.FC<ReleaseManagementSectionProps> =
           <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
             {/* Minimum Supported OS */}
             <div>
-              <label className="block text-xs font-bold text-[#334155] dark:text-slate-300 mb-1.5">
+              <label className="block text-xs font-bold text-[#172033] dark:text-slate-200 mb-1.5">
                 Minimum Supported OS Requirement
               </label>
               <input
@@ -620,13 +721,13 @@ export const ReleaseManagementSection: React.FC<ReleaseManagementSectionProps> =
                 value={formMinOs}
                 onChange={(e) => setFormMinOs(e.target.value)}
                 placeholder="e.g. Windows 10 / 11 64-bit"
-                className="w-full px-3.5 py-2.5 rounded-xl bg-white dark:bg-slate-800 border border-[#CBD5E1] dark:border-slate-700 text-xs text-[#0F172A] dark:text-white"
+                className="w-full px-3.5 py-2.5 rounded-xl bg-white dark:bg-slate-800 border border-[#CBD5E1] dark:border-slate-700 text-xs font-medium text-[#172033] dark:text-white placeholder:text-[#64748B] focus:outline-none focus:ring-2 focus:ring-[#0284C7]"
               />
             </div>
 
             {/* External URL (TestFlight / App Store / Play Store) */}
             <div>
-              <label className="block text-xs font-bold text-[#334155] dark:text-slate-300 mb-1.5">
+              <label className="block text-xs font-bold text-[#172033] dark:text-slate-200 mb-1.5">
                 External Distribution URL (App Store / TestFlight / Play Store)
               </label>
               <input
@@ -634,14 +735,14 @@ export const ReleaseManagementSection: React.FC<ReleaseManagementSectionProps> =
                 value={formExternalUrl}
                 onChange={(e) => setFormExternalUrl(e.target.value)}
                 placeholder="https://testflight.apple.com/join/... or https://play.google.com/..."
-                className="w-full px-3.5 py-2.5 rounded-xl bg-white dark:bg-slate-800 border border-[#CBD5E1] dark:border-slate-700 text-xs text-[#0F172A] dark:text-white"
+                className="w-full px-3.5 py-2.5 rounded-xl bg-white dark:bg-slate-800 border border-[#CBD5E1] dark:border-slate-700 text-xs font-medium text-[#172033] dark:text-white placeholder:text-[#64748B] focus:outline-none focus:ring-2 focus:ring-[#0284C7]"
               />
             </div>
           </div>
 
           {/* Release Notes */}
           <div>
-            <label className="block text-xs font-bold text-[#334155] dark:text-slate-300 mb-1.5">
+            <label className="block text-xs font-bold text-[#172033] dark:text-slate-200 mb-1.5">
               Release Notes (one bullet point per line)
             </label>
             <textarea
@@ -649,20 +750,20 @@ export const ReleaseManagementSection: React.FC<ReleaseManagementSectionProps> =
               value={formReleaseNotes}
               onChange={(e) => setFormReleaseNotes(e.target.value)}
               placeholder="Added hardware acceleration for Apple Silicon M4&#10;Integrated zero-trust edge streaming&#10;Security patch for telemetry transport"
-              className="w-full px-3.5 py-2 rounded-xl bg-white dark:bg-slate-800 border border-[#CBD5E1] dark:border-slate-700 text-xs text-[#0F172A] dark:text-white"
+              className="w-full px-3.5 py-2 rounded-xl bg-white dark:bg-slate-800 border border-[#CBD5E1] dark:border-slate-700 text-xs font-medium text-[#172033] dark:text-white placeholder:text-[#64748B] focus:outline-none focus:ring-2 focus:ring-[#0284C7]"
             />
           </div>
 
           {/* Drag & Drop Binary File Upload Well */}
           <div>
-            <label className="block text-xs font-bold text-[#334155] dark:text-slate-300 mb-1.5">
+            <label className="block text-xs font-bold text-[#172033] dark:text-slate-200 mb-1.5">
               Release Binary File *
             </label>
             <div
               onClick={() => fileInputRef.current?.click()}
               className={`border-2 border-dashed rounded-2xl p-6 text-center transition-all cursor-pointer ${
                 selectedFile
-                  ? 'border-emerald-500 bg-emerald-50/50 dark:bg-emerald-950/20'
+                  ? 'border-emerald-500 bg-emerald-50/70 dark:bg-emerald-950/20'
                   : 'border-[#CBD5E1] dark:border-slate-700 hover:border-[#0284C7] bg-[#F8FAFC] dark:bg-slate-900/50'
               }`}
             >
@@ -679,8 +780,8 @@ export const ReleaseManagementSection: React.FC<ReleaseManagementSectionProps> =
                   <div className="w-10 h-10 rounded-xl bg-emerald-500/10 text-emerald-600 flex items-center justify-center">
                     <CheckCircle2 className="w-5 h-5" />
                   </div>
-                  <div className="text-xs font-bold text-[#0F172A] dark:text-white">{selectedFile.name}</div>
-                  <div className="text-[11px] text-[#64748B] dark:text-slate-400 font-mono">
+                  <div className="text-xs font-bold text-[#172033] dark:text-white">{selectedFile.name}</div>
+                  <div className="text-[11px] text-[#475569] dark:text-slate-400 font-mono">
                     Size: {formatFileSize(selectedFile.size)} · Type: {selectedFile.type || 'binary/octet-stream'}
                   </div>
                   <button
@@ -690,7 +791,7 @@ export const ReleaseManagementSection: React.FC<ReleaseManagementSectionProps> =
                       setSelectedFile(null);
                       if (fileInputRef.current) fileInputRef.current.value = '';
                     }}
-                    className="text-[11px] text-red-600 hover:underline pt-1"
+                    className="text-[11px] text-red-600 hover:underline pt-1 font-semibold"
                   >
                     Remove and choose another file
                   </button>
@@ -698,18 +799,15 @@ export const ReleaseManagementSection: React.FC<ReleaseManagementSectionProps> =
               ) : (
                 <div className="flex flex-col items-center justify-center space-y-2">
                   <UploadCloud className="w-8 h-8 text-[#0284C7]" />
-                  <div className="text-xs font-semibold text-[#0F172A] dark:text-white">
+                  <div className="text-xs font-semibold text-[#172033] dark:text-white">
                     Click to browse or drag & drop the official installer binary here
                   </div>
-                  <div className="text-[11px] text-[#64748B] dark:text-slate-400">
+                  <div className="text-[11px] text-[#475569] dark:text-slate-400">
                     Permitted for {formPlatform}:{' '}
                     <span className="font-mono font-bold text-[#0284C7]">
                       {(PERMITTED_PLATFORM_EXTENSIONS[formPlatform] || []).join(' or ')}
                     </span>{' '}
-                    · Max size:{' '}
-                    {formPlatform.startsWith('android') || formPlatform.startsWith('ios')
-                      ? `${MAX_MOBILE_RELEASE_SIZE_BYTES / (1024 * 1024)} MB`
-                      : `${MAX_DESKTOP_RELEASE_SIZE_BYTES / (1024 * 1024)} MB`}
+                    · Max size: 250 MB (250 MiB)
                   </div>
                 </div>
               )}
@@ -720,13 +818,13 @@ export const ReleaseManagementSection: React.FC<ReleaseManagementSectionProps> =
           {uploadProgress && (
             <div className="p-4 rounded-2xl bg-white dark:bg-slate-800 border border-[#CBD5E1] dark:border-slate-700 space-y-2">
               <div className="flex items-center justify-between text-xs font-semibold">
-                <span className="capitalize text-[#0284C7]">
+                <span className="capitalize text-[#0284C7] font-bold">
                   {uploadProgress.stage === 'hashing' && 'Calculating Client SHA-256 Checksum...'}
                   {uploadProgress.stage === 'uploading' && 'Streaming Binary to Cloudflare R2...'}
                   {uploadProgress.stage === 'verifying' && 'Verifying Integrity & Magic Headers...'}
                   {uploadProgress.stage === 'completed' && 'Upload & Verification Complete!'}
                 </span>
-                <span className="font-mono text-[#0F172A] dark:text-white">{uploadProgress.pct}%</span>
+                <span className="font-mono text-[#172033] dark:text-white font-bold">{uploadProgress.pct}%</span>
               </div>
               <div className="w-full bg-[#E2E8F0] dark:bg-slate-700 rounded-full h-2.5 overflow-hidden">
                 <div
@@ -756,7 +854,7 @@ export const ReleaseManagementSection: React.FC<ReleaseManagementSectionProps> =
                 type="button"
                 onClick={() => setShowUploadForm(false)}
                 disabled={isUploading}
-                className="px-4 py-2.5 rounded-xl border border-[#CBD5E1] dark:border-slate-700 text-xs font-semibold text-[#475569] hover:bg-[#F1F5F9] dark:hover:bg-slate-800 cursor-pointer"
+                className="px-4 py-2.5 rounded-xl border border-[#CBD5E1] dark:border-slate-700 text-xs font-semibold text-[#334155] dark:text-slate-300 hover:bg-[#F1F5F9] dark:hover:bg-slate-800 cursor-pointer"
               >
                 Cancel
               </button>
@@ -788,7 +886,7 @@ export const ReleaseManagementSection: React.FC<ReleaseManagementSectionProps> =
         {/* Filter Controls */}
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-[#D5E1E8] dark:border-slate-700 pb-4">
           <div className="flex flex-wrap items-center gap-2">
-            <span className="text-xs font-bold text-[#64748B] dark:text-slate-400 mr-1 flex items-center gap-1">
+            <span className="text-xs font-bold text-[#334155] dark:text-slate-400 mr-1 flex items-center gap-1">
               <Filter className="w-3 h-3" /> Filter:
             </span>
             {(['all', 'windows', 'macos', 'android', 'ios'] as const).map((p) => (
@@ -798,8 +896,8 @@ export const ReleaseManagementSection: React.FC<ReleaseManagementSectionProps> =
                 onClick={() => setPlatformFilter(p)}
                 className={`px-3 py-1 rounded-xl text-xs font-semibold capitalize transition-all cursor-pointer ${
                   platformFilter === p
-                    ? 'bg-[#0284C7] text-white shadow-xs'
-                    : 'bg-[#F1F5F9] dark:bg-slate-800 text-[#475569] dark:text-slate-300 hover:bg-[#E2E8F0]'
+                    ? 'bg-[#0284C7] text-white shadow-xs font-bold'
+                    : 'bg-[#F1F5F9] dark:bg-slate-800 text-[#475569] dark:text-slate-300 hover:bg-[#E2E8F0] dark:hover:bg-slate-700 hover:text-[#172033]'
                 }`}
               >
                 {p}
@@ -808,11 +906,11 @@ export const ReleaseManagementSection: React.FC<ReleaseManagementSectionProps> =
           </div>
 
           <div className="flex items-center gap-2">
-            <span className="text-xs text-[#64748B] dark:text-slate-400">Channel:</span>
+            <span className="text-xs font-semibold text-[#475569] dark:text-slate-400">Channel:</span>
             <select
               value={channelFilter}
               onChange={(e) => setChannelFilter(e.target.value as any)}
-              className="px-2.5 py-1 rounded-xl bg-white dark:bg-slate-800 border border-[#CBD5E1] dark:border-slate-700 text-xs font-semibold text-[#0F172A] dark:text-white cursor-pointer"
+              className="px-2.5 py-1 rounded-xl bg-white dark:bg-slate-800 border border-[#CBD5E1] dark:border-slate-700 text-xs font-semibold text-[#172033] dark:text-white cursor-pointer focus:outline-none focus:ring-2 focus:ring-[#0284C7]"
             >
               <option value="all">All Channels</option>
               <option value="stable">Stable</option>
@@ -824,28 +922,28 @@ export const ReleaseManagementSection: React.FC<ReleaseManagementSectionProps> =
 
         {/* Table or Cards */}
         {loading && releases.length === 0 ? (
-          <div className="py-12 text-center text-xs font-mono text-slate-500 flex items-center justify-center gap-2">
+          <div className="py-12 text-center text-xs font-mono text-[#475569] dark:text-slate-400 flex items-center justify-center gap-2">
             <RefreshCw className="w-4 h-4 animate-spin text-[#0284C7]" />
             <span>LOADING REGISTERED APPLICATION RELEASES...</span>
           </div>
         ) : filteredReleases.length === 0 ? (
-          <div className="py-12 text-center text-xs text-slate-500 space-y-2">
+          <div className="py-12 text-center text-xs text-[#475569] dark:text-slate-400 space-y-2">
             <HardDrive className="w-8 h-8 text-slate-400 mx-auto" />
-            <div className="font-semibold text-slate-700 dark:text-slate-300">No releases found matching criteria</div>
-            <p className="text-[11px] text-slate-400">Upload a new release using the button above.</p>
+            <div className="font-semibold text-[#172033] dark:text-slate-300">No releases found matching criteria</div>
+            <p className="text-[11px] text-[#475569] dark:text-slate-400">Upload a new release using the button above.</p>
           </div>
         ) : (
           <div className="overflow-x-auto">
             <table className="w-full text-left text-xs">
               <thead>
-                <tr className="border-b border-[#E2E8F0] dark:border-slate-700 text-[#64748B] dark:text-slate-400 uppercase text-[10px] font-mono tracking-wider">
-                  <th className="py-3 px-3">Product & Platform</th>
-                  <th className="py-3 px-3">Version & Channel</th>
-                  <th className="py-3 px-3">Format / Size</th>
-                  <th className="py-3 px-3">Status</th>
-                  <th className="py-3 px-3">SHA-256 Integrity</th>
-                  <th className="py-3 px-3">Updated By</th>
-                  <th className="py-3 px-3 text-right">Actions</th>
+                <tr className="border-b border-[#E2E8F0] dark:border-slate-700 text-[#334155] dark:text-slate-400 uppercase text-[10px] font-mono tracking-wider">
+                  <th className="py-3 px-3 font-bold">Product & Platform</th>
+                  <th className="py-3 px-3 font-bold">Version & Channel</th>
+                  <th className="py-3 px-3 font-bold">Format / Size</th>
+                  <th className="py-3 px-3 font-bold">Status</th>
+                  <th className="py-3 px-3 font-bold">SHA-256 Integrity</th>
+                  <th className="py-3 px-3 font-bold">Updated By</th>
+                  <th className="py-3 px-3 text-right font-bold">Actions</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-[#E2E8F0] dark:divide-slate-800">
@@ -861,10 +959,10 @@ export const ReleaseManagementSection: React.FC<ReleaseManagementSectionProps> =
                           {getPlatformIcon(rel.platform)}
                         </div>
                         <div>
-                          <div className="font-bold text-[#0F172A] dark:text-white">
+                          <div className="font-bold text-[#172033] dark:text-white">
                             {rel.productName || 'Orion-9'}
                           </div>
-                          <div className="text-[11px] text-[#64748B] dark:text-slate-400 font-mono">
+                          <div className="text-[11px] text-[#475569] dark:text-slate-400 font-mono">
                             {rel.platform}
                           </div>
                         </div>
@@ -874,32 +972,32 @@ export const ReleaseManagementSection: React.FC<ReleaseManagementSectionProps> =
                     {/* Version & Channel */}
                     <td className="py-3.5 px-3">
                       <div className="flex items-center gap-1.5">
-                        <span className="font-mono font-bold text-[#0F172A] dark:text-white text-xs">
+                        <span className="font-mono font-bold text-[#172033] dark:text-white text-xs">
                           v{rel.version}
                         </span>
                         <span
                           className={`px-1.5 py-0.5 rounded text-[10px] font-semibold uppercase ${
                             rel.channel === 'stable'
-                              ? 'bg-emerald-100 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-300'
+                              ? 'bg-emerald-100 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-300 border border-emerald-300 dark:border-emerald-700'
                               : rel.channel === 'beta'
-                                ? 'bg-amber-100 text-amber-800 dark:bg-amber-950 dark:text-amber-300'
-                                : 'bg-slate-100 text-slate-800 dark:bg-slate-800 dark:text-slate-300'
+                                ? 'bg-amber-100 text-amber-900 dark:bg-amber-950 dark:text-amber-300 border border-amber-300 dark:border-amber-700'
+                                : 'bg-slate-200 text-slate-800 dark:bg-slate-800 dark:text-slate-300 border border-slate-300 dark:border-slate-700'
                           }`}
                         >
                           {rel.channel}
                         </span>
                       </div>
-                      <div className="text-[10px] text-slate-400 font-mono mt-0.5">
+                      <div className="text-[10px] text-[#475569] dark:text-slate-400 font-mono mt-0.5">
                         {rel.publishedAt ? new Date(rel.publishedAt).toLocaleDateString() : rel.releaseDate}
                       </div>
                     </td>
 
                     {/* Format / Size */}
                     <td className="py-3.5 px-3">
-                      <div className="font-bold uppercase text-[#0F172A] dark:text-white font-mono">
+                      <div className="font-bold uppercase text-[#263449] dark:text-white font-mono">
                         .{rel.format}
                       </div>
-                      <div className="text-[11px] text-[#64748B] dark:text-slate-400 font-mono">
+                      <div className="text-[11px] text-[#475569] dark:text-slate-400 font-mono">
                         {formatFileSize(rel.sizeBytes)}
                       </div>
                     </td>
@@ -911,13 +1009,13 @@ export const ReleaseManagementSection: React.FC<ReleaseManagementSectionProps> =
                     <td className="py-3.5 px-3">
                       {rel.sha256 ? (
                         <div className="flex items-center gap-1.5">
-                          <code className="text-[10px] font-mono text-[#0284C7] bg-[#0284C7]/5 px-2 py-0.5 rounded border border-[#0284C7]/15 max-w-[120px] truncate">
+                          <code className="text-[10px] font-mono text-[#0284C7] bg-[#0284C7]/10 dark:bg-sky-950/60 px-2 py-0.5 rounded border border-[#0284C7]/20 dark:border-sky-800 max-w-[120px] truncate">
                             {rel.sha256.slice(0, 10)}...{rel.sha256.slice(-6)}
                           </code>
                           <button
                             type="button"
                             onClick={() => copyToClipboard(rel.sha256, 'hash', rel.id)}
-                            className="p-1 rounded text-slate-400 hover:text-[#0284C7] cursor-pointer"
+                            className="p-1 rounded text-[#475569] dark:text-slate-400 hover:text-[#0284C7] cursor-pointer"
                             title="Copy full SHA-256 hash"
                           >
                             {copiedHashId === rel.id ? (
@@ -928,12 +1026,12 @@ export const ReleaseManagementSection: React.FC<ReleaseManagementSectionProps> =
                           </button>
                         </div>
                       ) : (
-                        <span className="text-[11px] text-slate-400 italic">No hash</span>
+                        <span className="text-[11px] text-[#475569] dark:text-slate-400 italic">No hash</span>
                       )}
                     </td>
 
                     {/* Updated By */}
-                    <td className="py-3.5 px-3 text-[11px] text-[#64748B] dark:text-slate-400 font-mono truncate max-w-[130px]">
+                    <td className="py-3.5 px-3 text-[11px] text-[#475569] dark:text-slate-400 font-mono truncate max-w-[130px]">
                       {rel.updatedBy || rel.createdBy || 'System'}
                     </td>
 
@@ -944,7 +1042,7 @@ export const ReleaseManagementSection: React.FC<ReleaseManagementSectionProps> =
                         <button
                           type="button"
                           onClick={() => setSelectedRelease(rel)}
-                          className="p-1.5 rounded-lg border border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700 cursor-pointer"
+                          className="p-1.5 rounded-lg border border-[#CBD5E1] dark:border-slate-700 text-[#334155] dark:text-slate-300 hover:bg-[#F1F5F9] dark:hover:bg-slate-700 cursor-pointer"
                           title="View release details"
                         >
                           <Eye className="w-3.5 h-3.5" />
@@ -955,7 +1053,7 @@ export const ReleaseManagementSection: React.FC<ReleaseManagementSectionProps> =
                           <button
                             type="button"
                             onClick={() => copyToClipboard(rel.downloadUrl, 'url', rel.id)}
-                            className="p-1.5 rounded-lg border border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700 cursor-pointer"
+                            className="p-1.5 rounded-lg border border-[#CBD5E1] dark:border-slate-700 text-[#334155] dark:text-slate-300 hover:bg-[#F1F5F9] dark:hover:bg-slate-700 cursor-pointer"
                             title="Copy download URL"
                           >
                             {copiedUrlId === rel.id ? (
@@ -1005,7 +1103,7 @@ export const ReleaseManagementSection: React.FC<ReleaseManagementSectionProps> =
                           <button
                             type="button"
                             onClick={() => setConfirmAction({ type: 'delete', release: rel })}
-                            className="p-1.5 rounded-lg text-red-500 hover:bg-red-50 dark:hover:bg-red-950/40 cursor-pointer"
+                            className="p-1.5 rounded-lg text-red-600 hover:bg-red-50 dark:hover:bg-red-950/40 cursor-pointer"
                             title="Delete release record"
                           >
                             <Trash2 className="w-3.5 h-3.5" />
@@ -1024,17 +1122,17 @@ export const ReleaseManagementSection: React.FC<ReleaseManagementSectionProps> =
       {/* DETAIL MODAL */}
       {selectedRelease && (
         <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-xs flex items-center justify-center p-4">
-          <div className="bg-white dark:bg-slate-900 rounded-3xl border border-slate-200 dark:border-slate-700 max-w-2xl w-full p-6 sm:p-8 space-y-5 shadow-2xl animate-in zoom-in-95 duration-150">
-            <div className="flex items-center justify-between border-b border-slate-200 dark:border-slate-800 pb-4">
+          <div className="bg-white dark:bg-slate-900 rounded-3xl border border-[#CBD5E1] dark:border-slate-700 max-w-2xl w-full p-6 sm:p-8 space-y-5 shadow-2xl animate-in zoom-in-95 duration-150">
+            <div className="flex items-center justify-between border-b border-[#CBD5E1] dark:border-slate-800 pb-4">
               <div className="flex items-center gap-3">
                 <div className="w-10 h-10 rounded-xl bg-slate-100 dark:bg-slate-800 flex items-center justify-center">
                   {getPlatformIcon(selectedRelease.platform)}
                 </div>
                 <div>
-                  <h3 className="text-base font-bold text-[#0F172A] dark:text-white">
+                  <h3 className="text-base font-bold text-[#172033] dark:text-white">
                     {selectedRelease.productName} v{selectedRelease.version}
                   </h3>
-                  <div className="flex items-center gap-2 text-xs font-mono text-slate-500">
+                  <div className="flex items-center gap-2 text-xs font-mono text-[#475569] dark:text-slate-400">
                     <span>{selectedRelease.platform}</span>
                     <span>·</span>
                     <span>{selectedRelease.format.toUpperCase()}</span>
@@ -1044,7 +1142,7 @@ export const ReleaseManagementSection: React.FC<ReleaseManagementSectionProps> =
               <button
                 type="button"
                 onClick={() => setSelectedRelease(null)}
-                className="p-2 rounded-xl text-slate-400 hover:text-slate-600 dark:hover:text-white cursor-pointer"
+                className="p-2 rounded-xl text-slate-400 hover:text-[#172033] dark:hover:text-white cursor-pointer"
               >
                 <X className="w-5 h-5" />
               </button>
@@ -1052,20 +1150,20 @@ export const ReleaseManagementSection: React.FC<ReleaseManagementSectionProps> =
 
             <div className="space-y-4 text-xs">
               <div className="grid grid-cols-2 gap-3">
-                <div className="p-3 rounded-xl bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-700">
-                  <div className="text-[10px] font-mono text-slate-400 uppercase">Status</div>
+                <div className="p-3 rounded-xl bg-slate-50 dark:bg-slate-800/60 border border-[#CBD5E1] dark:border-slate-700">
+                  <div className="text-[10px] font-mono font-bold text-[#475569] dark:text-slate-400 uppercase">Status</div>
                   <div className="mt-1">{getStatusBadge(selectedRelease.status)}</div>
                 </div>
-                <div className="p-3 rounded-xl bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-700">
-                  <div className="text-[10px] font-mono text-slate-400 uppercase">Package Size</div>
-                  <div className="font-mono font-bold text-slate-800 dark:text-slate-200 mt-1">
+                <div className="p-3 rounded-xl bg-slate-50 dark:bg-slate-800/60 border border-[#CBD5E1] dark:border-slate-700">
+                  <div className="text-[10px] font-mono font-bold text-[#475569] dark:text-slate-400 uppercase">Package Size</div>
+                  <div className="font-mono font-bold text-[#172033] dark:text-slate-200 mt-1">
                     {formatFileSize(selectedRelease.sizeBytes)} ({selectedRelease.sizeBytes.toLocaleString()} bytes)
                   </div>
                 </div>
               </div>
 
               {/* SHA-256 Box */}
-              <div className="p-3.5 rounded-xl bg-[#0B1528] text-white space-y-1.5">
+              <div className="p-3.5 rounded-xl bg-[#0B1528] text-white space-y-1.5 border border-[#1E293B]">
                 <div className="flex items-center justify-between text-[11px] text-slate-300">
                   <span className="font-bold flex items-center gap-1.5 text-sky-400">
                     <Hash className="w-3.5 h-3.5" /> Verified Cryptographic SHA-256
@@ -1085,19 +1183,19 @@ export const ReleaseManagementSection: React.FC<ReleaseManagementSectionProps> =
               </div>
 
               {/* Download URL Box */}
-              <div className="p-3.5 rounded-xl bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-700 space-y-1">
+              <div className="p-3.5 rounded-xl bg-slate-50 dark:bg-slate-800/60 border border-[#CBD5E1] dark:border-slate-700 space-y-1">
                 <div className="flex items-center justify-between text-[11px]">
-                  <span className="font-bold text-slate-700 dark:text-slate-300">Authoritative CDN Streaming URL</span>
+                  <span className="font-bold text-[#172033] dark:text-slate-200">Authoritative CDN Streaming URL</span>
                   <button
                     type="button"
                     onClick={() => copyToClipboard(selectedRelease.downloadUrl, 'url', selectedRelease.id)}
-                    className="inline-flex items-center gap-1 text-[10px] font-mono text-[#0284C7] hover:underline cursor-pointer"
+                    className="inline-flex items-center gap-1 text-[10px] font-mono text-[#0284C7] hover:underline cursor-pointer font-bold"
                   >
                     <Copy className="w-3 h-3" />
                     <span>Copy URL</span>
                   </button>
                 </div>
-                <div className="font-mono text-[11px] text-slate-600 dark:text-slate-400 break-all select-all">
+                <div className="font-mono text-[11px] text-[#334155] dark:text-slate-300 break-all select-all">
                   {selectedRelease.downloadUrl}
                 </div>
               </div>
@@ -1105,8 +1203,8 @@ export const ReleaseManagementSection: React.FC<ReleaseManagementSectionProps> =
               {/* Release Notes */}
               {selectedRelease.releaseNotes && selectedRelease.releaseNotes.length > 0 && (
                 <div className="space-y-1.5">
-                  <div className="font-bold text-slate-700 dark:text-slate-300">Release Notes:</div>
-                  <ul className="list-disc list-inside space-y-1 text-slate-600 dark:text-slate-400 pl-1">
+                  <div className="font-bold text-[#172033] dark:text-slate-200">Release Notes:</div>
+                  <ul className="list-disc list-inside space-y-1 text-[#334155] dark:text-slate-300 pl-1">
                     {selectedRelease.releaseNotes.map((note, idx) => (
                       <li key={idx}>{note}</li>
                     ))}
@@ -1117,12 +1215,12 @@ export const ReleaseManagementSection: React.FC<ReleaseManagementSectionProps> =
               {/* External URL if present */}
               {selectedRelease.externalUrl && (
                 <div className="flex items-center gap-2 pt-1">
-                  <span className="font-bold text-slate-700 dark:text-slate-300">External Store:</span>
+                  <span className="font-bold text-[#172033] dark:text-slate-200">External Store:</span>
                   <a
                     href={selectedRelease.externalUrl}
                     target="_blank"
                     rel="noreferrer"
-                    className="text-[#0284C7] hover:underline inline-flex items-center gap-1 font-mono"
+                    className="text-[#0284C7] hover:underline inline-flex items-center gap-1 font-mono font-bold"
                   >
                     <span>{selectedRelease.externalUrl}</span>
                     <ExternalLink className="w-3 h-3" />
@@ -1135,7 +1233,7 @@ export const ReleaseManagementSection: React.FC<ReleaseManagementSectionProps> =
               <button
                 type="button"
                 onClick={() => setSelectedRelease(null)}
-                className="px-4 py-2 rounded-xl bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 text-xs font-semibold hover:bg-slate-200 cursor-pointer"
+                className="px-4 py-2 rounded-xl bg-slate-100 dark:bg-slate-800 text-[#334155] dark:text-slate-300 text-xs font-semibold hover:bg-slate-200 dark:hover:bg-slate-700 cursor-pointer"
               >
                 Close
               </button>
@@ -1147,7 +1245,7 @@ export const ReleaseManagementSection: React.FC<ReleaseManagementSectionProps> =
       {/* CONFIRMATION MODAL */}
       {confirmAction && (
         <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-xs flex items-center justify-center p-4">
-          <div className="bg-white dark:bg-slate-900 rounded-3xl border border-slate-200 dark:border-slate-700 max-w-md w-full p-6 sm:p-8 space-y-5 shadow-2xl animate-in zoom-in-95 duration-150">
+          <div className="bg-white dark:bg-slate-900 rounded-3xl border border-[#CBD5E1] dark:border-slate-700 max-w-md w-full p-6 sm:p-8 space-y-5 shadow-2xl animate-in zoom-in-95 duration-150">
             <div className="flex items-center gap-3">
               <div
                 className={`w-10 h-10 rounded-xl flex items-center justify-center shrink-0 ${
@@ -1167,36 +1265,36 @@ export const ReleaseManagementSection: React.FC<ReleaseManagementSectionProps> =
                 )}
               </div>
               <div>
-                <h3 className="text-base font-bold text-[#0F172A] dark:text-white capitalize">
+                <h3 className="text-base font-bold text-[#172033] dark:text-white capitalize">
                   {confirmAction.type === 'rollback'
                     ? 'Confirm Rollback'
                     : `${confirmAction.type} Release`}
                 </h3>
-                <div className="text-xs text-slate-500 font-mono">
+                <div className="text-xs text-[#475569] dark:text-slate-400 font-mono">
                   {confirmAction.release.filename} (v{confirmAction.release.version})
                 </div>
               </div>
             </div>
 
-            <p className="text-xs text-slate-600 dark:text-slate-400 leading-relaxed">
+            <p className="text-xs text-[#334155] dark:text-slate-300 leading-relaxed">
               {confirmAction.type === 'publish' && (
                 <>
-                  Are you sure you want to publish <strong className="text-[#0F172A] dark:text-white">v{confirmAction.release.version}</strong>? This will immediately make it the active production distribution for <strong className="text-[#0F172A] dark:text-white">{confirmAction.release.platform}</strong>, and mark any previous active release as superseded.
+                  Are you sure you want to publish <strong className="text-[#172033] dark:text-white">v{confirmAction.release.version}</strong>? This will immediately make it the active production distribution for <strong className="text-[#172033] dark:text-white">{confirmAction.release.platform}</strong>, and mark any previous active release as superseded.
                 </>
               )}
               {confirmAction.type === 'unpublish' && (
                 <>
-                  Are you sure you want to unpublish <strong className="text-[#0F172A] dark:text-white">v{confirmAction.release.version}</strong>? Public users will no longer be able to download this version from the website until another release is published.
+                  Are you sure you want to unpublish <strong className="text-[#172033] dark:text-white">v{confirmAction.release.version}</strong>? Public users will no longer be able to download this version from the website until another release is published.
                 </>
               )}
               {confirmAction.type === 'rollback' && (
                 <>
-                  Are you sure you want to roll back the distribution to <strong className="text-[#0F172A] dark:text-white">v{confirmAction.release.version}</strong>? It will become the live published release for {confirmAction.release.platform}.
+                  Are you sure you want to roll back the distribution to <strong className="text-[#172033] dark:text-white">v{confirmAction.release.version}</strong>? It will become the live published release for <strong className="text-[#172033] dark:text-white">{confirmAction.release.platform}</strong>.
                 </>
               )}
               {confirmAction.type === 'delete' && (
                 <>
-                  Are you sure you want to delete the release record for <strong className="text-[#0F172A] dark:text-white">{confirmAction.release.filename}</strong>? This cannot be undone.
+                  Are you sure you want to delete the release record for <strong className="text-[#172033] dark:text-white">{confirmAction.release.filename}</strong>? This cannot be undone.
                 </>
               )}
             </p>
@@ -1206,7 +1304,7 @@ export const ReleaseManagementSection: React.FC<ReleaseManagementSectionProps> =
                 type="button"
                 onClick={() => setConfirmAction(null)}
                 disabled={isActionPending}
-                className="px-4 py-2 rounded-xl border border-slate-200 dark:border-slate-700 text-xs font-semibold text-slate-700 dark:text-slate-300 hover:bg-slate-100 cursor-pointer"
+                className="px-4 py-2 rounded-xl border border-[#CBD5E1] dark:border-slate-700 text-xs font-semibold text-[#334155] dark:text-slate-300 hover:bg-[#F1F5F9] dark:hover:bg-slate-800 cursor-pointer"
               >
                 Cancel
               </button>

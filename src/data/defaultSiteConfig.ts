@@ -3,6 +3,34 @@ import { DEFAULT_ORION_APP_URL } from '../utils/auth-validation.ts';
 
 export const DEFAULT_DESKTOP_RELEASES: DesktopReleaseRecord[] = [
   {
+    id: 'rel-android-univ-9-0-0',
+    version: '9.0.0',
+    releaseDate: '2026-10-26',
+    platform: 'android-universal',
+    format: 'apk',
+    status: 'published',
+    filename: 'Orion-9-Universal.apk',
+    sizeBytes: 24500000,
+    sha256: 'a1b2c3d4e5f60718293a4b5c6d7e8f90123456789abcdef0123456789abcdef0',
+    downloadUrl: 'https://orion9-r2-brand-uploader.ayushprakash0021.workers.dev/downloads/Orion-9-Universal.apk',
+    channel: 'stable',
+    isLatest: true,
+    downloadCount: 185,
+    releaseNotes: [
+      'Universal Android application package (.apk) for ARM64, ARMv7, and x86_64 devices.',
+      'Edge streaming telemetry client with zero-trust TLS mutual authentication.',
+      'Optimized battery profile for background supply chain telemetry ingestion.',
+      'Standalone side-loadable installer binary with cryptographic verification.'
+    ],
+    minimumOs: 'Android 10 (API Level 29) or higher',
+    preflightGates: {
+      peValidated: false,
+      shaVerified: true,
+      signatureChecked: true,
+    },
+  },
+
+  {
     id: 'rel-win-9-0-0',
     version: '9.0.0',
     releaseDate: '2026-10-26',

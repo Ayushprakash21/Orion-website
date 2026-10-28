@@ -215,6 +215,9 @@ export const OrionWorldExperience: React.FC = () => {
       const scrollable = Math.max(1, container.offsetHeight - window.innerHeight);
       const raw = clamp01(-rect.top / scrollable);
       scrollProgressRef.current = raw;
+      const state = evaluateWorldScrollState(raw);
+      setHudState(state);
+      autoStage7IndexRef.current = state.activeStage7Index;
     };
 
     handleScroll();
@@ -235,7 +238,7 @@ export const OrionWorldExperience: React.FC = () => {
     const width = mount.clientWidth || window.innerWidth;
     const height = mount.clientHeight || window.innerHeight;
 
-    const currentIsDark = document.documentElement.classList.contains('dark');
+    const currentIsDark = isDark || document.documentElement.classList.contains('dark');
     const scene = new THREE.Scene();
     sceneRef.current = scene;
     const skyColor = new THREE.Color(currentIsDark ? 0x000000 : 0xe6f3fb);
@@ -388,6 +391,9 @@ export const OrionWorldExperience: React.FC = () => {
       // Smooth scroll lerp for stable, cinematic camera gliding
       // Supports both manual scrolling and automatic 10-second stage transitions
       const rawScroll = scrollProgressRef.current;
+      if (smoothedScrollRef.current === 0 && rawScroll > 0.05) {
+        smoothedScrollRef.current = rawScroll;
+      }
       let targetProgress = rawScroll;
       if (
         isAutoAdvancingRef.current &&
@@ -583,6 +589,9 @@ export const OrionWorldExperience: React.FC = () => {
       className="relative w-full h-[480vh] bg-[#E6F3FB] dark:bg-black select-none overflow-visible transition-colors duration-300"
       aria-label="Orion-9 3D Supply Chain Operating World and Process"
     >
+      {/* Anchor marker for direct navigation to Stage 0: Raw Material Origins */}
+      <div id="stage-raw-materials" className="absolute top-[22%] left-0 w-px h-px pointer-events-none opacity-0" aria-hidden="true" />
+
       {/* Sticky Full-Viewport 3D Stage */}
       <div className="sticky top-0 left-0 w-full h-screen overflow-hidden">
         {/* Dedicated WebGL Canvas Mount */}
@@ -619,20 +628,22 @@ export const OrionWorldExperience: React.FC = () => {
             <button
               type="button"
               onClick={() => scrollToNormalizedProgress(0.18)}
-              className="px-5 py-2.5 rounded-lg bg-white dark:bg-[#0B0B0B] border border-[#BDD6E8] dark:border-white/10 text-xs font-semibold text-[#070B19] dark:text-[#F5F5F7] hover:border-[#070B19] dark:hover:border-white/30 transition-colors cursor-pointer shadow-xs flex items-center gap-2"
+              className="px-5 py-2.5 rounded-lg bg-white dark:bg-[#0B0B0B] border border-[#BDD6E8] dark:border-white/10 text-xs font-semibold text-[#172033] dark:text-[#F5F5F7] hover:border-[#172033] dark:hover:border-white/30 transition-colors cursor-pointer shadow-xs flex items-center gap-2"
             >
               <span>Scroll to Discover Our Process</span>
-              <ArrowRight className="w-3.5 h-3.5 text-[#0284C7]" />
+              <ArrowRight className="w-3.5 h-3.5 text-[#0284C7] dark:text-[#38BDF8]" />
             </button>
-            <div className="w-px h-6 sm:h-8 bg-[#070B19]/40 dark:bg-white/20 mt-1" />
+            <div className="w-px h-6 sm:h-8 bg-[#172033]/40 dark:bg-white/20 mt-1" />
           </div>
         </div>
 
         {/* ==========================================================================
-            2. MINIMAL DYNAMIC LEFT-ALIGNED STAGE HEADING INDICATOR
-               Replaces large card, badges, descriptions, telemetry tags, and numbered
-               navigation strip with pure, left-aligned typography, subtle transition,
-               and restrained cyan accent dot.
+            2. HIGH-CONTRAST DYNAMIC STAGE INDICATOR OVERLAY
+               Engineered with frosted contrasting liquid-glass pill and strict
+               theme-adaptive high-contrast typography:
+               - Light background: Dark Navy (#172033) primary, Medium-Dark Grey (#475569) secondary
+               - Dark background: #F5F5F7 primary, #94A3B8 secondary
+               - Semantic status accent: High-contrast Cyan (#0284C7 on light, #38BDF8 on dark)
            ========================================================================== */}
         <div
           style={{
@@ -649,15 +660,51 @@ export const OrionWorldExperience: React.FC = () => {
               animate={prefersReducedMotion ? { opacity: 1 } : { opacity: 1, x: 0 }}
               exit={prefersReducedMotion ? { opacity: 0 } : { opacity: 0, x: 10 }}
               transition={{ duration: 0.38, ease: [0.16, 1, 0.3, 1] }}
-              className="flex items-center gap-2.5 sm:gap-3"
+              className={`flex items-center gap-3 px-4 py-2.5 sm:px-5 sm:py-3 rounded-2xl backdrop-blur-md transition-all ${
+                isDark
+                  ? 'bg-[#0B0D13]/90 border border-white/12 shadow-[0_4px_24px_rgba(0,0,0,0.5)]'
+                  : 'bg-white/92 border border-[#172033]/12 shadow-[0_4px_24px_rgba(23,32,51,0.08)]'
+              }`}
             >
               <span
-                className="w-2 h-2 sm:w-2.5 sm:h-2.5 rounded-full bg-[#0284C7] shadow-[0_0_10px_rgba(2,132,199,0.75)] shrink-0"
+                className={`w-2.5 h-2.5 rounded-full shrink-0 ${
+                  isDark
+                    ? 'bg-[#38BDF8] shadow-[0_0_10px_rgba(56,189,248,0.75)]'
+                    : 'bg-[#0284C7] shadow-[0_0_10px_rgba(2,132,199,0.75)]'
+                }`}
                 aria-hidden="true"
               />
-              <h2 className="font-editorial text-lg sm:text-2xl md:text-[26px] font-bold tracking-[-0.015em] text-[#070B19] dark:text-[#F5F5F7] select-none whitespace-nowrap drop-shadow-xs">
-                {STAGE_HEADINGS[hudState.activeStage7Index] || STAGE_HEADINGS[0]}
-              </h2>
+              <div className="flex flex-col">
+                <div className="flex items-center gap-2 leading-none mb-1">
+                  <span
+                    className={`font-mono text-[10px] sm:text-[11px] font-bold tracking-wider uppercase ${
+                      isDark ? 'text-[#94A3B8]' : 'text-[#475569]'
+                    }`}
+                  >
+                    STAGE {SUPPLY_CHAIN_7_STAGES[hudState.activeStage7Index]?.number || '01'} / 07
+                  </span>
+                  <span
+                    className={`text-[10px] ${isDark ? 'text-[#64748B]' : 'text-[#94A3B8]'}`}
+                    aria-hidden="true"
+                  >
+                    ·
+                  </span>
+                  <span
+                    className={`font-mono text-[10px] sm:text-[11px] font-semibold uppercase tracking-wider ${
+                      isDark ? 'text-[#38BDF8]' : 'text-[#0284C7]'
+                    }`}
+                  >
+                    {SUPPLY_CHAIN_7_STAGES[hudState.activeStage7Index]?.stageName || 'ORIGIN'}
+                  </span>
+                </div>
+                <h2
+                  className={`font-editorial text-lg sm:text-2xl md:text-[26px] font-bold tracking-[-0.015em] select-none whitespace-nowrap leading-tight ${
+                    isDark ? 'text-[#F5F5F7]' : 'text-[#172033]'
+                  }`}
+                >
+                  {STAGE_HEADINGS[hudState.activeStage7Index] || STAGE_HEADINGS[0]}
+                </h2>
+              </div>
             </motion.div>
           </AnimatePresence>
         </div>

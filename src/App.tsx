@@ -65,6 +65,19 @@ const AppContent: React.FC = () => {
       }
     };
     window.addEventListener('popstate', handlePopState);
+
+    if (window.location.hash) {
+      const hash = window.location.hash.replace('#', '');
+      setTimeout(() => {
+        const el = document.getElementById(hash);
+        if (el) {
+          const navHeight = 92;
+          const targetTop = el.getBoundingClientRect().top + window.scrollY - navHeight;
+          window.scrollTo({ top: Math.max(0, targetTop), behavior: 'instant' });
+          window.dispatchEvent(new Event('scroll'));
+        }
+      }, 250);
+    }
     return () => window.removeEventListener('popstate', handlePopState);
   }, []);
 

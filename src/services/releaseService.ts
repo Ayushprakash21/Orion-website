@@ -56,9 +56,10 @@ export interface UploadReleaseResponse {
   error?: string;
 }
 
-// Configurable file size limits (matching Cloudflare Worker limits)
-export const MAX_DESKTOP_RELEASE_SIZE_BYTES = 200 * 1024 * 1024; // 200 MB
-export const MAX_MOBILE_RELEASE_SIZE_BYTES = 150 * 1024 * 1024; // 150 MB
+// Unified release file size limit: 250 MB (250 MiB / 262,144,000 bytes)
+export const MAX_RELEASE_FILE_SIZE_BYTES = 262144000;
+export const MAX_DESKTOP_RELEASE_SIZE_BYTES = MAX_RELEASE_FILE_SIZE_BYTES;
+export const MAX_MOBILE_RELEASE_SIZE_BYTES = MAX_RELEASE_FILE_SIZE_BYTES;
 
 export const PERMITTED_PLATFORM_EXTENSIONS: Record<string, string[]> = {
   'windows-x64': ['.exe', '.msi'],

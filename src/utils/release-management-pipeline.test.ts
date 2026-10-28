@@ -148,6 +148,7 @@ describe('Orion-9 Release & Distribution Manager Master Pipeline Test Suite', ()
     assert.equal(res.status, 413);
     const data = await res.json();
     assert.equal(data.code, 'file_too_large');
+    assert.match(data.error, /File exceeds the maximum allowed size of 250 MiB/);
   });
 
   // Test 5: Invalid binary magic bytes handling (Rejecting HTML renamed as .exe)
@@ -416,5 +417,81 @@ describe('Orion-9 Release & Distribution Manager Master Pipeline Test Suite', ()
     const res = await deleteApplicationRelease('rel-published', 'admin@orion-9.com', list);
     assert.equal(res.success, false);
     assert.match(res.error || '', /Cannot delete an active published release/i);
+  });
+
+  // Test 17: Android APK upload end-to-end pipeline
+  it('17. Android APK upload end-to-end: Validates APK magic header, hashes, and stores in R2', async () => {
+    const bucket = new MockR2Bucket();
+    const env = createTestEnv(bucket);
+
+    const validApkZipBytes = new Uint8Array([0x50, 0x4b, 0x03, 0x04, 0x00, 0x01, 0x02, 0x03]);
+    const file = new File([validApkZipBytes], 'Orion-9-Mobile.apk', { type: 'application/vnd.android.package-archive' });
+
+    // Client-side validation check
+    const clientValidation = await validateReleaseBinaryHeader(file, 'android-universal');
+    assert.equal(clientValidation.valid, true);
+    assert.equal(clientValidation.detectedFormat, 'APK');
+
+    const formData = new FormData();
+    formData.append('file', file, 'Orion-9-Mobile.apk');
+    formData.append('platform', 'android-universal');
+    formData.append('version', '9.3.0');
+    formData.append('channel', 'stable');
+
+    const req = new Request('http://localhost:5173/api/releases/upload', {
+      method: 'POST',
+      headers: {
+        Origin: 'http://localhost:5173',
+        Authorization: 'Bearer mock-local-dev-admin-token',
+      },
+      body: formData,
+    });
+
+    const res = await worker.fetch(req, env);
+    assert.equal(res.status, 200);
+    const data = await res.json();
+    assert.equal(data.success, true);
+    assert.equal(data.filename, 'Orion-9-Mobile.apk');
+    assert.equal(data.key, 'releases/android/9.3.0/Orion-9-Mobile.apk');
+    assert.equal(data.contentType, 'application/vnd.android.package-archive');
+    assert.equal(data.sha256.length, 64);
+
+    // Verify stored object in R2
+    const stored = await bucket.get('releases/android/9.3.0/Orion-9-Mobile.apk');
+    assert.ok(stored);
+    assert.equal(stored.size, validApkZipBytes.length);
+  });
+
+  // Test 18: Rejection of corrupted or fake Android APKs
+  it('18. Android APK validation rejection: Rejects non-ZIP/corrupt APK payloads', async () => {
+    const fakeApkBytes = new Uint8Array([0x00, 0x11, 0x22, 0x33]);
+    const file = new File([fakeApkBytes], 'corrupt.apk', { type: 'application/vnd.android.package-archive' });
+    const check = await validateReleaseBinaryHeader(file, 'android-universal');
+    assert.equal(check.valid, false);
+    assert.match(check.error || '', /Missing authentic ZIP\/APK archive signature/i);
+  });
+
+  // Test 19: 250 MB Maximum release file size limit enforcement
+  it('19. Maximum release file size limit: Exactly enforces 250 MB (262,144,000 bytes)', async () => {
+    // 250 MiB = 262,144,000 bytes
+    assert.equal(MAX_DESKTOP_RELEASE_SIZE_BYTES, 262144000);
+    assert.equal(MAX_MOBILE_RELEASE_SIZE_BYTES, 262144000);
+
+    // Create a mock oversized file exceeding 250 MB (262,144,001 bytes)
+    const mockBigFile = {
+      name: 'large-release.apk',
+      size: 262144001,
+      slice: () => new Blob([]),
+    } as unknown as File;
+
+    const validation = await validateReleaseBinaryHeader(mockBigFile, 'android-universal');
+    assert.equal(validation.valid, false);
+    assert.match(validation.error || '', /exceeds maximum permitted size of 250 MB/i);
+  });
+
+  // Test 20: Platform extensions include Android APK for both universal and arm64
+  it('20. Platform extension registry: Validates Android universal and arm64 support .apk', () => {
+    assert.deepEqual(PERMITTED_PLATFORM_EXTENSIONS['android-universal'], ['.apk']);
+    assert.deepEqual(PERMITTED_PLATFORM_EXTENSIONS['android-arm64'], ['.apk']);
   });
 });

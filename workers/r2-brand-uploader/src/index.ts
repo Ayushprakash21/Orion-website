@@ -43,8 +43,9 @@ export interface Env {
 }
 
 const MAX_FILE_SIZE_BYTES = 5 * 1024 * 1024; // 5 MB for logos
-export const MAX_DESKTOP_RELEASE_SIZE_BYTES = 200 * 1024 * 1024; // 200 MB for Desktop (.exe, .dmg)
-export const MAX_MOBILE_RELEASE_SIZE_BYTES = 150 * 1024 * 1024; // 150 MB for Mobile (.apk, .ipa)
+export const MAX_RELEASE_FILE_SIZE_BYTES = 262144000; // 250 MiB (250 MB)
+export const MAX_DESKTOP_RELEASE_SIZE_BYTES = MAX_RELEASE_FILE_SIZE_BYTES;
+export const MAX_MOBILE_RELEASE_SIZE_BYTES = MAX_RELEASE_FILE_SIZE_BYTES;
 
 export const ALLOWED_RELEASE_EXTENSIONS: Record<string, Set<string>> = {
   windows: new Set(['.exe', '.msi']),
@@ -692,7 +693,7 @@ export default {
         const maxMb = (maxAllowedBytes / (1024 * 1024)).toFixed(0);
         return jsonResponse(
           {
-            error: `File size (${mb} MB) exceeds maximum allowed size of ${maxMb} MB for ${platformFamily}.`,
+            error: `File exceeds the maximum allowed size of 250 MiB. (File size ${mb} MB exceeds limit of ${maxMb} MB).`,
             code: 'file_too_large',
           },
           413,
