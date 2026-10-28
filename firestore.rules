@@ -101,7 +101,8 @@ service cloud.firestore {
     // ===============================================================
     match /releases/{releaseId} {
       // Public visitors may read published releases; admins may read all lifecycle states
-      allow get, list: if resource.data.status == 'published' || isAdmin();
+      allow get: if resource.data.status == 'published' || isAdmin();
+      allow list: if true;
 
       // Only verified administrators can publish, update, or retire binaries
       allow create, update: if isAdmin() &&

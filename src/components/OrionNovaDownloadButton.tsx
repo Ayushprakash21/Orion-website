@@ -103,20 +103,20 @@ export const OrionNovaDownloadButton: React.FC<OrionNovaDownloadButtonProps> = (
                 initial={{ opacity: 0, scale: 0.7 }}
                 animate={{ opacity: 1, scale: 1 }}
                 exit={{ opacity: 0, scale: 0.5 }}
-                className="flex items-center justify-center gap-2 px-4 w-full"
+                className="flex items-center justify-center gap-2 px-2.5 sm:px-4 w-full min-w-0"
               >
                 {!isAuthenticated ? (
                   <>
-                    <Lock className="w-4 h-4 text-white/90 shrink-0" />
-                    <span className="font-bold tracking-tight truncate">
+                    <Lock className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-white/90 shrink-0" />
+                    <span className="font-bold tracking-tight truncate text-xs sm:text-sm">
                       Authenticate to Download {filename}
                     </span>
                   </>
                 ) : (
                   <>
-                    <Download className="w-4 h-4 text-white shrink-0" />
-                    <span className="font-bold tracking-tight truncate">
-                      Download {filename} <span className="font-normal opacity-90 text-xs ml-1">(v{version})</span>
+                    <Download className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-white shrink-0" />
+                    <span className="font-bold tracking-tight truncate text-xs sm:text-sm">
+                      Download {filename} <span className="font-normal opacity-90 text-[11px] sm:text-xs ml-1">(v{version})</span>
                     </span>
                   </>
                 )}
