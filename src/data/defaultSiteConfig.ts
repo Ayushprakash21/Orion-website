@@ -306,7 +306,7 @@ export const DEFAULT_SITE_CONFIG: SiteConfigurationBundle = {
     ogDescription:
       'Autonomous risk sensing, canonical graph intelligence, and governed execution—engineered to keep global operations moving.',
     ogImageUrl: '',
-    canonicalUrl: 'https://orion-9-webos.ai.studio/',
+    canonicalUrl: 'https://orion-9.ai.studio/',
     indexable: true,
   },
   authSettings: {

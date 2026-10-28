@@ -1,4 +1,6 @@
 import assert from 'node:assert/strict';
+import fs from 'node:fs';
+import path from 'node:path';
 import {
   isSafeLogoUrl,
   validateBrandingConfig,
@@ -1594,7 +1596,36 @@ runTest('68. Global human account holder terminology: User instead of Operator',
   assert.ok(!Object.values(accountLabels).some((label) => label.toLowerCase().includes('operator')));
 });
 
+runTest('69. Dashboard header redesign: Visit Website homepage navigation, flat row without pill wrapper, and uniform actions', () => {
+  const layoutPath = path.resolve(process.cwd(), 'src/components/dashboard/UserDashboardLayout.tsx');
+  const layoutSource = fs.readFileSync(layoutPath, 'utf-8');
 
+  // 1. No awkward legacy "Public Site" text or back arrow
+  assert.ok(!layoutSource.includes('<span>Public Site</span>'), 'Legacy "Public Site" span must be removed');
+  assert.ok(!layoutSource.includes('ArrowLeft'), 'Legacy ArrowLeft back-icon must be removed');
+
+  // 2. Visit Website with Globe icon navigates directly to "/"
+  assert.ok(layoutSource.includes("onNavigate('/')"), 'Must navigate to "/" public homepage');
+  assert.ok(layoutSource.includes('Visit Website'), 'Must have Visit Website button');
+  assert.ok(layoutSource.includes('Globe'), 'Must use Globe icon');
+
+  // 3. No pill container wrapper around center navigation
+  assert.ok(!layoutSource.includes('liquid-glass-subtle p-1 rounded-2xl'), 'Outer pill container must be removed');
+
+  // 4. All 5 destinations with whitespace-nowrap
+  assert.ok(layoutSource.includes("label: 'Overview'"));
+  assert.ok(layoutSource.includes("label: 'Learning Center'"));
+  assert.ok(layoutSource.includes("label: 'OS User Manual'"));
+  assert.ok(layoutSource.includes("label: 'Documentation'"));
+  assert.ok(layoutSource.includes("label: 'Progress'"));
+  assert.ok(layoutSource.includes('whitespace-nowrap'), 'Must prevent label wrapping');
+
+  // 5. Right actions uniform: Theme, Admin gating, Launch OS, Sign Out
+  assert.ok(layoutSource.includes('toggleTheme'));
+  assert.ok(layoutSource.includes('isAdmin &&'));
+  assert.ok(layoutSource.includes('launchOrion('));
+  assert.ok(layoutSource.includes('logout'));
+});
 
 // Execution Summary
 console.log('================================================================');

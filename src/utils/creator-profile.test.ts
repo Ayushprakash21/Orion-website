@@ -14,6 +14,8 @@
 
 import test from 'node:test';
 import assert from 'node:assert/strict';
+import fs from 'node:fs';
+import path from 'node:path';
 import {
   DEFAULT_CREATOR_PROFILE,
   DEFAULT_SITE_CONFIG,
@@ -207,5 +209,23 @@ test('Orion-9 Creator Profile & Cloudflare R2 Upload Test Suite', async (t) => {
 
     const javascriptUrl = 'javascript:document.cookie';
     assert.equal(isSafeLogoUrl(javascriptUrl), false);
+  });
+
+  // 11. Redesigned Creator Profile Card Specifications
+  await t.test('11. Creator profile card enforces responsive 180px portrait, clear typography, and distinct quote', () => {
+    const aboutPath = path.resolve(process.cwd(), 'src/components/about/AboutPage.tsx');
+    const aboutContent = fs.readFileSync(aboutPath, 'utf-8');
+
+    // Desktop 180x180 px portrait and responsive scaling
+    assert.ok(aboutContent.includes('lg:w-[180px] lg:h-[180px]'), 'Must support 180x180 px portrait on desktop');
+    assert.ok(aboutContent.includes('w-28 h-28'), 'Must support mobile 112px portrait');
+    assert.ok(aboutContent.includes('object-cover object-top'), 'Must preserve aspect ratio and focus on creator face');
+    assert.ok(aboutContent.includes('creator of Orion-9'), 'Must provide meaningful alt text for accessibility');
+
+    // Typographic hierarchy and distinct sections
+    assert.ok(aboutContent.includes('data-testid="about-creator-card"'), 'Must maintain about-creator-card testid');
+    assert.ok(aboutContent.includes('data-testid="about-creator-avatar"'), 'Must maintain about-creator-avatar testid');
+    assert.ok(aboutContent.includes('Foundational Question'), 'Must provide distinct quote header');
+    assert.ok(aboutContent.includes('Primary System Maintainer'), 'Must retain maintainer status attribution');
   });
 });

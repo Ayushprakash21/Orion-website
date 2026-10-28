@@ -59,6 +59,7 @@ export function isOriginAllowed(origin: string, env: Env): boolean {
 
   // 1. Production Google AI Studio & Google Cloud Run origins
   if (
+    lower === 'https://orion-9.ai.studio' ||
     lower === 'https://orion-9-webos.ai.studio' ||
     lower.endsWith('.ai.studio') ||
     lower === 'https://ai.studio' ||

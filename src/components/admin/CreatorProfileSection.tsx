@@ -212,9 +212,9 @@ export const CreatorProfileSection: React.FC<CreatorProfileSectionProps> = ({
               </div>
             </div>
 
-            {/* Avatar Frame (Matches About Page creator card: w-24 h-24 rounded-2xl) */}
+            {/* Avatar Frame (Matches About Page creator card: responsive 112–180 px rounded-3xl) */}
             <div
-              className={`w-32 h-32 rounded-3xl p-2 flex items-center justify-center transition-colors border ${
+              className={`w-36 h-36 rounded-3xl p-2 flex items-center justify-center transition-colors border shadow-sm ${
                 previewTone === 'light'
                   ? 'bg-sky-50 border-sky-200'
                   : 'bg-slate-900 border-slate-800'
@@ -224,11 +224,12 @@ export const CreatorProfileSection: React.FC<CreatorProfileSectionProps> = ({
                 <img
                   src={currentUrl}
                   alt={creatorForm.name}
-                  className="w-28 h-28 rounded-2xl object-cover shadow-xl shadow-sky-600/20 border border-[var(--glass-border)]"
+                  className="w-32 h-32 rounded-2xl object-cover object-top shadow-xl shadow-sky-600/20 border border-[var(--glass-border)]"
                 />
               ) : (
-                <div className="w-28 h-28 rounded-2xl bg-gradient-to-br from-[#0284C7] to-[#070B19] text-white flex items-center justify-center font-bold text-3xl shadow-xl shadow-sky-600/20">
-                  AP
+                <div className="w-32 h-32 rounded-2xl bg-gradient-to-br from-[#0284C7] to-[#070B19] text-white flex flex-col items-center justify-center font-bold shadow-xl shadow-sky-600/20">
+                  <span className="text-3xl font-mono">AP</span>
+                  <span className="text-[10px] font-mono tracking-wider opacity-75 mt-0.5">Orion-9</span>
                 </div>
               )}
             </div>
@@ -238,7 +239,7 @@ export const CreatorProfileSection: React.FC<CreatorProfileSectionProps> = ({
                 {currentUrl ? 'Custom Photograph Active' : 'Fallback "AP" Avatar Active'}
               </p>
               <p className="text-[11px] text-[var(--orion-text-muted)] mt-0.5">
-                Displays at 80×80 px on the public About page
+                Displays at 180×180 px on desktop (responsive 112–180 px) on the public About page
               </p>
             </div>
           </div>

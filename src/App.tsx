@@ -107,7 +107,7 @@ const AppContent: React.FC = () => {
         <div className="min-h-screen bg-[var(--orion-canvas)] flex items-center justify-center">
           <div className="flex flex-col items-center gap-3">
             <div className="w-8 h-8 rounded-full border-2 border-sky-400 border-t-transparent animate-spin" />
-            <p className="text-xs font-mono text-[var(--orion-text-muted)]">Verifying Operator Session...</p>
+            <p className="text-xs font-mono text-[var(--orion-text-muted)]">Verifying User Session...</p>
           </div>
         </div>
       );

@@ -134,6 +134,14 @@ export function SiteConfigProvider({ children }: { children: React.ReactNode }) 
     if (metaDesc && activeConfig.seo.metaDescription) {
       metaDesc.setAttribute('content', activeConfig.seo.metaDescription);
     }
+    const canonicalLink = document.querySelector('link[rel="canonical"]');
+    if (canonicalLink && activeConfig.seo.canonicalUrl) {
+      canonicalLink.setAttribute('href', activeConfig.seo.canonicalUrl);
+    }
+    const ogUrl = document.querySelector('meta[property="og:url"]');
+    if (ogUrl && activeConfig.seo.canonicalUrl) {
+      ogUrl.setAttribute('content', activeConfig.seo.canonicalUrl);
+    }
 
     const root = document.documentElement;
     root.style.setProperty('--orion-canvas', activeConfig.branding.canvasColor);
