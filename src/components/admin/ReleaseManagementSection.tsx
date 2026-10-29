@@ -541,12 +541,21 @@ export const ReleaseManagementSection: React.FC<ReleaseManagementSectionProps> =
           </div>
 
           {validationError && (
-            <div className="p-4 rounded-2xl bg-red-50 dark:bg-red-950/50 border border-red-300 dark:border-red-800 flex items-start gap-3 text-red-800 dark:text-red-300 text-xs">
-              <AlertTriangle className="w-4 h-4 shrink-0 mt-0.5 text-red-600" />
-              <div className="space-y-0.5">
-                <span className="font-bold">Validation Warning:</span>
-                <div>{validationError}</div>
+            <div className="p-4 rounded-2xl bg-red-50 dark:bg-red-950/50 border border-red-300 dark:border-red-800 flex items-start justify-between gap-3 text-red-800 dark:text-red-300 text-xs">
+              <div className="flex items-start gap-3">
+                <AlertTriangle className="w-4 h-4 shrink-0 mt-0.5 text-red-600" />
+                <div className="space-y-1">
+                  <span className="font-bold">Release Upload Notice:</span>
+                  <div className="text-[11px] leading-relaxed break-words">{validationError}</div>
+                </div>
               </div>
+              <button
+                type="button"
+                onClick={() => setValidationError(null)}
+                className="text-[11px] font-semibold text-red-600 dark:text-red-400 hover:underline shrink-0"
+              >
+                Dismiss
+              </button>
             </div>
           )}
 
@@ -819,10 +828,17 @@ export const ReleaseManagementSection: React.FC<ReleaseManagementSectionProps> =
             <div className="p-4 rounded-2xl bg-white dark:bg-slate-800 border border-[#CBD5E1] dark:border-slate-700 space-y-2">
               <div className="flex items-center justify-between text-xs font-semibold">
                 <span className="capitalize text-[#0284C7] font-bold">
-                  {uploadProgress.stage === 'hashing' && 'Calculating Client SHA-256 Checksum...'}
-                  {uploadProgress.stage === 'uploading' && 'Streaming Binary to Cloudflare R2...'}
-                  {uploadProgress.stage === 'verifying' && 'Verifying Integrity & Magic Headers...'}
-                  {uploadProgress.stage === 'completed' && 'Upload & Verification Complete!'}
+                  {uploadProgress.detail || (
+                    <>
+                      {uploadProgress.stage === 'validating' && 'Validating Binary Header & Platform Format...'}
+                      {uploadProgress.stage === 'hashing' && 'Calculating Client SHA-256 Checksum...'}
+                      {uploadProgress.stage === 'initializing' && 'Initializing Cloudflare R2 Upload Session...'}
+                      {uploadProgress.stage === 'uploading' && 'Streaming Binary Chunks to Cloudflare R2...'}
+                      {uploadProgress.stage === 'assembling' && 'Assembling & Finalizing R2 Release Artifact...'}
+                      {uploadProgress.stage === 'verifying' && 'Verifying Integrity & Magic Headers in R2...'}
+                      {uploadProgress.stage === 'completed' && 'Upload & Integrity Verification Complete!'}
+                    </>
+                  )}
                 </span>
                 <span className="font-mono text-[#172033] dark:text-white font-bold">{uploadProgress.pct}%</span>
               </div>
@@ -832,6 +848,15 @@ export const ReleaseManagementSection: React.FC<ReleaseManagementSectionProps> =
                   style={{ width: `${uploadProgress.pct}%` }}
                 />
               </div>
+              {uploadProgress.loadedBytes > 0 && uploadProgress.totalBytes > 0 && (
+                <div className="flex items-center justify-between text-[11px] text-[#475569] dark:text-slate-400 font-mono">
+                  <span>
+                    Transferred: {formatFileSize(uploadProgress.loadedBytes)} / {formatFileSize(uploadProgress.totalBytes)}
+                    {uploadProgress.currentPart && uploadProgress.totalParts ? ` · Part ${uploadProgress.currentPart}/${uploadProgress.totalParts}` : ''}
+                  </span>
+                  <span className="uppercase font-bold tracking-wider text-[10px] text-[#0284C7]">{uploadProgress.stage}</span>
+                </div>
+              )}
             </div>
           )}
 

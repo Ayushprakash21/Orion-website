@@ -8,19 +8,20 @@ const worker = (workerModule as any).fetch ? workerModule : (workerModule as any
 
 // Mock R2 Bucket for testing
 class MockR2Bucket implements R2Bucket {
-  public store = new Map<string, { body: ArrayBuffer | string; metadata?: unknown }>();
+  public store = new Map<string, { body: any; metadata?: any }>();
+  public multipartStore = new Map<string, { key: string; uploadId: string; parts: Map<number, { partNumber: number; etag: string; buffer: ArrayBuffer }> }>();
   public shouldFailPut = false;
 
   async put(
     key: string,
-    value: ArrayBuffer | string,
+    value: any,
     options?: { httpMetadata?: { contentType?: string }; customMetadata?: Record<string, string> }
-  ): Promise<unknown> {
+  ): Promise<any> {
     if (this.shouldFailPut) {
       throw new Error('Simulated R2 storage quota exceeded or disk write failure');
     }
     this.store.set(key, { body: value, metadata: options });
-    return { key };
+    return { key, size: value?.byteLength || 0 };
   }
 
   async get(key: string): Promise<any> {
@@ -31,6 +32,20 @@ class MockR2Bucket implements R2Bucket {
       body: item.body,
       size,
       httpMetadata: (item.metadata as any)?.httpMetadata,
+      customMetadata: (item.metadata as any)?.customMetadata,
+      httpEtag: 'mock-etag-1234',
+    };
+  }
+
+  async head(key: string): Promise<any> {
+    const item = this.store.get(key);
+    if (!item) return null;
+    const size = typeof item.body === 'string' ? item.body.length : (item.body as any)?.byteLength || 0;
+    return {
+      key,
+      size,
+      httpMetadata: (item.metadata as any)?.httpMetadata,
+      customMetadata: (item.metadata as any)?.customMetadata,
       httpEtag: 'mock-etag-1234',
     };
   }
@@ -38,6 +53,49 @@ class MockR2Bucket implements R2Bucket {
   async delete(keys: string | string[]): Promise<void> {
     const arr = Array.isArray(keys) ? keys : [keys];
     for (const k of arr) this.store.delete(k);
+  }
+
+  async createMultipartUpload(key: string, options?: any): Promise<any> {
+    const uploadId = 'mock-upload-' + Date.now();
+    this.multipartStore.set(uploadId, { key, uploadId, parts: new Map() });
+    return this.resumeMultipartUpload(key, uploadId);
+  }
+
+  resumeMultipartUpload(key: string, uploadId: string): any {
+    const session = this.multipartStore.get(uploadId) || { key, uploadId, parts: new Map() };
+    this.multipartStore.set(uploadId, session);
+    return {
+      key,
+      uploadId,
+      uploadPart: async (partNumber: number, val: any) => {
+        const etag = `etag-${partNumber}-${Date.now()}`;
+        session.parts.set(partNumber, { partNumber, etag, buffer: val });
+        return { partNumber, etag };
+      },
+      complete: async (parts: any[]) => {
+        let totalSize = 0;
+        const buffers: Uint8Array[] = [];
+        for (const p of parts) {
+          const stored = session.parts.get(p.partNumber);
+          if (stored) {
+            const u8 = new Uint8Array(stored.buffer);
+            buffers.push(u8);
+            totalSize += u8.byteLength;
+          }
+        }
+        const combined = new Uint8Array(totalSize);
+        let offset = 0;
+        for (const b of buffers) {
+          combined.set(b, offset);
+          offset += b.byteLength;
+        }
+        this.store.set(key, { body: combined.buffer, metadata: {} });
+        return { key, size: totalSize, httpEtag: 'mock-completed-etag' };
+      },
+      abort: async () => {
+        this.multipartStore.delete(uploadId);
+      },
+    };
   }
 }
 

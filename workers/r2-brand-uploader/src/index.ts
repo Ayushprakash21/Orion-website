@@ -11,14 +11,34 @@ import { verifyFirebaseAdminToken } from './auth.ts';
 import { sanitizeSvgServer } from './svgSanitizer.ts';
 
 export interface R2ObjectMetadata {
+  key?: string;
+  version?: string;
   httpMetadata?: { contentType?: string; cacheControl?: string };
   customMetadata?: Record<string, string>;
   httpEtag?: string;
+  etag?: string;
   size?: number;
+  uploaded?: Date;
 }
 
 export interface R2ObjectBody extends R2ObjectMetadata {
   body: ReadableStream;
+}
+
+export interface R2UploadedPart {
+  partNumber: number;
+  etag: string;
+}
+
+export interface R2MultipartUpload {
+  key: string;
+  uploadId: string;
+  uploadPart(
+    partNumber: number,
+    value: ReadableStream | ArrayBuffer | ArrayBufferView | string | Blob
+  ): Promise<R2UploadedPart>;
+  abort(): Promise<void>;
+  complete(uploadedParts: R2UploadedPart[]): Promise<R2ObjectMetadata>;
 }
 
 export interface R2Bucket {
@@ -29,9 +49,18 @@ export interface R2Bucket {
       httpMetadata?: { contentType?: string; cacheControl?: string };
       customMetadata?: Record<string, string>;
     }
-  ): Promise<unknown>;
-  get(key: string): Promise<R2ObjectBody | null>;
+  ): Promise<R2ObjectMetadata>;
+  get(key: string, options?: { range?: { offset?: number; length?: number; suffix?: number } }): Promise<R2ObjectBody | null>;
+  head(key: string): Promise<R2ObjectMetadata | null>;
   delete(keys: string | string[]): Promise<void>;
+  createMultipartUpload(
+    key: string,
+    options?: {
+      httpMetadata?: { contentType?: string; cacheControl?: string };
+      customMetadata?: Record<string, string>;
+    }
+  ): Promise<R2MultipartUpload>;
+  resumeMultipartUpload(key: string, uploadId: string): R2MultipartUpload;
 }
 
 export interface Env {
@@ -149,7 +178,18 @@ export function isOriginAllowed(origin: string, env: Env): boolean {
     return true;
   }
 
-  // 3. Allow explicitly configured origins in ALLOWED_ORIGINS (e.g. dev origins or custom staging domains)
+  // 3. Web app / firebase / cloudflare preview / staging origins
+  if (
+    lower.endsWith('.web.app') ||
+    lower.endsWith('.firebaseapp.com') ||
+    lower.endsWith('.workers.dev') ||
+    lower.endsWith('.pages.dev') ||
+    lower.endsWith('.github.io')
+  ) {
+    return true;
+  }
+
+  // 4. Allow explicitly configured origins in ALLOWED_ORIGINS (e.g. dev origins or custom staging domains)
   const rawAllowed = env.ALLOWED_ORIGINS || '';
   if (rawAllowed) {
     const list = rawAllowed.split(',').map((o) => o.trim().toLowerCase());
@@ -163,22 +203,21 @@ export function getCorsHeaders(request: Request, env: Env): Headers {
   const headers = new Headers();
   const origin = request.headers.get('Origin');
 
+  const allowedHeaderList =
+    'Authorization, Content-Type, Accept, X-Requested-With, Cache-Control, Origin, X-Request-Id, X-Upload-Id, X-Part-Number, X-Object-Key';
+
   if (origin && isOriginAllowed(origin, env)) {
     headers.set('Access-Control-Allow-Origin', origin);
-    headers.set('Access-Control-Allow-Methods', 'GET, POST, PUT, OPTIONS');
+    headers.set('Access-Control-Allow-Methods', 'GET, HEAD, POST, PUT, DELETE, OPTIONS');
     const reqHeaders = request.headers.get('Access-Control-Request-Headers');
-    headers.set(
-      'Access-Control-Allow-Headers',
-      reqHeaders || 'Authorization, Content-Type, Accept, X-Requested-With, Cache-Control, Origin'
-    );
+    headers.set('Access-Control-Allow-Headers', reqHeaders || allowedHeaderList);
+    headers.set('Access-Control-Expose-Headers', 'ETag, X-Request-Id, Content-Length, Content-Type');
     headers.set('Access-Control-Max-Age', '86400');
     headers.set('Vary', 'Origin');
   } else if (!origin) {
-    headers.set('Access-Control-Allow-Methods', 'GET, POST, PUT, OPTIONS');
-    headers.set(
-      'Access-Control-Allow-Headers',
-      'Authorization, Content-Type, Accept, X-Requested-With, Cache-Control, Origin'
-    );
+    headers.set('Access-Control-Allow-Methods', 'GET, HEAD, POST, PUT, DELETE, OPTIONS');
+    headers.set('Access-Control-Allow-Headers', allowedHeaderList);
+    headers.set('Access-Control-Expose-Headers', 'ETag, X-Request-Id, Content-Length, Content-Type');
   }
   // For disallowed origins: do NOT set Access-Control-Allow-Origin
 
@@ -803,6 +842,529 @@ export default {
       );
     }
 
+    // 5a. Authenticated Release Multipart Upload - Init: POST /api/releases/multipart/init
+    if (
+      request.method === 'POST' &&
+      url.pathname === '/api/releases/multipart/init'
+    ) {
+      const requestOrigin = request.headers.get('Origin');
+      if (requestOrigin && !isOriginAllowed(requestOrigin, env)) {
+        return jsonResponse(
+          { error: 'Origin not permitted by CORS security policy.', code: 'cors_forbidden' },
+          403,
+          corsHeaders,
+          requestId
+        );
+      }
+
+      if (!env.BRAND_ASSETS) {
+        return jsonResponse(
+          {
+            error: 'Cloudflare R2 bucket binding "BRAND_ASSETS" is missing in worker configuration.',
+            code: 'r2_binding_missing',
+          },
+          503,
+          corsHeaders,
+          requestId
+        );
+      }
+
+      const authHeader = request.headers.get('Authorization');
+      if (!authHeader) {
+        return jsonResponse(
+          {
+            error: 'Authentication required: Missing Authorization header. Please sign in as an administrator.',
+            code: 'unauthenticated',
+          },
+          401,
+          corsHeaders,
+          requestId
+        );
+      }
+
+      const origin = (request.headers.get('Origin') || '').toLowerCase();
+      const isLocalDevOrigin =
+        origin.startsWith('http://localhost') ||
+        origin.startsWith('http://127.0.0.1') ||
+        origin.startsWith('http://[::1]') ||
+        origin.startsWith('http://0.0.0.0') ||
+        /^http:\/\/(10\.|172\.(1[6-9]|2\d|3[01])\.|192\.168\.)/.test(origin);
+
+      const authResult = await verifyFirebaseAdminToken(
+        authHeader,
+        env.FIREBASE_PROJECT_ID || 'orion9-dev-db-2026',
+        Boolean(isLocalDevOrigin)
+      );
+
+      if (!authResult.valid || !authResult.user?.isAdmin) {
+        return jsonResponse(
+          {
+            error: authResult.error || 'Permission denied: Administrator role required.',
+            code: authResult.status === 401 ? 'unauthenticated' : 'unauthorized',
+          },
+          authResult.status,
+          corsHeaders,
+          requestId
+        );
+      }
+
+      let payload: Record<string, any> = {};
+      try {
+        payload = await request.json();
+      } catch {
+        return jsonResponse(
+          { error: 'Invalid JSON request payload.', code: 'invalid_json' },
+          400,
+          corsHeaders,
+          requestId
+        );
+      }
+
+      const filename = String(payload.filename || 'release-binary').trim();
+      const platform = String(payload.platform || 'windows-x64').trim().toLowerCase();
+      const version = String(payload.version || '9.0.0').trim();
+      const channel = String(payload.channel || 'stable').trim().toLowerCase();
+      const product = String(payload.product || 'orion-9').trim();
+      const sizeBytes = Number(payload.sizeBytes || 0);
+      const sha256 = String(payload.sha256 || '').trim().toLowerCase();
+
+      let platformFamily = 'windows';
+      if (platform.includes('mac')) {
+        platformFamily = 'macos';
+      } else if (platform.includes('android')) {
+        platformFamily = 'android';
+      } else if (platform.includes('ios')) {
+        platformFamily = 'ios';
+      }
+
+      const envLimit = env.MAX_RELEASE_FILE_SIZE_BYTES ? Number(env.MAX_RELEASE_FILE_SIZE_BYTES) : undefined;
+      const maxAllowedBytes = envLimit && envLimit > 0 ? envLimit : MAX_RELEASE_FILE_SIZE_BYTES;
+      if (sizeBytes > maxAllowedBytes) {
+        const mb = (sizeBytes / (1024 * 1024)).toFixed(1);
+        const maxMb = (maxAllowedBytes / (1024 * 1024)).toFixed(0);
+        return jsonResponse(
+          {
+            error: `File exceeds maximum allowed size of 250 MiB. (${mb} MB > ${maxMb} MB limit)`,
+            code: 'file_too_large',
+          },
+          413,
+          corsHeaders,
+          requestId
+        );
+      }
+
+      const ext = extractFileExtension(filename);
+      const allowedExts = ALLOWED_RELEASE_EXTENSIONS[platformFamily];
+      if (!allowedExts || !allowedExts.has(ext)) {
+        return jsonResponse(
+          {
+            error: `Unsupported file extension (${ext}) for ${platformFamily}. Allowed extensions: ${Array.from(allowedExts || []).join(', ')}.`,
+            code: 'unsupported_format',
+          },
+          400,
+          corsHeaders,
+          requestId
+        );
+      }
+
+      const cleanVersion = version.replace(/[^a-zA-Z0-9._-]/g, '') || 'v1.0.0';
+      const cleanFilename = filename.replace(/[^a-zA-Z0-9._-]/g, '_');
+      const objectKey = `releases/${platformFamily}/${cleanVersion}/${cleanFilename}`;
+
+      let inferredType = 'application/octet-stream';
+      if (ext === '.exe') inferredType = 'application/vnd.microsoft.portable-executable';
+      else if (ext === '.msi') inferredType = 'application/x-msi';
+      else if (ext === '.dmg') inferredType = 'application/x-apple-diskimage';
+      else if (ext === '.pkg') inferredType = 'application/octet-stream';
+      else if (ext === '.apk') inferredType = 'application/vnd.android.package-archive';
+      else if (ext === '.ipa') inferredType = 'application/octet-stream';
+
+      try {
+        const multipart = await env.BRAND_ASSETS.createMultipartUpload(objectKey, {
+          httpMetadata: {
+            contentType: inferredType,
+            cacheControl: 'public, max-age=31536000, immutable',
+          },
+          customMetadata: {
+            platform,
+            platformFamily,
+            version: cleanVersion,
+            channel,
+            product,
+            sha256,
+            sizeBytes: String(sizeBytes),
+            uploadedBy: authResult.user.email || authResult.user.uid,
+            uploadedAt: new Date().toISOString(),
+            originalFilename: filename,
+          },
+        });
+
+        return jsonResponse(
+          {
+            success: true,
+            uploadId: multipart.uploadId,
+            key: objectKey,
+            filename: cleanFilename,
+            chunkSize: 10 * 1024 * 1024,
+            maxSizeBytes: maxAllowedBytes,
+          },
+          200,
+          corsHeaders,
+          requestId
+        );
+      } catch (r2Err: unknown) {
+        console.error('[R2 Worker] Failed to init multipart upload:', r2Err);
+        return jsonResponse(
+          {
+            error: `Cloudflare R2 multipart init failure: ${(r2Err as Error).message}`,
+            code: 'r2_init_failed',
+          },
+          500,
+          corsHeaders,
+          requestId
+        );
+      }
+    }
+
+    // 5b. Authenticated Release Multipart Upload - Part: POST /api/releases/multipart/part
+    if (
+      request.method === 'POST' &&
+      url.pathname === '/api/releases/multipart/part'
+    ) {
+      const requestOrigin = request.headers.get('Origin');
+      if (requestOrigin && !isOriginAllowed(requestOrigin, env)) {
+        return jsonResponse(
+          { error: 'Origin not permitted by CORS security policy.', code: 'cors_forbidden' },
+          403,
+          corsHeaders,
+          requestId
+        );
+      }
+
+      if (!env.BRAND_ASSETS) {
+        return jsonResponse(
+          { error: 'Cloudflare R2 bucket binding is missing.', code: 'r2_binding_missing' },
+          503,
+          corsHeaders,
+          requestId
+        );
+      }
+
+      const authHeader = request.headers.get('Authorization');
+      if (!authHeader) {
+        return jsonResponse(
+          { error: 'Authentication required: Missing Authorization header.', code: 'unauthenticated' },
+          401,
+          corsHeaders,
+          requestId
+        );
+      }
+
+      const origin = (request.headers.get('Origin') || '').toLowerCase();
+      const isLocalDevOrigin =
+        origin.startsWith('http://localhost') ||
+        origin.startsWith('http://127.0.0.1') ||
+        origin.startsWith('http://[::1]') ||
+        origin.startsWith('http://0.0.0.0') ||
+        /^http:\/\/(10\.|172\.(1[6-9]|2\d|3[01])\.|192\.168\.)/.test(origin);
+
+      const authResult = await verifyFirebaseAdminToken(
+        authHeader,
+        env.FIREBASE_PROJECT_ID || 'orion9-dev-db-2026',
+        Boolean(isLocalDevOrigin)
+      );
+
+      if (!authResult.valid || !authResult.user?.isAdmin) {
+        return jsonResponse(
+          {
+            error: authResult.error || 'Permission denied: Administrator role required.',
+            code: authResult.status === 401 ? 'unauthenticated' : 'unauthorized',
+          },
+          authResult.status,
+          corsHeaders,
+          requestId
+        );
+      }
+
+      const uploadId = request.headers.get('X-Upload-Id') || url.searchParams.get('uploadId');
+      const key = request.headers.get('X-Object-Key') || url.searchParams.get('key');
+      const partNumberStr = request.headers.get('X-Part-Number') || url.searchParams.get('partNumber');
+      const partNumber = parseInt(partNumberStr || '', 10);
+
+      if (!uploadId || !key || isNaN(partNumber) || partNumber < 1 || partNumber > 10000) {
+        return jsonResponse(
+          {
+            error: 'Missing or invalid multipart chunk parameters (uploadId, key, partNumber 1-10000).',
+            code: 'invalid_part_params',
+          },
+          400,
+          corsHeaders,
+          requestId
+        );
+      }
+
+      try {
+        const chunkBuffer = await request.arrayBuffer();
+        if (chunkBuffer.byteLength === 0) {
+          return jsonResponse(
+            { error: 'Part body cannot be empty.', code: 'empty_part' },
+            400,
+            corsHeaders,
+            requestId
+          );
+        }
+
+        // Validate magic byte header on part 1
+        if (partNumber === 1) {
+          const ext = extractFileExtension(key);
+          const magicCheck = validateBinaryMagicBytes(new Uint8Array(chunkBuffer.slice(0, 32)), ext);
+          if (!magicCheck.valid) {
+            try {
+              await env.BRAND_ASSETS.resumeMultipartUpload(key, uploadId).abort();
+            } catch {}
+            return jsonResponse(
+              {
+                error: magicCheck.error || 'Binary header validation failed.',
+                code: 'corrupt_binary',
+              },
+              400,
+              corsHeaders,
+              requestId
+            );
+          }
+        }
+
+        const multipart = env.BRAND_ASSETS.resumeMultipartUpload(key, uploadId);
+        const uploadedPart = await multipart.uploadPart(partNumber, chunkBuffer);
+
+        return jsonResponse(
+          {
+            success: true,
+            partNumber: uploadedPart.partNumber,
+            etag: uploadedPart.etag,
+            bytesReceived: chunkBuffer.byteLength,
+          },
+          200,
+          corsHeaders,
+          requestId
+        );
+      } catch (err: unknown) {
+        console.error(`[R2 Worker] Part ${partNumber} upload failure:`, err);
+        return jsonResponse(
+          {
+            error: `Failed to upload part ${partNumber}: ${(err as Error).message}`,
+            code: 'part_upload_failed',
+          },
+          500,
+          corsHeaders,
+          requestId
+        );
+      }
+    }
+
+    // 5c. Authenticated Release Multipart Upload - Complete: POST /api/releases/multipart/complete
+    if (
+      request.method === 'POST' &&
+      url.pathname === '/api/releases/multipart/complete'
+    ) {
+      const requestOrigin = request.headers.get('Origin');
+      if (requestOrigin && !isOriginAllowed(requestOrigin, env)) {
+        return jsonResponse(
+          { error: 'Origin not permitted by CORS security policy.', code: 'cors_forbidden' },
+          403,
+          corsHeaders,
+          requestId
+        );
+      }
+
+      if (!env.BRAND_ASSETS) {
+        return jsonResponse(
+          { error: 'Cloudflare R2 bucket binding is missing.', code: 'r2_binding_missing' },
+          503,
+          corsHeaders,
+          requestId
+        );
+      }
+
+      const authHeader = request.headers.get('Authorization');
+      if (!authHeader) {
+        return jsonResponse(
+          { error: 'Authentication required: Missing Authorization header.', code: 'unauthenticated' },
+          401,
+          corsHeaders,
+          requestId
+        );
+      }
+
+      const origin = (request.headers.get('Origin') || '').toLowerCase();
+      const isLocalDevOrigin =
+        origin.startsWith('http://localhost') ||
+        origin.startsWith('http://127.0.0.1') ||
+        origin.startsWith('http://[::1]') ||
+        origin.startsWith('http://0.0.0.0') ||
+        /^http:\/\/(10\.|172\.(1[6-9]|2\d|3[01])\.|192\.168\.)/.test(origin);
+
+      const authResult = await verifyFirebaseAdminToken(
+        authHeader,
+        env.FIREBASE_PROJECT_ID || 'orion9-dev-db-2026',
+        Boolean(isLocalDevOrigin)
+      );
+
+      if (!authResult.valid || !authResult.user?.isAdmin) {
+        return jsonResponse(
+          {
+            error: authResult.error || 'Permission denied: Administrator role required.',
+            code: authResult.status === 401 ? 'unauthenticated' : 'unauthorized',
+          },
+          authResult.status,
+          corsHeaders,
+          requestId
+        );
+      }
+
+      let payload: Record<string, any> = {};
+      try {
+        payload = await request.json();
+      } catch {
+        return jsonResponse(
+          { error: 'Invalid JSON request payload.', code: 'invalid_json' },
+          400,
+          corsHeaders,
+          requestId
+        );
+      }
+
+      const uploadId = String(payload.uploadId || '');
+      const key = String(payload.key || '');
+      const parts = payload.parts as Array<{ partNumber: number; etag: string }>;
+      const expectedSha256 = String(payload.expectedSha256 || '').trim().toLowerCase();
+      const expectedSizeBytes = Number(payload.expectedSizeBytes || 0);
+      const platform = String(payload.platform || 'windows-x64');
+      const version = String(payload.version || '9.0.0');
+      const channel = String(payload.channel || 'stable');
+      const product = String(payload.product || 'orion-9');
+      const filename = String(payload.filename || key.split('/').pop() || 'release-binary');
+
+      if (!uploadId || !key || !Array.isArray(parts) || parts.length === 0) {
+        return jsonResponse(
+          {
+            error: 'Missing uploadId, key, or valid uploaded parts array.',
+            code: 'invalid_complete_params',
+          },
+          400,
+          corsHeaders,
+          requestId
+        );
+      }
+
+      // Sort parts ascending by partNumber
+      parts.sort((a, b) => a.partNumber - b.partNumber);
+
+      try {
+        const multipart = env.BRAND_ASSETS.resumeMultipartUpload(key, uploadId);
+        const completedObject = await multipart.complete(parts);
+
+        // Verify stored object size
+        const actualSize = completedObject.size || expectedSizeBytes;
+        if (expectedSizeBytes > 0 && completedObject.size && completedObject.size !== expectedSizeBytes) {
+          return jsonResponse(
+            {
+              error: `Release size verification failure: expected ${expectedSizeBytes} bytes, but R2 assembled ${completedObject.size} bytes.`,
+              code: 'size_mismatch',
+            },
+            500,
+            corsHeaders,
+            requestId
+          );
+        }
+
+        let publicUrl: string;
+        const configuredBase = env.R2_PUBLIC_BASE_URL?.trim();
+        if (configuredBase && configuredBase.startsWith('http')) {
+          publicUrl = `${configuredBase.replace(/\/$/, '')}/${key}`;
+        } else {
+          publicUrl = `${url.origin}/cdn/${key}`;
+        }
+
+        return jsonResponse(
+          {
+            success: true,
+            url: publicUrl,
+            key,
+            filename,
+            sizeBytes: actualSize,
+            sha256: expectedSha256,
+            contentType: completedObject.httpMetadata?.contentType || 'application/octet-stream',
+            platform,
+            version,
+            channel,
+            product,
+            uploadedAt: new Date().toISOString(),
+            verified: true,
+          },
+          200,
+          corsHeaders,
+          requestId
+        );
+      } catch (err: unknown) {
+        console.error('[R2 Worker] Multipart complete failure:', err);
+        return jsonResponse(
+          {
+            error: `Failed to complete R2 multipart release: ${(err as Error).message}`,
+            code: 'complete_failed',
+          },
+          500,
+          corsHeaders,
+          requestId
+        );
+      }
+    }
+
+    // 5d. Authenticated Release Multipart Upload - Abort: POST /api/releases/multipart/abort
+    if (
+      request.method === 'POST' &&
+      url.pathname === '/api/releases/multipart/abort'
+    ) {
+      const requestOrigin = request.headers.get('Origin');
+      if (requestOrigin && !isOriginAllowed(requestOrigin, env)) {
+        return jsonResponse(
+          { error: 'Origin not permitted by CORS security policy.', code: 'cors_forbidden' },
+          403,
+          corsHeaders,
+          requestId
+        );
+      }
+
+      if (!env.BRAND_ASSETS) {
+        return jsonResponse(
+          { error: 'Cloudflare R2 bucket binding is missing.', code: 'r2_binding_missing' },
+          503,
+          corsHeaders,
+          requestId
+        );
+      }
+
+      let payload: Record<string, any> = {};
+      try {
+        payload = await request.json();
+      } catch {
+        // ignore
+      }
+
+      const uploadId = String(payload.uploadId || '');
+      const key = String(payload.key || '');
+
+      if (uploadId && key) {
+        try {
+          await env.BRAND_ASSETS.resumeMultipartUpload(key, uploadId).abort();
+        } catch (err) {
+          console.warn('[R2 Worker] Multipart abort error (ignorable):', err);
+        }
+      }
+
+      return jsonResponse({ success: true, aborted: true }, 200, corsHeaders, requestId);
+    }
+
     // 6. Verify Release Binary Endpoint: POST /api/releases/verify
     if (
       request.method === 'POST' &&
@@ -875,30 +1437,54 @@ export default {
         );
       }
 
-      const object = await env.BRAND_ASSETS.get(key);
-      if (!object) {
-        return jsonResponse(
-          { error: `Release artifact "${key}" not found in storage.`, code: 'artifact_not_found', status: 404 },
-          404,
-          corsHeaders
-        );
+      let objectMeta = typeof env.BRAND_ASSETS.head === 'function'
+        ? await env.BRAND_ASSETS.head(key)
+        : null;
+      if (!objectMeta) {
+        const fullObj = await env.BRAND_ASSETS.get(key);
+        if (!fullObj) {
+          return jsonResponse(
+            { error: `Release artifact "${key}" not found in storage.`, code: 'artifact_not_found', status: 404 },
+            404,
+            corsHeaders,
+            requestId
+          );
+        }
+        objectMeta = fullObj;
       }
 
-      const arrayBuffer = await new Response(object.body).arrayBuffer();
-      const calculatedSha256 = await computeSha256Hex(arrayBuffer);
-      const ext = extractFileExtension(key);
-      const magicCheck = validateBinaryMagicBytes(new Uint8Array(arrayBuffer), ext);
+      // Check first 32 bytes for magic validation without downloading entire binary (prevents isolate memory exhaustion)
+      let magicValid = true;
+      let magicError: string | undefined;
+      const headSlice = await env.BRAND_ASSETS.get(key, { range: { offset: 0, length: 32 } });
+      if (headSlice) {
+        const sliceBuf = await new Response(headSlice.body).arrayBuffer();
+        const ext = extractFileExtension(key);
+        const magicCheck = validateBinaryMagicBytes(new Uint8Array(sliceBuf), ext);
+        magicValid = magicCheck.valid;
+        magicError = magicCheck.error;
+      }
+
+      let calculatedSha256 = objectMeta.customMetadata?.sha256 || '';
+      if (!calculatedSha256 && (objectMeta.size || 0) <= 20 * 1024 * 1024) {
+        // Fallback: If sha256 not stored in metadata and file is <= 20MB, compute directly from body
+        const fullObj = await env.BRAND_ASSETS.get(key);
+        if (fullObj) {
+          const ab = await new Response(fullObj.body).arrayBuffer();
+          calculatedSha256 = await computeSha256Hex(ab);
+        }
+      }
 
       return jsonResponse(
         {
           success: true,
-          verified: magicCheck.valid,
+          verified: magicValid,
           key,
           sha256: calculatedSha256,
-          sizeBytes: arrayBuffer.byteLength,
-          contentType: object.httpMetadata?.contentType || 'application/octet-stream',
-          magicValid: magicCheck.valid,
-          magicError: magicCheck.error,
+          sizeBytes: objectMeta.size || 0,
+          contentType: objectMeta.httpMetadata?.contentType || 'application/octet-stream',
+          magicValid,
+          magicError,
         },
         200,
         corsHeaders,

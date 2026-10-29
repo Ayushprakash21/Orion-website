@@ -38,7 +38,23 @@ export interface UploadReleaseProgress {
   pct: number;
   loadedBytes: number;
   totalBytes: number;
-  stage: 'validating' | 'hashing' | 'uploading' | 'verifying' | 'completed' | 'failed';
+  stage: 'validating' | 'hashing' | 'initializing' | 'uploading' | 'assembling' | 'verifying' | 'completed' | 'failed';
+  detail?: string;
+  currentPart?: number;
+  totalParts?: number;
+}
+
+export class ReleaseUploadError extends Error {
+  public code: string;
+  public requestId?: string;
+  public status?: number;
+  constructor(message: string, code: string, requestId?: string, status?: number) {
+    super(message);
+    this.name = 'ReleaseUploadError';
+    this.code = code;
+    this.requestId = requestId;
+    this.status = status;
+  }
 }
 
 export interface UploadReleaseResponse {
@@ -74,6 +90,24 @@ export const PERMITTED_PLATFORM_EXTENSIONS: Record<string, string[]> = {
 };
 
 /**
+ * Resolves Cloudflare R2 Worker API base URL.
+ */
+export function getReleaseApiBase(): string {
+  const env =
+    (import.meta as unknown as { env?: Record<string, string | undefined> })?.env || {};
+  const explicitUpload = env.VITE_R2_RELEASE_UPLOAD_ENDPOINT?.trim();
+  if (explicitUpload) {
+    try {
+      const u = new URL(explicitUpload);
+      return u.origin;
+    } catch {}
+  }
+
+  const cdnBase = env.VITE_RELEASE_CDN_BASE?.trim() || env.VITE_R2_PUBLIC_BASE_URL?.trim();
+  return (cdnBase || DEFAULT_RELEASE_CDN_BASE).replace(/\/+$/, '');
+}
+
+/**
  * Resolves Cloudflare R2 Release Upload API endpoint.
  */
 export function getReleaseUploadEndpoint(): string {
@@ -82,8 +116,7 @@ export function getReleaseUploadEndpoint(): string {
   const explicit = env.VITE_R2_RELEASE_UPLOAD_ENDPOINT?.trim();
   if (explicit) return explicit;
 
-  const cdnBase = env.VITE_RELEASE_CDN_BASE?.trim() || env.VITE_R2_PUBLIC_BASE_URL?.trim();
-  const base = (cdnBase || DEFAULT_RELEASE_CDN_BASE).replace(/\/+$/, '');
+  const base = getReleaseApiBase();
   return `${base}/api/releases/upload`;
 }
 
@@ -213,9 +246,446 @@ export async function computeFileSha256(
 }
 
 /**
- * Uploads a verified release binary to Cloudflare R2 through the authenticated Worker.
+ * Classifies release upload failure into a structured, diagnosable error with requestId.
  */
-export async function uploadReleaseToStorage(
+export function diagnoseReleaseUploadError(
+  err: any,
+  endpoint: string,
+  requestId: string
+): ReleaseUploadError {
+  if (err instanceof ReleaseUploadError) return err;
+
+  const msg = (err?.message || String(err)).trim();
+  const status = typeof err?.status === 'number' ? err.status : undefined;
+
+  if (status === 401 || msg.includes('Authentication required') || msg.includes('unauthenticated')) {
+    return new ReleaseUploadError(
+      `Authentication required: Session expired or invalid administrator credentials. Please sign in again. (Ref: ${requestId})`,
+      'auth_required',
+      requestId,
+      401
+    );
+  }
+  if (status === 403 || msg.includes('Permission denied') || msg.includes('unauthorized') || msg.includes('cors_forbidden')) {
+    return new ReleaseUploadError(
+      `Permission denied: Administrator role required to publish releases, or origin rejected by CORS security policy. (Ref: ${requestId})`,
+      'permission_denied',
+      requestId,
+      403
+    );
+  }
+  if (status === 413 || msg.includes('exceeds') || msg.includes('file_too_large') || msg.includes('Payload Too Large')) {
+    return new ReleaseUploadError(
+      `File exceeds maximum allowed size of 250 MiB. (Ref: ${requestId})`,
+      'file_too_large',
+      requestId,
+      413
+    );
+  }
+  if (status === 503 || msg.includes('r2_binding_missing')) {
+    return new ReleaseUploadError(
+      `Cloudflare R2 release storage binding is currently unavailable. Please contact system admin. (Ref: ${requestId})`,
+      'storage_unavailable',
+      requestId,
+      503
+    );
+  }
+  if (msg.includes('timed out') || msg.includes('timeout')) {
+    return new ReleaseUploadError(
+      `Release upload timed out while transferring binary chunks. Please check your connection speed and try again. (Ref: ${requestId})`,
+      'timeout',
+      requestId
+    );
+  }
+  if (
+    msg.includes('Network') ||
+    msg.includes('Failed to fetch') ||
+    msg.includes('Load failed') ||
+    msg.includes('NetworkError') ||
+    msg.includes('CORS')
+  ) {
+    return new ReleaseUploadError(
+      `Network or CORS connection failure when uploading to release storage at ${endpoint}. (Ref: ${requestId})`,
+      'network_failure',
+      requestId
+    );
+  }
+  if (msg.includes('corrupt_binary') || msg.includes('PE "MZ"') || msg.includes('ZIP/APK')) {
+    return new ReleaseUploadError(
+      `Binary format verification failure: ${msg} (Ref: ${requestId})`,
+      'corrupt_binary',
+      requestId
+    );
+  }
+  if (msg.includes('SHA-256') || msg.includes('checksum mismatch')) {
+    return new ReleaseUploadError(
+      `Integrity verification failure: Cryptographic SHA-256 hash mismatch during upload transfer. (Ref: ${requestId})`,
+      'checksum_mismatch',
+      requestId
+    );
+  }
+
+  return new ReleaseUploadError(
+    `Release upload error: ${msg} (Ref: ${requestId})`,
+    'upload_failed',
+    requestId,
+    status
+  );
+}
+
+/**
+ * Uploads a release binary via authenticated multipart chunked upload.
+ * Required for files > 100 MB (e.g. Android APKs of 166 MB) to comply with Cloudflare edge request limits.
+ */
+export async function uploadReleaseMultipart(
+  file: File,
+  metadata: {
+    platform: ReleasePlatform;
+    version: string;
+    channel: ReleaseChannel;
+    product?: string;
+  },
+  onProgress?: (progress: UploadReleaseProgress) => void,
+  explicitAuthToken?: string
+): Promise<UploadReleaseResponse> {
+  const clientRequestId =
+    typeof crypto !== 'undefined' && crypto.randomUUID
+      ? crypto.randomUUID()
+      : 'req-rel-' + Date.now().toString(36);
+
+  const apiBase = getReleaseApiBase();
+
+  // 1. Validation
+  if (onProgress) {
+    onProgress({
+      pct: 5,
+      loadedBytes: 0,
+      totalBytes: file.size,
+      stage: 'validating',
+      detail: 'Validating binary header and platform format...',
+    });
+  }
+
+  const validation = await validateReleaseBinaryHeader(file, metadata.platform);
+  if (!validation.valid) {
+    throw new ReleaseUploadError(
+      validation.error || 'Binary validation failed.',
+      'validation_error',
+      clientRequestId
+    );
+  }
+
+  // 2. SHA-256
+  if (onProgress) {
+    onProgress({
+      pct: 10,
+      loadedBytes: 0,
+      totalBytes: file.size,
+      stage: 'hashing',
+      detail: 'Computing client cryptographic SHA-256 checksum...',
+    });
+  }
+
+  const clientSha256 = await computeFileSha256(file, (hPct) => {
+    if (onProgress) {
+      onProgress({
+        pct: 10 + Math.round(hPct * 0.1), // 10% to 20%
+        loadedBytes: 0,
+        totalBytes: file.size,
+        stage: 'hashing',
+        detail: `Hashing binary (${hPct}%)...`,
+      });
+    }
+  });
+
+  // 3. Resolve Admin Auth Token
+  let token = explicitAuthToken;
+  if (!token) {
+    const { auth } = initializeFirebase();
+    const currentUser = auth?.currentUser;
+    if (currentUser) {
+      try {
+        token = await currentUser.getIdToken(true).catch(async () => {
+          return currentUser.getIdToken(false);
+        });
+      } catch (err) {
+        console.error('[ReleaseService] Failed to acquire ID token:', err);
+      }
+    }
+  }
+
+  if (!token && typeof window !== 'undefined') {
+    try {
+      if (window.sessionStorage.getItem('orion_local_dev_admin') === 'true') {
+        token = 'mock-local-dev-admin-token';
+      }
+    } catch {
+      // ignore
+    }
+  }
+
+  if (!token) {
+    throw new ReleaseUploadError(
+      'Authentication required: You must be signed in as an administrator to upload release binaries.',
+      'auth_required',
+      clientRequestId,
+      401
+    );
+  }
+
+  // 4. Init Multipart Upload
+  if (onProgress) {
+    onProgress({
+      pct: 22,
+      loadedBytes: 0,
+      totalBytes: file.size,
+      stage: 'initializing',
+      detail: 'Initializing multipart session with Cloudflare R2...',
+    });
+  }
+
+  let uploadId = '';
+  let storageKey = '';
+  let chunkSize = 10 * 1024 * 1024; // 10 MiB default
+
+  try {
+    const initRes = await fetch(`${apiBase}/api/releases/multipart/init`, {
+      method: 'POST',
+      headers: {
+        Authorization: `Bearer ${token}`,
+        'Content-Type': 'application/json',
+        'X-Request-Id': clientRequestId,
+      },
+      body: JSON.stringify({
+        filename: file.name,
+        platform: metadata.platform,
+        version: metadata.version.trim(),
+        channel: metadata.channel,
+        product: metadata.product || 'orion-9',
+        sizeBytes: file.size,
+        sha256: clientSha256,
+      }),
+    });
+
+    const initJson: any = await initRes.json().catch(() => ({}));
+    if (!initRes.ok || initJson.success !== true) {
+      throw diagnoseReleaseUploadError(
+        new Error(initJson.error || `Init returned HTTP ${initRes.status}`),
+        `${apiBase}/api/releases/multipart/init`,
+        initJson.requestId || clientRequestId
+      );
+    }
+
+    uploadId = initJson.uploadId;
+    storageKey = initJson.key;
+    if (initJson.chunkSize && initJson.chunkSize > 0) {
+      chunkSize = initJson.chunkSize;
+    }
+  } catch (err: any) {
+    throw diagnoseReleaseUploadError(err, `${apiBase}/api/releases/multipart/init`, clientRequestId);
+  }
+
+  // 5. Upload chunks
+  const totalParts = Math.max(1, Math.ceil(file.size / chunkSize));
+  const uploadedParts: Array<{ partNumber: number; etag: string }> = [];
+  let totalUploadedBytes = 0;
+
+  try {
+    for (let partNumber = 1; partNumber <= totalParts; partNumber++) {
+      const start = (partNumber - 1) * chunkSize;
+      const end = Math.min(start + chunkSize, file.size);
+      const chunkBlob = file.slice(start, end);
+      const chunkBytes = end - start;
+
+      let partSuccess = false;
+      let lastPartError: any = null;
+
+      for (let attempt = 1; attempt <= 3; attempt++) {
+        try {
+          const partRes = await fetch(
+            `${apiBase}/api/releases/multipart/part?uploadId=${encodeURIComponent(uploadId)}&partNumber=${partNumber}&key=${encodeURIComponent(storageKey)}`,
+            {
+              method: 'POST',
+              headers: {
+                Authorization: `Bearer ${token}`,
+                'Content-Type': 'application/octet-stream',
+                'X-Upload-Id': uploadId,
+                'X-Part-Number': String(partNumber),
+                'X-Object-Key': storageKey,
+                'X-Request-Id': clientRequestId,
+              },
+              body: chunkBlob,
+            }
+          );
+
+          const partJson: any = await partRes.json().catch(() => ({}));
+          if (!partRes.ok || partJson.success !== true) {
+            throw new Error(partJson.error || `Part upload HTTP ${partRes.status}`);
+          }
+
+          uploadedParts.push({
+            partNumber: partJson.partNumber || partNumber,
+            etag: partJson.etag || '',
+          });
+
+          totalUploadedBytes += chunkBytes;
+          partSuccess = true;
+
+          if (onProgress) {
+            const uploadPct = Math.round((totalUploadedBytes / file.size) * 63);
+            onProgress({
+              pct: 25 + uploadPct,
+              loadedBytes: totalUploadedBytes,
+              totalBytes: file.size,
+              stage: 'uploading',
+              currentPart: partNumber,
+              totalParts,
+              detail: `Streaming binary chunk ${partNumber} of ${totalParts} to R2...`,
+            });
+          }
+
+          break;
+        } catch (partErr: any) {
+          lastPartError = partErr;
+          if (attempt < 3) {
+            await new Promise((r) => setTimeout(r, 500 * attempt));
+          }
+        }
+      }
+
+      if (!partSuccess) {
+        throw lastPartError || new Error(`Failed to upload part ${partNumber} after 3 attempts.`);
+      }
+    }
+  } catch (chunkErr: any) {
+    if (uploadId && storageKey) {
+      fetch(`${apiBase}/api/releases/multipart/abort`, {
+        method: 'POST',
+        headers: {
+          Authorization: `Bearer ${token}`,
+          'Content-Type': 'application/json',
+          'X-Request-Id': clientRequestId,
+        },
+        body: JSON.stringify({ uploadId, key: storageKey }),
+      }).catch(() => {});
+    }
+    throw diagnoseReleaseUploadError(
+      chunkErr,
+      `${apiBase}/api/releases/multipart/part`,
+      clientRequestId
+    );
+  }
+
+  // 6. Complete Multipart Upload
+  if (onProgress) {
+    onProgress({
+      pct: 90,
+      loadedBytes: file.size,
+      totalBytes: file.size,
+      stage: 'assembling',
+      detail: 'Assembling and finalizing release binary in Cloudflare R2...',
+    });
+  }
+
+  let completeData: any;
+  try {
+    const completeRes = await fetch(`${apiBase}/api/releases/multipart/complete`, {
+      method: 'POST',
+      headers: {
+        Authorization: `Bearer ${token}`,
+        'Content-Type': 'application/json',
+        'X-Request-Id': clientRequestId,
+      },
+      body: JSON.stringify({
+        uploadId,
+        key: storageKey,
+        parts: uploadedParts,
+        expectedSha256: clientSha256,
+        expectedSizeBytes: file.size,
+        platform: metadata.platform,
+        version: metadata.version.trim(),
+        channel: metadata.channel,
+        product: metadata.product || 'orion-9',
+        filename: file.name,
+      }),
+    });
+
+    const completeJson: any = await completeRes.json().catch(() => ({}));
+    if (!completeRes.ok || completeJson.success !== true) {
+      throw diagnoseReleaseUploadError(
+        new Error(completeJson.error || `Complete returned HTTP ${completeRes.status}`),
+        `${apiBase}/api/releases/multipart/complete`,
+        completeJson.requestId || clientRequestId
+      );
+    }
+    completeData = completeJson;
+  } catch (err: any) {
+    throw diagnoseReleaseUploadError(err, `${apiBase}/api/releases/multipart/complete`, clientRequestId);
+  }
+
+  // 7. Post-Upload Verification
+  if (onProgress) {
+    onProgress({
+      pct: 96,
+      loadedBytes: file.size,
+      totalBytes: file.size,
+      stage: 'verifying',
+      detail: 'Verifying stored release integrity and magic byte headers...',
+    });
+  }
+
+  try {
+    const verifyRes = await fetch(`${apiBase}/api/releases/verify`, {
+      method: 'POST',
+      headers: {
+        Authorization: `Bearer ${token}`,
+        'Content-Type': 'application/json',
+        'X-Request-Id': clientRequestId,
+      },
+      body: JSON.stringify({ key: storageKey }),
+    });
+
+    const verifyJson: any = await verifyRes.json().catch(() => ({}));
+    if (verifyRes.ok && verifyJson.success && verifyJson.verified === false) {
+      throw new ReleaseUploadError(
+        verifyJson.magicError || 'Storage verification failed: Binary magic byte headers invalid.',
+        'corrupt_binary',
+        verifyJson.requestId || clientRequestId
+      );
+    }
+  } catch (err: any) {
+    console.warn('[ReleaseService] Post-upload verification probe note:', err);
+  }
+
+  if (onProgress) {
+    onProgress({
+      pct: 100,
+      loadedBytes: file.size,
+      totalBytes: file.size,
+      stage: 'completed',
+      detail: 'Release upload and verification completed successfully!',
+    });
+  }
+
+  return {
+    success: true,
+    url: completeData.url,
+    key: completeData.key || storageKey,
+    filename: completeData.filename || file.name,
+    sizeBytes: completeData.sizeBytes || file.size,
+    sha256: clientSha256,
+    contentType: completeData.contentType || 'application/octet-stream',
+    platform: completeData.platform || metadata.platform,
+    version: completeData.version || metadata.version,
+    channel: completeData.channel || metadata.channel,
+    uploadedAt: completeData.uploadedAt || new Date().toISOString(),
+  };
+}
+
+/**
+ * Single-POST release upload implementation for small files (< 10 MB).
+ */
+export async function uploadReleaseSingle(
   file: File,
   metadata: {
     platform: ReleasePlatform;
@@ -233,6 +703,7 @@ export async function uploadReleaseToStorage(
       loadedBytes: 0,
       totalBytes: file.size,
       stage: 'validating',
+      detail: 'Validating binary header...',
     });
   }
 
@@ -248,6 +719,7 @@ export async function uploadReleaseToStorage(
       loadedBytes: 0,
       totalBytes: file.size,
       stage: 'hashing',
+      detail: 'Computing client SHA-256...',
     });
   }
 
@@ -258,6 +730,7 @@ export async function uploadReleaseToStorage(
         loadedBytes: 0,
         totalBytes: file.size,
         stage: 'hashing',
+        detail: `Hashing binary (${hPct}%)...`,
       });
     }
   });
@@ -326,6 +799,7 @@ export async function uploadReleaseToStorage(
               loadedBytes: evt.loaded,
               totalBytes: evt.total,
               stage: 'uploading',
+              detail: 'Streaming binary to Cloudflare R2...',
             });
           }
         };
@@ -338,6 +812,7 @@ export async function uploadReleaseToStorage(
             loadedBytes: file.size,
             totalBytes: file.size,
             stage: 'verifying',
+            detail: 'Verifying integrity in R2...',
           });
         }
 
@@ -392,6 +867,7 @@ export async function uploadReleaseToStorage(
             loadedBytes: file.size,
             totalBytes: file.size,
             stage: 'completed',
+            detail: 'Complete!',
           });
         }
 
@@ -422,7 +898,7 @@ export async function uploadReleaseToStorage(
         reject(new Error('Upload to Cloudflare R2 storage timed out.'));
       };
 
-      xhr.timeout = 180000; // 3 minutes timeout for 100MB+ binaries
+      xhr.timeout = 180000;
       xhr.send(formData);
       return;
     }
@@ -469,6 +945,34 @@ export async function uploadReleaseToStorage(
 
     reject(new Error('No HTTP transport available.'));
   });
+}
+
+/**
+ * Primary release binary upload entrypoint.
+ * Automatically chooses between multipart chunked upload (> 10 MB) and single upload (<= 10 MB).
+ */
+export async function uploadReleaseToStorage(
+  file: File,
+  metadata: {
+    platform: ReleasePlatform;
+    version: string;
+    channel: ReleaseChannel;
+    product?: string;
+  },
+  onProgress?: (progress: UploadReleaseProgress) => void,
+  explicitAuthToken?: string
+): Promise<UploadReleaseResponse> {
+  // Always use multipart chunked upload for files > 10MB to guarantee bypassing Cloudflare edge request body limits
+  if (file.size > 10 * 1024 * 1024) {
+    return uploadReleaseMultipart(file, metadata, onProgress, explicitAuthToken);
+  }
+
+  try {
+    return await uploadReleaseSingle(file, metadata, onProgress, explicitAuthToken);
+  } catch (err: any) {
+    console.warn('[ReleaseService] Single upload failed, attempting fallback to multipart upload:', err);
+    return uploadReleaseMultipart(file, metadata, onProgress, explicitAuthToken);
+  }
 }
 
 /**

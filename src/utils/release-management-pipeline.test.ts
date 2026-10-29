@@ -31,19 +31,20 @@ import type { AppReleaseRecord, ReleasePlatform } from '../types/cms.ts';
 const worker = (workerModule as any).fetch ? workerModule : (workerModule as any).default;
 
 class MockR2Bucket implements R2Bucket {
-  public store = new Map<string, { body: ArrayBuffer | string; metadata?: unknown }>();
+  public store = new Map<string, { body: any; metadata?: any }>();
+  public multipartStore = new Map<string, { key: string; uploadId: string; parts: Map<number, { partNumber: number; etag: string; buffer: ArrayBuffer }> }>();
   public shouldFailPut = false;
 
   async put(
     key: string,
-    value: ArrayBuffer | string,
+    value: any,
     options?: { httpMetadata?: { contentType?: string }; customMetadata?: Record<string, string> }
-  ): Promise<unknown> {
+  ): Promise<any> {
     if (this.shouldFailPut) {
       throw new Error('Simulated R2 storage quota exceeded or disk write failure');
     }
     this.store.set(key, { body: value, metadata: options });
-    return { key };
+    return { key, size: value?.byteLength || 0 };
   }
 
   async get(key: string): Promise<any> {
@@ -54,6 +55,20 @@ class MockR2Bucket implements R2Bucket {
       body: item.body,
       size,
       httpMetadata: (item.metadata as any)?.httpMetadata,
+      customMetadata: (item.metadata as any)?.customMetadata,
+      httpEtag: 'mock-etag-rel-1234',
+    };
+  }
+
+  async head(key: string): Promise<any> {
+    const item = this.store.get(key);
+    if (!item) return null;
+    const size = typeof item.body === 'string' ? item.body.length : (item.body as any)?.byteLength || 0;
+    return {
+      key,
+      size,
+      httpMetadata: (item.metadata as any)?.httpMetadata,
+      customMetadata: (item.metadata as any)?.customMetadata,
       httpEtag: 'mock-etag-rel-1234',
     };
   }
@@ -61,6 +76,49 @@ class MockR2Bucket implements R2Bucket {
   async delete(keys: string | string[]): Promise<void> {
     const arr = Array.isArray(keys) ? keys : [keys];
     for (const k of arr) this.store.delete(k);
+  }
+
+  async createMultipartUpload(key: string, options?: any): Promise<any> {
+    const uploadId = 'mock-upload-' + Date.now();
+    this.multipartStore.set(uploadId, { key, uploadId, parts: new Map() });
+    return this.resumeMultipartUpload(key, uploadId);
+  }
+
+  resumeMultipartUpload(key: string, uploadId: string): any {
+    const session = this.multipartStore.get(uploadId) || { key, uploadId, parts: new Map() };
+    this.multipartStore.set(uploadId, session);
+    return {
+      key,
+      uploadId,
+      uploadPart: async (partNumber: number, val: any) => {
+        const etag = `etag-${partNumber}-${Date.now()}`;
+        session.parts.set(partNumber, { partNumber, etag, buffer: val });
+        return { partNumber, etag };
+      },
+      complete: async (parts: any[]) => {
+        let totalSize = 0;
+        const buffers: Uint8Array[] = [];
+        for (const p of parts) {
+          const stored = session.parts.get(p.partNumber);
+          if (stored) {
+            const u8 = new Uint8Array(stored.buffer);
+            buffers.push(u8);
+            totalSize += u8.byteLength;
+          }
+        }
+        const combined = new Uint8Array(totalSize);
+        let offset = 0;
+        for (const b of buffers) {
+          combined.set(b, offset);
+          offset += b.byteLength;
+        }
+        this.store.set(key, { body: combined.buffer, metadata: {} });
+        return { key, size: totalSize, httpEtag: 'mock-completed-etag' };
+      },
+      abort: async () => {
+        this.multipartStore.delete(uploadId);
+      },
+    };
   }
 }
 
@@ -493,5 +551,127 @@ describe('Orion-9 Release & Distribution Manager Master Pipeline Test Suite', ()
   it('20. Platform extension registry: Validates Android universal and arm64 support .apk', () => {
     assert.deepEqual(PERMITTED_PLATFORM_EXTENSIONS['android-universal'], ['.apk']);
     assert.deepEqual(PERMITTED_PLATFORM_EXTENSIONS['android-arm64'], ['.apk']);
+  });
+
+  // Test 21: Release Multipart Initialization Endpoint
+  it('21. Release multipart init: Authenticates admin, validates payload, and creates R2 upload session', async () => {
+    const bucket = new MockR2Bucket();
+    const env = createTestEnv(bucket);
+
+    const req = new Request('http://localhost:5173/api/releases/multipart/init', {
+      method: 'POST',
+      headers: {
+        Origin: 'http://localhost:5173',
+        Authorization: 'Bearer mock-local-dev-admin-token',
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        filename: 'Orion-9-Mobile-Android.apk',
+        platform: 'android-universal',
+        version: '9.3.0',
+        channel: 'stable',
+        product: 'orion-9',
+        sizeBytes: 174384128, // ~166.31 MB
+        sha256: 'a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4e5f6a1b2',
+      }),
+    });
+
+    const res = await worker.fetch(req, env);
+    assert.equal(res.status, 200);
+    const data = await res.json();
+    assert.equal(data.success, true);
+    assert.ok(data.uploadId);
+    assert.equal(data.key, 'releases/android/9.3.0/Orion-9-Mobile-Android.apk');
+    assert.equal(data.chunkSize, 10 * 1024 * 1024);
+  });
+
+  // Test 22: Release Multipart Chunk Upload & Magic Header Validation
+  it('22. Release multipart chunk upload: Validates part 1 magic header and stores part', async () => {
+    const bucket = new MockR2Bucket();
+    const env = createTestEnv(bucket);
+
+    // Init session
+    const initRes = await bucket.createMultipartUpload('releases/android/9.3.0/Orion-9-Mobile-Android.apk');
+    const uploadId = initRes.uploadId;
+
+    // Part 1 with valid PK ZIP magic bytes
+    const validPart1Bytes = new Uint8Array([0x50, 0x4b, 0x03, 0x04, 0x00, 0x00, 0x00, 0x00]);
+    const req = new Request(
+      `http://localhost:5173/api/releases/multipart/part?uploadId=${uploadId}&partNumber=1&key=${encodeURIComponent('releases/android/9.3.0/Orion-9-Mobile-Android.apk')}`,
+      {
+        method: 'POST',
+        headers: {
+          Origin: 'http://localhost:5173',
+          Authorization: 'Bearer mock-local-dev-admin-token',
+          'Content-Type': 'application/octet-stream',
+          'X-Upload-Id': uploadId,
+          'X-Part-Number': '1',
+          'X-Object-Key': 'releases/android/9.3.0/Orion-9-Mobile-Android.apk',
+        },
+        body: validPart1Bytes.buffer,
+      }
+    );
+
+    const res = await worker.fetch(req, env);
+    assert.equal(res.status, 200);
+    const data = await res.json();
+    assert.equal(data.success, true);
+    assert.equal(data.partNumber, 1);
+    assert.ok(data.etag);
+  });
+
+  // Test 23: Release Multipart Completion and Assembling
+  it('23. Release multipart complete: Assembles parts, validates size, and returns authoritative CDN URL', async () => {
+    const bucket = new MockR2Bucket();
+    const env = createTestEnv(bucket);
+
+    const session = await bucket.createMultipartUpload('releases/android/9.3.0/Orion-9-Mobile-Android.apk');
+    const part1 = await session.uploadPart(1, new Uint8Array([0x50, 0x4b, 0x03, 0x04]).buffer);
+    const part2 = await session.uploadPart(2, new Uint8Array([0x01, 0x02, 0x03, 0x04]).buffer);
+
+    const req = new Request('http://localhost:5173/api/releases/multipart/complete', {
+      method: 'POST',
+      headers: {
+        Origin: 'http://localhost:5173',
+        Authorization: 'Bearer mock-local-dev-admin-token',
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        uploadId: session.uploadId,
+        key: session.key,
+        parts: [part1, part2],
+        expectedSha256: 'mock-sha256-apk',
+        expectedSizeBytes: 8,
+        platform: 'android-universal',
+        version: '9.3.0',
+        channel: 'stable',
+        filename: 'Orion-9-Mobile-Android.apk',
+      }),
+    });
+
+    const res = await worker.fetch(req, env);
+    assert.equal(res.status, 200);
+    const data = await res.json();
+    assert.equal(data.success, true);
+    assert.equal(data.sizeBytes, 8);
+    assert.match(data.url, /\/cdn\/releases\/android\/9\.3\.0\/Orion-9-Mobile-Android\.apk/);
+  });
+
+  // Test 24: Error classification & correlation ID diagnosis
+  it('24. Release upload error diagnostics: Distinguishes auth, permission, size, CORS, and network failure', async () => {
+    const { diagnoseReleaseUploadError } = await import('../services/releaseService.ts');
+
+    const authErr = diagnoseReleaseUploadError(new Error('Authentication required: please login'), 'https://test/api', 'req-1');
+    assert.equal(authErr.code, 'auth_required');
+    assert.equal(authErr.requestId, 'req-1');
+
+    const permErr = diagnoseReleaseUploadError(new Error('Permission denied: Administrator role required'), 'https://test/api', 'req-2');
+    assert.equal(permErr.code, 'permission_denied');
+
+    const sizeErr = diagnoseReleaseUploadError(new Error('File exceeds maximum allowed size'), 'https://test/api', 'req-3');
+    assert.equal(sizeErr.code, 'file_too_large');
+
+    const netErr = diagnoseReleaseUploadError(new Error('Failed to fetch'), 'https://test/api', 'req-4');
+    assert.equal(netErr.code, 'network_failure');
   });
 });
