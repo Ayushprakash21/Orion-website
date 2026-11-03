@@ -57,32 +57,40 @@ export const Footer: React.FC<FooterProps> = ({ onNavigate, onOpenDownload }) =>
       className="w-full bg-[var(--orion-canvas)] text-[var(--orion-text-primary)] border-t border-[var(--glass-border-subtle)] relative overflow-hidden transition-colors duration-300"
     >
       {/* ==========================================================================
-          1. CLOSING ENTERPRISE CALLOUT IN TRANSLUCENT LIQUID GLASS
+          1. CLOSING ENTERPRISE BRAND BANNER
          ========================================================================== */}
-      <div className="max-w-[1440px] mx-auto px-4 sm:px-8 pt-12 pb-6">
-        <div className="liquid-glass-elevated rounded-3xl p-8 sm:p-14 border border-[var(--glass-border)] shadow-xl flex flex-col lg:flex-row lg:items-center justify-between gap-10 relative overflow-hidden">
-          {/* Ambient glass reflection */}
+      <div className="max-w-[1440px] mx-auto px-4 sm:px-6 lg:px-12 pt-14 pb-8 sm:pb-12">
+        <div className="min-h-[340px] lg:min-h-[380px] rounded-3xl lg:rounded-[32px] p-8 sm:p-12 lg:p-16 bg-gradient-to-br from-white via-[#F8FBFE] to-[#F0F7FF] dark:bg-gradient-to-br dark:from-[#151515] dark:via-[#111111] dark:to-[#0A0A0A] border border-sky-200/70 dark:border-[#38301D] shadow-[0_20px_50px_rgba(2,132,199,0.06),0_1px_3px_rgba(0,0,0,0.03)] dark:shadow-[0_24px_64px_rgba(0,0,0,0.85),inset_0_1px_0_rgba(212,175,55,0.12)] flex flex-col lg:flex-row lg:items-center justify-between gap-10 lg:gap-14 relative overflow-hidden transition-all duration-300">
+          {/* Ambient Lighting Glow */}
           <div
-            className="pointer-events-none absolute -top-24 -right-24 w-96 h-96 bg-sky-500/10 dark:bg-sky-400/5 blur-3xl rounded-full"
+            className="pointer-events-none absolute -top-32 -right-32 w-[450px] h-[450px] bg-sky-400/10 dark:bg-[#D4AF37]/5 blur-[100px] rounded-full"
             aria-hidden="true"
           />
 
-          <div className="max-w-2xl space-y-4 relative z-10">
-            <OrionLogo
-              companyName={companyName}
-              size="sm"
-              tone={theme === 'dark' ? 'light' : 'dark'}
-              placement="footer"
-            />
-            <h2 className="text-2xl sm:text-4xl font-extrabold tracking-tight text-[var(--orion-text-primary)] leading-tight">
+          {/* Left Column: Brand Identity, Headline & Supporting Text */}
+          <div className="max-w-2xl lg:max-w-3xl space-y-6 sm:space-y-7 relative z-10">
+            {/* Prominent Orion-9 Brand Identity */}
+            <div className="flex items-center">
+              <OrionLogo
+                companyName={companyName}
+                size="brand"
+                tone={theme === 'dark' ? 'light' : 'dark'}
+                placement="footer"
+              />
+            </div>
+
+            <h2 className="font-editorial text-2xl sm:text-4xl lg:text-[42px] font-extrabold tracking-tight text-slate-900 dark:text-[#F5F5F5] leading-[1.15]">
               Command your global supply chain with fast response and governed execution.
             </h2>
-            <p className="text-sm sm:text-base text-[var(--orion-text-secondary)] leading-relaxed">
+
+            <p className="text-base sm:text-lg text-slate-600 dark:text-[#A3A3A3] leading-relaxed max-w-2xl font-sans">
               Unify maritime, air, and ground logistics telemetry into one live operational operating system.
             </p>
           </div>
 
-          <div className="flex flex-wrap items-center gap-3 shrink-0 relative z-10">
+          {/* Right Column: Premium Action Buttons */}
+          <div className="flex flex-col sm:flex-row lg:flex-row items-stretch sm:items-center gap-3 sm:gap-3.5 shrink-0 relative z-10 lg:ml-auto">
+            {/* Primary Action: Download Desktop App */}
             <button
               type="button"
               onClick={() => {
@@ -93,23 +101,27 @@ export const Footer: React.FC<FooterProps> = ({ onNavigate, onOpenDownload }) =>
                   handleRoute('/login?redirect=/download&platform=windows');
                 }
               }}
-              className="inline-flex items-center gap-2 px-5 py-3 rounded-xl liquid-glass-button text-xs font-semibold text-[var(--orion-text-primary)] hover:border-[var(--orion-accent)] transition-all cursor-pointer"
+              className="h-12 px-6 sm:px-7 rounded-xl bg-gradient-to-r from-[#0284C7] to-[#0369A1] hover:from-[#0369A1] hover:to-[#075985] text-white dark:bg-gradient-to-r dark:from-[#D4AF37] dark:to-[#F5D76E] dark:hover:brightness-105 dark:text-[#080808] text-sm font-semibold dark:font-bold shadow-md shadow-[#0284C7]/25 hover:shadow-lg hover:shadow-[#0284C7]/35 dark:shadow-[0_4px_16px_rgba(212,175,55,0.25)] dark:hover:shadow-[0_6px_20px_rgba(212,175,55,0.35)] transition-all duration-200 cursor-pointer inline-flex items-center justify-center gap-2.5 transform hover:-translate-y-0.5"
             >
-              <Download className="w-4 h-4 text-[var(--orion-accent)]" />
-              <span>Download Desktop App</span>
+              <Download className="w-4 h-4 text-white dark:text-[#080808] shrink-0" />
+              <span className="whitespace-nowrap">Download Desktop App</span>
             </button>
+
+            {/* Secondary Action: Sign up */}
             <button
               type="button"
               onClick={() => handleRoute('/signup')}
-              className="px-5 py-3 rounded-xl liquid-glass-button text-xs font-semibold text-[var(--orion-text-primary)] transition-all cursor-pointer"
+              className="h-12 px-6 sm:px-7 rounded-xl bg-white hover:bg-slate-50 text-slate-900 border border-slate-200 hover:border-slate-300 shadow-xs hover:shadow-sm dark:bg-[#1B1B1B] dark:hover:bg-[#222222] dark:text-[#F5F5F5] dark:border-[#38301D] dark:hover:border-[#D4AF37]/50 text-sm font-semibold transition-all duration-200 cursor-pointer inline-flex items-center justify-center whitespace-nowrap"
             >
               Sign up
             </button>
+
+            {/* Authenticated Launch or Secondary Action: Sign in */}
             {user ? (
               <button
                 type="button"
                 onClick={() => launchOrion(destinationUrl)}
-                className="inline-flex items-center gap-2 px-6 py-3 rounded-xl bg-gradient-to-r from-[#0284C7] to-[#0369A1] hover:from-[#0369A1] hover:to-[#075985] text-white dark:from-[#D4AF37] dark:to-[#F5D76E] dark:hover:brightness-105 dark:text-[#080808] dark:shadow-[0_4px_16px_rgba(212,175,55,0.25)] text-xs font-semibold dark:font-bold transition-all shadow-[0_4px_16px_rgba(2,132,199,0.35)] cursor-pointer"
+                className="h-12 px-6 sm:px-7 rounded-xl bg-slate-900 hover:bg-slate-800 text-white dark:bg-[#262626] dark:hover:bg-[#2F2F2F] dark:text-[#F5F5F5] dark:border dark:border-[#38301D] text-sm font-semibold transition-all duration-200 shadow-xs cursor-pointer inline-flex items-center justify-center gap-2 whitespace-nowrap"
               >
                 <span>Launch Orion-9 OS</span>
                 <ArrowRight className="w-4 h-4" />
@@ -118,7 +130,7 @@ export const Footer: React.FC<FooterProps> = ({ onNavigate, onOpenDownload }) =>
               <button
                 type="button"
                 onClick={() => handleRoute('/login')}
-                className="px-5 py-3 rounded-xl liquid-glass-button text-xs font-semibold text-[var(--orion-text-primary)] transition-all cursor-pointer"
+                className="h-12 px-6 sm:px-7 rounded-xl bg-white hover:bg-slate-50 text-slate-900 border border-slate-200 hover:border-slate-300 shadow-xs hover:shadow-sm dark:bg-[#1B1B1B] dark:hover:bg-[#222222] dark:text-[#F5F5F5] dark:border-[#38301D] dark:hover:border-[#D4AF37]/50 text-sm font-semibold transition-all duration-200 cursor-pointer inline-flex items-center justify-center whitespace-nowrap"
               >
                 Sign in
               </button>

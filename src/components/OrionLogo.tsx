@@ -5,7 +5,7 @@ import { Orion3DLogo } from './Orion3DLogo';
 
 export interface OrionLogoProps {
   companyName?: string;
-  size?: 'sm' | 'md' | 'lg' | 'xl';
+  size?: 'sm' | 'md' | 'lg' | 'xl' | '2xl' | 'brand';
   tone?: 'dark' | 'light';
   showMark?: boolean;
   className?: string;
@@ -65,6 +65,8 @@ export const OrionLogo: React.FC<OrionLogoProps> = ({
     md: 'w-8 h-8',
     lg: 'w-9 h-9',
     xl: 'w-11 h-11 sm:w-12 sm:h-12 lg:w-14 lg:h-14',
+    '2xl': 'w-12 h-12 sm:w-14 sm:h-14 lg:w-20 lg:h-20',
+    brand: 'w-12 h-12 sm:w-14 sm:h-14 lg:w-20 lg:h-20',
   };
 
   const textSizes = {
@@ -72,6 +74,8 @@ export const OrionLogo: React.FC<OrionLogoProps> = ({
     md: 'text-lg',
     lg: 'text-xl',
     xl: 'text-xl sm:text-[22px] lg:text-2xl',
+    '2xl': 'text-[22px] sm:text-2xl lg:text-[32px]',
+    brand: 'text-[22px] sm:text-2xl lg:text-[32px]',
   };
 
   const primaryStroke = isLight ? '#F5F5F5' : '#070B19';
@@ -81,13 +85,21 @@ export const OrionLogo: React.FC<OrionLogoProps> = ({
   return (
     <span
       className={`inline-flex items-center ${
-        size === 'xl' ? 'gap-3 sm:gap-3.5' : 'gap-2.5'
+        size === '2xl' || size === 'brand'
+          ? 'gap-3.5 sm:gap-4 lg:gap-5'
+          : size === 'xl'
+          ? 'gap-3 sm:gap-3.5'
+          : 'gap-2.5'
       } select-none ${className}`}
     >
       {showMark && (
         <span
           className={`${markSizes[size]} ${
-            size === 'xl' ? 'rounded-xl p-1 sm:p-1.5' : 'rounded-lg p-0.5'
+            size === '2xl' || size === 'brand'
+              ? 'rounded-2xl p-2 sm:p-2.5 shadow-md'
+              : size === 'xl'
+              ? 'rounded-xl p-1 sm:p-1.5'
+              : 'rounded-lg p-0.5'
           } flex items-center justify-center shrink-0 shadow-2xs border ${
             isLight ? 'border-[#38301D]' : 'border-[#38BDF8]/30'
           } overflow-hidden`}
