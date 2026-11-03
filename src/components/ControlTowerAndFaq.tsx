@@ -41,12 +41,17 @@ export const ControlTowerAndFaq: React.FC = () => {
          ========================================================================== */}
       <section
         id="faq"
-        className="max-w-[1440px] mx-auto px-4 sm:px-6 lg:px-12 py-16 sm:py-28 border-t border-[var(--glass-border-subtle)]"
+        className="max-w-[1440px] mx-auto px-4 sm:px-6 lg:px-12 py-16 sm:py-28 border-t border-[var(--glass-border-subtle)] scroll-mt-24 sm:scroll-mt-32"
       >
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-12 lg:gap-16 items-start">
           {/* Left Column: Heading */}
-          <div className="lg:col-span-5 space-y-4">
-            <SectionBadge icon={<ShieldCheck className="w-3.5 h-3.5 sm:w-4 sm:h-4" />}>
+          <div className="lg:col-span-5 space-y-5">
+            <SectionBadge
+              sectionNumber="03"
+              align="left"
+              icon={<ShieldCheck className="w-3.5 h-3.5 sm:w-4 sm:h-4" />}
+              className="mb-2"
+            >
               Enterprise FAQ
             </SectionBadge>
             <h2 className="font-editorial text-3xl sm:text-4xl lg:text-[42px] font-bold tracking-tight leading-tight text-[var(--orion-text-primary)]">

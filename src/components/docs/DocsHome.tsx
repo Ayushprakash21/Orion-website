@@ -5,6 +5,7 @@ import {
   ArrowRight,
   ShieldCheck,
 } from 'lucide-react';
+import { SectionBadge } from '../SectionBadge';
 import { DesktopTourDemo } from './DesktopTourDemo';
 import { DataFlowExplorerDemo } from './DataFlowExplorerDemo';
 import { DocsFeatureExplorer } from './DocsFeatureExplorer';
@@ -19,12 +20,13 @@ export const DocsHome: React.FC<{
       {/* 1. HERO SECTION */}
       <section className="relative pt-2 sm:pt-6 pb-6 border-b border-[var(--glass-border-subtle)]">
         <div className="space-y-4 max-w-3xl">
-          <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full liquid-glass-badge text-[11px] font-mono uppercase tracking-wider text-[var(--orion-accent)] font-semibold">
-            <Sparkles className="w-3.5 h-3.5" />
-            <span>ORION-9 OS MANUAL & TECHNICAL REFERENCE</span>
-            <span className="opacity-40">|</span>
-            <span className="text-emerald-500 font-bold">Certified v9.0.0</span>
-          </div>
+          <SectionBadge
+            icon={<Sparkles className="w-3.5 h-3.5" />}
+            align="left"
+            className="mb-2"
+          >
+            ORION-9 OS MANUAL &amp; TECHNICAL REFERENCE
+          </SectionBadge>
 
           <h1 className="text-3xl sm:text-5xl font-editorial font-bold tracking-tight text-[var(--orion-text-primary)] leading-tight">
             Orion-9 Documentation

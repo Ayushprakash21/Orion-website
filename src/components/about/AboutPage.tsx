@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { Navbar } from '../Navbar';
 import { Footer } from '../Footer';
+import { SectionBadge } from '../SectionBadge';
 import { useSiteConfig } from '../../context/SiteConfigContext';
 import {
   Sparkles,
@@ -253,10 +254,14 @@ export const AboutPage: React.FC<AboutPageProps> = ({ onNavigate, onOpenDownload
            ========================================================================== */}
         <section id="overview" className="max-w-[1440px] mx-auto px-4 sm:px-6 lg:px-12 pt-6 pb-12 sm:pb-16 scroll-mt-32">
           <div className="space-y-6 max-w-4xl">
-            <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full liquid-glass-badge text-[var(--orion-accent)] font-mono text-xs font-semibold uppercase tracking-wider">
-              <Sparkles className="w-3.5 h-3.5" />
-              <span>ORION-9 OPERATING SYSTEM &middot; SYSTEM GENESIS &amp; ARCHITECTURE</span>
-            </div>
+            <SectionBadge
+              sectionNumber="01"
+              align="left"
+              icon={<Sparkles className="w-3.5 h-3.5" />}
+              className="mb-2"
+            >
+              ORION-9 OPERATING SYSTEM &middot; SYSTEM GENESIS &amp; ARCHITECTURE
+            </SectionBadge>
 
             <h1 className="text-3xl sm:text-5xl lg:text-6xl font-editorial font-bold text-[var(--orion-text-primary)] tracking-tight leading-[1.12]">
               The intelligent operating environment for global supply chains.

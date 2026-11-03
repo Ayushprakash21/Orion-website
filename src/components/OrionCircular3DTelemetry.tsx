@@ -435,8 +435,11 @@ export const OrionCircular3DTelemetry: React.FC = () => {
         {/* Top Section Header */}
         <div className="flex flex-col items-center text-center max-w-3xl mb-8 sm:mb-10 px-4">
           <SectionBadge
-            icon={<Radio className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-sky-400 animate-pulse" />}
-            className="mb-3.5 sm:mb-4 bg-sky-500/10 border-sky-400/30 text-sky-400"
+            sectionNumber="02"
+            align="center"
+            darkCanvas={true}
+            icon={<Radio className="w-3.5 h-3.5 sm:w-4 sm:h-4 animate-pulse" />}
+            className="mb-5 sm:mb-6"
           >
             ORION-9 OS TELEMETRY
           </SectionBadge>

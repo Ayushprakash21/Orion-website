@@ -207,8 +207,8 @@ export const EditorialCapabilities: React.FC = () => {
 
       <div className="max-w-[1440px] mx-auto px-4 sm:px-6 lg:px-12 relative z-10">
         {/* Large Editorial Headline */}
-        <div className="max-w-4xl pb-14 sm:pb-20 space-y-4">
-          <SectionBadge>
+        <div className="max-w-4xl pb-14 sm:pb-20 space-y-5">
+          <SectionBadge sectionNumber="01" align="left" className="mb-2">
             Enterprise Architecture Capabilities
           </SectionBadge>
           <h2 className="font-editorial text-3xl sm:text-5xl lg:text-[50px] font-extrabold tracking-tight leading-[1.12] text-[var(--orion-text-primary)]">
