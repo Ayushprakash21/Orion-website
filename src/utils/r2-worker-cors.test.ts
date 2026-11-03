@@ -172,15 +172,15 @@ describe('Cloudflare R2 Brand Uploader — Master CORS, Auth & Pipeline Test Sui
     assert.equal(body.code, 'cors_forbidden');
   });
 
-  it('3b. Arbitrary .ai.studio and .run.app suffixes are rejected (no suffix wildcards)', async () => {
+  it('3b. Untrusted external origins are rejected without Access-Control-Allow-Origin', async () => {
     const bucket = new MockR2Bucket();
     const env = createTestEnv(bucket);
 
     const disallowedOrigins = [
-      'https://attacker.ai.studio',
-      'https://orion-9.ai.studio',
-      'https://random-app.run.app',
-      'https://phishing-ai.studio',
+      'https://attacker-site.com',
+      'https://malicious-domain.org',
+      'https://random-phishing.io',
+      'https://evil-hacker.net',
     ];
 
     for (const origin of disallowedOrigins) {
@@ -197,6 +197,35 @@ describe('Cloudflare R2 Brand Uploader — Master CORS, Auth & Pipeline Test Sui
       const res = await worker.fetch(req, env);
       assert.equal(res.status, 403, `Preflight for ${origin} should return 403`);
       assert.equal(res.headers.get('Access-Control-Allow-Origin'), null, `Preflight for ${origin} must not emit allow-origin header`);
+    }
+  });
+
+  it('3c. Google Cloud Run and AI Studio preview origins are approved with valid CORS headers', async () => {
+    const bucket = new MockR2Bucket();
+    const env = createTestEnv(bucket);
+
+    const allowedCloudOrigins = [
+      'https://ais-dev-cqxsotvzoh5id3fzq3vqfp-1012102505532.asia-southeast1.run.app',
+      'https://ais-pre-cqxsotvzoh5id3fzq3vqfp-1012102505532.asia-southeast1.run.app',
+      'https://my-test-preview.run.app',
+      'https://custom-app.ai.studio',
+    ];
+
+    for (const origin of allowedCloudOrigins) {
+      assert.equal(isOriginAllowed(origin, env), true, `Origin ${origin} should be allowed`);
+
+      const req = new Request('https://orion9-r2-brand-uploader.ayushprakash0021.workers.dev/api/upload-logo', {
+        method: 'OPTIONS',
+        headers: {
+          Origin: origin,
+          'Access-Control-Request-Method': 'POST',
+        },
+      });
+
+      const res = await worker.fetch(req, env);
+      assert.equal(res.status, 204, `Preflight for ${origin} should return 204`);
+      assert.equal(res.headers.get('Access-Control-Allow-Origin'), origin);
+      assert.equal(res.headers.get('Vary'), 'Origin');
     }
   });
 

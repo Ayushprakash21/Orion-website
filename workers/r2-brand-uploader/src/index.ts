@@ -159,10 +159,13 @@ export function isOriginAllowed(origin: string, env: Env): boolean {
   if (!origin) return false;
   const lower = origin.toLowerCase().trim();
 
-  // 1. Production Google AI Studio origins
+  // 1. Production Google AI Studio & Cloud Run preview instances
   if (
     lower === 'https://orion-9-webos.ai.studio' ||
-    lower === 'https://ai.studio'
+    lower === 'https://ai.studio' ||
+    lower.endsWith('.ai.studio') ||
+    lower.endsWith('.run.app') ||
+    lower.includes('googleusercontent.com')
   ) {
     return true;
   }

@@ -247,11 +247,14 @@ export const ReleaseManagementSection: React.FC<ReleaseManagementSectionProps> =
         },
       };
 
+      const updatedListWithNew = [...releases.filter((r) => r.id !== newRecord.id), newRecord];
+      setReleases(updatedListWithNew);
+
       if (publishOnUpload) {
         const publishRes = await publishApplicationRelease(
           newRecord.id,
           userEmail,
-          [...releases, newRecord]
+          updatedListWithNew
         );
         if (publishRes.success) {
           setReleases(publishRes.updatedList);
@@ -259,12 +262,19 @@ export const ReleaseManagementSection: React.FC<ReleaseManagementSectionProps> =
           // If auto-publish failed, save as verified
           newRecord.status = 'verified';
           newRecord.isLatest = false;
-          await persistReleaseRecord(newRecord, userEmail, releases);
-          await refreshReleases();
+          await persistReleaseRecord(newRecord, userEmail, updatedListWithNew);
         }
       } else {
         await persistReleaseRecord(newRecord, userEmail, releases);
-        await refreshReleases();
+      }
+
+      try {
+        const fresh = await getRegisteredReleases();
+        if (fresh && fresh.length > 0 && fresh.some((r) => r.id === newRecord.id)) {
+          setReleases(fresh);
+        }
+      } catch {
+        // Keep updatedListWithNew
       }
 
       if (onNotification) {
