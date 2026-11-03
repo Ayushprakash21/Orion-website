@@ -768,9 +768,9 @@ export function AdminConsole({ onNavigate }: AdminConsoleProps) {
       <aside
         className={`
           fixed inset-y-0 left-0 z-50 w-[min(280px,85vw)] lg:w-72
-          bg-[#090D18]/98 lg:bg-[#090D18]/95 dark:bg-[#060913]/98 lg:dark:bg-[#060913]/95
-          backdrop-blur-2xl text-white shrink-0 flex flex-col justify-between p-5 sm:p-6
-          border-r border-white/10 shadow-2xl lg:shadow-none
+          bg-[#080808]/98 lg:bg-[#080808]/95
+          backdrop-blur-2xl text-[#F5F5F5] shrink-0 flex flex-col justify-between p-5 sm:p-6
+          border-r border-[#292929] shadow-2xl lg:shadow-none
           transition-transform duration-300 ease-in-out
           lg:static lg:h-screen lg:sticky lg:top-0 lg:overflow-y-auto lg:translate-x-0
           ${
@@ -784,12 +784,12 @@ export function AdminConsole({ onNavigate }: AdminConsoleProps) {
         <div className="flex flex-col min-h-0 flex-1">
           <div className="flex items-center justify-between mb-6 sm:mb-8 shrink-0">
             <div className="flex items-center gap-3 min-w-0">
-              <div className="w-9 h-9 rounded-xl bg-[#294D6B] flex items-center justify-center font-mono font-bold text-sm text-white shrink-0">
+              <div className="w-9 h-9 rounded-xl bg-[#141414] border border-[#38301D] flex items-center justify-center font-mono font-bold text-sm text-[#D4AF37] shrink-0">
                 {publishedConfig.branding.shortMark}
               </div>
               <div className="min-w-0">
-                <div className="text-sm font-semibold tracking-tight truncate">Orion-9 Admin</div>
-                <div className="text-[11px] font-mono text-[#A8C2D2] truncate">CMS &amp; Governance</div>
+                <div className="text-sm font-semibold tracking-tight truncate text-[#F5F5F5]">Orion-9 Admin</div>
+                <div className="text-[11px] font-mono text-[#D4AF37] truncate">CMS &amp; Governance</div>
               </div>
             </div>
 
@@ -797,7 +797,7 @@ export function AdminConsole({ onNavigate }: AdminConsoleProps) {
               <button
                 type="button"
                 onClick={() => onNavigate('/')}
-                className="p-2 rounded-lg bg-white/5 hover:bg-white/10 text-xs font-mono text-[#A8C2D2] flex items-center gap-1 cursor-pointer"
+                className="p-2 rounded-lg bg-[#141414] border border-[#292929] hover:border-[#38301D] text-xs font-mono text-[#A3A3A3] hover:text-[#D4AF37] flex items-center gap-1 cursor-pointer transition-colors"
                 title="View Public Website"
               >
                 Site <ExternalLink className="w-3 h-3" />
@@ -807,7 +807,7 @@ export function AdminConsole({ onNavigate }: AdminConsoleProps) {
               <button
                 type="button"
                 onClick={() => setIsMobileDrawerOpen(false)}
-                className="lg:hidden p-2 rounded-lg bg-white/5 hover:bg-white/10 text-slate-400 hover:text-white transition cursor-pointer"
+                className="lg:hidden p-2 rounded-lg bg-[#141414] border border-[#292929] text-[#A3A3A3] hover:text-[#F5F5F5] transition cursor-pointer"
                 aria-label="Close navigation drawer"
               >
                 <X className="w-4 h-4" />
@@ -828,13 +828,13 @@ export function AdminConsole({ onNavigate }: AdminConsoleProps) {
                     setStatusBanner(null);
                     setIsMobileDrawerOpen(false); // Closes drawer automatically on selection
                   }}
-                  className={`w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-xs font-medium transition-colors cursor-pointer ${
+                  className={`w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-xs font-medium transition-all duration-150 cursor-pointer ${
                     active
-                      ? 'bg-[#294D6B] text-white shadow-xs font-semibold'
-                      : 'text-slate-300 hover:bg-white/5 hover:text-white'
+                      ? 'bg-[#D4AF37]/15 text-[#F5D76E] border border-[#38301D] shadow-[0_2px_8px_rgba(0,0,0,0.4)] font-semibold'
+                      : 'text-[#A3A3A3] hover:bg-[#1B1B1B] hover:text-[#F5F5F5] border border-transparent'
                   }`}
                 >
-                  <Icon className="w-4 h-4 shrink-0" />
+                  <Icon className={`w-4 h-4 shrink-0 ${active ? 'text-[#D4AF37]' : 'text-[#737373]'}`} />
                   <span className="truncate">{item.label}</span>
                 </button>
               );
@@ -843,13 +843,13 @@ export function AdminConsole({ onNavigate }: AdminConsoleProps) {
         </div>
 
         {/* 14th Item: Logout & User badge */}
-        <div className="mt-5 pt-5 border-t border-white/10 space-y-3 shrink-0">
-          <div className="px-3 py-2.5 rounded-xl bg-white/5 text-xs">
+        <div className="mt-5 pt-5 border-t border-[#292929] space-y-3 shrink-0">
+          <div className="px-3 py-2.5 rounded-xl bg-[#141414] border border-[#292929] text-xs">
             <div className="flex items-center gap-1.5 text-emerald-400 font-mono text-[11px] mb-0.5 truncate">
               <ShieldCheck className="w-3.5 h-3.5 shrink-0" />
               <span>ADMIN VERIFIED ({adminAuthSource})</span>
             </div>
-            <div className="truncate text-slate-300 font-mono text-[11px]">{user?.email}</div>
+            <div className="truncate text-[#A3A3A3] font-mono text-[11px]">{user?.email}</div>
           </div>
 
           <button

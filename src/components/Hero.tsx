@@ -51,32 +51,32 @@ export const Hero: React.FC = () => {
               <button
                 type="button"
                 onClick={() => launchOrion(hp.secondaryCtaUrl || destinationUrl)}
-                className="group inline-flex items-center gap-2.5 px-7 py-3.5 rounded-full bg-[var(--orion-text-primary)] text-[var(--orion-surface)] font-medium text-sm hover:bg-[var(--orion-accent)] hover:text-white transition-all shadow-lg cursor-pointer"
+                className="group inline-flex items-center gap-2.5 px-7 py-3.5 rounded-full bg-gradient-to-r from-[#D4AF37] to-[#F5D76E] hover:brightness-105 text-[#080808] font-bold text-sm transition-all shadow-[0_4px_16px_rgba(212,175,55,0.25)] cursor-pointer"
               >
                 <span>Launch Orion-9 OS</span>
-                <ArrowRight className="w-4 h-4 text-[#A8C2D2] transition-transform group-hover:translate-x-1" />
+                <ArrowRight className="w-4 h-4 text-[#080808] transition-transform group-hover:translate-x-1" />
               </button>
 
               <a
                 href="#problem"
-                className="inline-flex items-center gap-2 px-6 py-3.5 rounded-full liquid-glass-button text-[var(--orion-text-primary)] font-medium text-sm transition-all shadow-xs"
+                className="inline-flex items-center gap-2 px-6 py-3.5 rounded-full liquid-glass-button text-[#F5F5F5] font-medium text-sm transition-all shadow-xs"
               >
-                <Compass className="w-4 h-4 text-[#294D6B]" />
+                <Compass className="w-4 h-4 text-[#D4AF37]" />
                 <span>Explore the Platform</span>
               </a>
             </div>
 
-            <div className="pt-4 border-t border-[var(--glass-border-subtle)] flex flex-wrap items-center gap-6 text-xs text-[var(--orion-text-muted)]">
+            <div className="pt-4 border-t border-[var(--glass-border-subtle)] flex flex-wrap items-center gap-6 text-xs text-[#737373]">
               <div className="flex items-center gap-2">
-                <ShieldCheck className="w-4 h-4 text-[#294D6B]" />
+                <ShieldCheck className="w-4 h-4 text-[#D4AF37]" />
                 <span>Zero-Trust Security</span>
               </div>
               <div className="flex items-center gap-2">
-                <Database className="w-4 h-4 text-[#294D6B]" />
+                <Database className="w-4 h-4 text-[#D4AF37]" />
                 <span>Canonical Graph Ontology</span>
               </div>
               <div className="flex items-center gap-2">
-                <CheckCircle2 className="w-4 h-4 text-[#294D6B]" />
+                <CheckCircle2 className="w-4 h-4 text-[#D4AF37]" />
                 <span>Governed Decision Automation</span>
               </div>
             </div>

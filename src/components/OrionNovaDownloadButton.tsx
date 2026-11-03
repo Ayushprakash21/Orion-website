@@ -88,10 +88,10 @@ export const OrionNovaDownloadButton: React.FC<OrionNovaDownloadButtonProps> = (
           }}
           className={`relative overflow-hidden flex items-center justify-center font-bold text-sm select-none cursor-pointer transition-colors shadow-xs ${
             !isAuthenticated
-              ? 'bg-[#0284C7] hover:bg-[#0369A1] text-white'
+              ? 'bg-gradient-to-r from-[#D4AF37] to-[#F5D76E] hover:brightness-105 text-[#080808] shadow-[0_4px_16px_rgba(212,175,55,0.25)]'
               : isComplete
               ? 'bg-[#059669] hover:bg-[#047857] text-white shadow-[0_0_20px_rgba(5,150,105,0.3)]'
-              : 'bg-[#0284C7] hover:bg-[#0369A1] text-white shadow-[0_4px_14px_rgba(2,132,199,0.35)]'
+              : 'bg-gradient-to-r from-[#D4AF37] to-[#F5D76E] hover:brightness-105 text-[#080808] shadow-[0_4px_16px_rgba(212,175,55,0.25)]'
           } ${disabled ? 'opacity-60 cursor-not-allowed' : ''}`}
         >
           {/* Subtle Glass Shimmer */}

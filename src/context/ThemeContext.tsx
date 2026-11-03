@@ -15,15 +15,15 @@ const ThemeContext = createContext<ThemeContextValue | undefined>(undefined);
 
 export const ThemeProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [themePreference, setThemePreferenceState] = useState<ThemePreference>(() => {
-    if (typeof window === 'undefined') return 'light';
+    if (typeof window === 'undefined') return 'dark';
     const stored = localStorage.getItem(THEME_STORAGE_KEY) as ThemePreference | null;
     if (stored === 'light' || stored === 'dark' || stored === 'system') {
       return stored;
     }
-    return 'light'; // Default to pristine light glass mode with dark toggle
+    return 'dark'; // Default to premium Black & Gold Dark Mode
   });
 
-  const [resolvedTheme, setResolvedTheme] = useState<'light' | 'dark'>('light');
+  const [resolvedTheme, setResolvedTheme] = useState<'light' | 'dark'>('dark');
 
   // Evaluate resolved theme based on preference and media query
   useEffect(() => {

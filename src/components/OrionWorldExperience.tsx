@@ -586,7 +586,7 @@ export const OrionWorldExperience: React.FC = () => {
     <section
       id="process"
       ref={containerRef}
-      className="relative w-full h-[480vh] bg-[#E6F3FB] dark:bg-black select-none overflow-visible transition-colors duration-300"
+      className="relative w-full h-[480vh] bg-[#080808] text-[#F5F5F5] select-none overflow-visible transition-colors duration-300"
       aria-label="Orion-9 3D Supply Chain Operating World and Process"
     >
       {/* Anchor marker for direct navigation to Stage 0: Raw Material Origins */}
@@ -667,11 +667,7 @@ export const OrionWorldExperience: React.FC = () => {
               }`}
             >
               <span
-                className={`w-2.5 h-2.5 rounded-full shrink-0 ${
-                  isDark
-                    ? 'bg-[#38BDF8] shadow-[0_0_10px_rgba(56,189,248,0.75)]'
-                    : 'bg-[#0284C7] shadow-[0_0_10px_rgba(2,132,199,0.75)]'
-                }`}
+                className="w-2.5 h-2.5 rounded-full shrink-0 bg-[#D4AF37] shadow-[0_0_10px_rgba(212,175,55,0.75)]"
                 aria-hidden="true"
               />
               <div className="flex flex-col">

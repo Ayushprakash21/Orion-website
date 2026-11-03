@@ -25,10 +25,10 @@ export const SectionBadge: React.FC<SectionBadgeProps> = ({
   return (
     <div
       id={id}
-      className={`inline-flex items-center gap-2 px-3.5 sm:px-4 py-1.5 rounded-full liquid-glass-badge text-xs sm:text-[13px] font-mono font-semibold uppercase tracking-wider text-[var(--orion-accent)] border border-sky-400/30 shadow-xs transition-colors select-none ${className}`}
+      className={`inline-flex items-center gap-2 px-3.5 sm:px-4 py-1.5 rounded-full bg-[#141414]/90 text-xs sm:text-[13px] font-mono font-semibold uppercase tracking-wider text-[#D4AF37] border border-[#38301D] shadow-[0_2px_10px_rgba(0,0,0,0.5)] transition-colors select-none ${className}`}
     >
       {icon && (
-        <span className="inline-flex items-center justify-center shrink-0 text-[var(--orion-accent)]" aria-hidden="true">
+        <span className="inline-flex items-center justify-center shrink-0 text-[#D4AF37]" aria-hidden="true">
           {icon}
         </span>
       )}

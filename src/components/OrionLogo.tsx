@@ -74,8 +74,8 @@ export const OrionLogo: React.FC<OrionLogoProps> = ({
     xl: 'text-xl sm:text-[22px] lg:text-2xl',
   };
 
-  const primaryStroke = isLight ? '#FFFFFF' : '#070B19';
-  const badgeBg = isLight ? '#FFFFFF' : '#070B19';
+  const primaryStroke = '#F5F5F5';
+  const badgeBg = '#141414';
 
   return (
     <span
@@ -87,7 +87,7 @@ export const OrionLogo: React.FC<OrionLogoProps> = ({
         <span
           className={`${markSizes[size]} ${
             size === 'xl' ? 'rounded-xl p-1 sm:p-1.5' : 'rounded-lg p-0.5'
-          } flex items-center justify-center shrink-0 shadow-2xs border border-[#38BDF8]/30 overflow-hidden`}
+          } flex items-center justify-center shrink-0 shadow-2xs border border-[#38301D] overflow-hidden`}
           style={{ backgroundColor: badgeBg }}
           aria-hidden="true"
         >
@@ -112,21 +112,21 @@ export const OrionLogo: React.FC<OrionLogoProps> = ({
             >
               <defs>
                 <linearGradient id="orionBadgeGrad" x1="472" y1="16" x2="788" y2="478" gradientUnits="userSpaceOnUse">
-                  <stop offset="0%" stopColor="#0284C7" />
-                  <stop offset="45%" stopColor="#00D2FF" />
-                  <stop offset="100%" stopColor="#38BDF8" />
+                  <stop offset="0%" stopColor="#D4AF37" />
+                  <stop offset="45%" stopColor="#F5D76E" />
+                  <stop offset="100%" stopColor="#9E7C25" />
                 </linearGradient>
               </defs>
               {/* 1. Under-Bridge Returning Ribbon */}
               <path
                 d="M 148 368 L 268 440 C 338 416 390 336 448 238 C 500 144 548 102 616 102 C 662 102 694 128 704 168 L 772 142 C 748 62 682 16 596 16 C 502 16 438 96 376 198 C 324 286 280 354 218 368 Z"
-                fill="#0284C7"
-                opacity="0.82"
+                fill="#D4AF37"
+                opacity="0.85"
               />
               {/* 2. Left Loop Lower Return Fold */}
               <path
                 d="M 16 238 C 16 360 106 454 224 454 C 250 454 274 448 298 438 L 176 362 C 128 342 102 296 102 238 Z"
-                fill={isLight ? '#0F172A' : '#64748B'}
+                fill="#292929"
               />
               {/* 3. Right Loop & Angled Numeral '9' Stem */}
               <path
@@ -136,7 +136,7 @@ export const OrionLogo: React.FC<OrionLogoProps> = ({
               {/* 4. Foreground Left Loop & Center Diagonal Bridge */}
               <path
                 d="M 16 238 C 16 112 104 16 220 16 C 316 16 384 96 458 192 C 528 280 578 326 638 322 C 680 318 714 286 728 238 L 668 308 C 638 344 594 360 546 354 C 480 346 426 284 360 198 C 298 118 256 86 204 86 C 138 86 94 144 94 226 C 94 288 128 338 176 362 L 64 362 C 32 326 16 284 16 238 Z"
-                fill={isLight ? '#07111F' : '#FFFFFF'}
+                fill="#F5F5F5"
               />
             </svg>
           )}
@@ -147,8 +147,8 @@ export const OrionLogo: React.FC<OrionLogoProps> = ({
         style={{ color: primaryStroke }}
       >
         <span>ORION</span>
-        <span className="text-[#0284C7] dark:text-[#38BDF8]">-</span>
-        <span className="text-[#00D2FF]">9</span>
+        <span className="text-[#D4AF37]">-</span>
+        <span className="text-[#F5D76E]">9</span>
       </span>
     </span>
   );
