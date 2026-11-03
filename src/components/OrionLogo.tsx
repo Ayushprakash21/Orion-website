@@ -232,7 +232,7 @@ export const OrionHeroBrandLockup: React.FC<OrionHeroBrandLockupProps> = ({
         data-testid="orion-hero-animated-logo"
         className="relative w-[260px] sm:w-[285px] md:w-[310px] lg:w-[330px] flex flex-col items-center justify-center select-none translate-y-0"
       >
-        {/* Stage 1 — Atmosphere: Soft radiant sky-white atmosphere behind logo (no dark halo) */}
+        {/* Stage 1 — Atmosphere: Soft radiant sky-white atmosphere behind logo */}
         <div
           aria-hidden="true"
           data-testid="orion-hero-ambient-glow"
@@ -373,7 +373,7 @@ export const OrionHeroBrandLockup: React.FC<OrionHeroBrandLockupProps> = ({
                 y="850"
                 textAnchor="middle"
                 fill="currentColor"
-                className="text-[#070E1C] dark:text-[#F5F5F7]"
+                className="text-[#070E1C]"
                 style={{
                   fontFamily: "system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif",
                   fontWeight: 800,
@@ -453,14 +453,14 @@ export const OrionHeroBrandLockup: React.FC<OrionHeroBrandLockupProps> = ({
       >
         <h1
           data-testid="orion-hero-editorial-headline"
-          className="font-editorial text-2xl sm:text-3xl md:text-4xl lg:text-[40px] font-extrabold tracking-[-0.03em] leading-[1.12] text-[var(--orion-text-primary)]"
+          className="font-editorial text-2xl sm:text-3xl md:text-4xl lg:text-[40px] font-extrabold tracking-[-0.03em] leading-[1.12] text-[#070E1C]"
         >
           {headlineText}
         </h1>
 
         <p
           data-testid="orion-hero-supporting-description"
-          className="text-xs sm:text-sm text-[var(--orion-text-secondary)] mt-2.5 max-w-xl mx-auto leading-relaxed"
+          className="text-xs sm:text-sm text-[#475569] mt-2.5 max-w-xl mx-auto leading-relaxed"
         >
           {supportingParagraph}
         </p>

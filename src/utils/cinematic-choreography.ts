@@ -642,10 +642,10 @@ export function catmullRomVec3(p0: Vec3, p1: Vec3, p2: Vec3, p3: Vec3, t: number
 export function evaluateWorldScrollState(rawScrollProgress: number): WorldScrollState {
   const p = clamp01(rawScrollProgress);
 
-  // Hero phase is active at the top of the scroll container (0.00 -> 0.16)
-  const heroFade = 1 - smoothstep(0.06, 0.165, p);
-  const isHeroPhase = p < 0.155;
-  const heroTranslateY = -smoothstep(0.04, 0.17, p) * 48;
+  // Hero phase is active at the top of the scroll container (0.00 -> 0.18)
+  const heroFade = 1 - smoothstep(0.08, 0.19, p);
+  const isHeroPhase = p < 0.18;
+  const heroTranslateY = -smoothstep(0.06, 0.19, p) * 48;
 
   // Bottom-left 01..04 progressive HUD fades in smoothly as hero fades out
   const processHudOpacity = smoothstep(0.13, 0.21, p);
