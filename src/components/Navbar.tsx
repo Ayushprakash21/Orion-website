@@ -19,6 +19,7 @@ import {
   GraduationCap,
   BookOpen,
   FileText,
+  User,
 } from 'lucide-react';
 
 interface NavbarProps {
@@ -342,6 +343,19 @@ export const Navbar: React.FC<NavbarProps> = ({ onNavigate, onOpenDownload }) =>
                         <span>Documentation</span>
                       </button>
 
+                      <button
+                        type="button"
+                        role="menuitem"
+                        onClick={() => {
+                          setUserDropdownOpen(false);
+                          handleRoute('/dashboard/profile');
+                        }}
+                        className="w-full flex items-center gap-2.5 px-3 py-2 rounded-xl text-[var(--orion-text-primary)] hover:bg-white/50 dark:hover:bg-white/10 transition-colors text-left font-medium cursor-pointer"
+                      >
+                        <User className="w-3.5 h-3.5 text-[var(--orion-accent)] shrink-0" />
+                        <span>Personal Profile</span>
+                      </button>
+
                       {isAdmin && (
                         <button
                           type="button"
@@ -495,6 +509,15 @@ export const Navbar: React.FC<NavbarProps> = ({ onNavigate, onOpenDownload }) =>
                       <span>Docs</span>
                     </button>
                   </div>
+
+                  <button
+                    type="button"
+                    onClick={() => handleRoute('/dashboard/profile')}
+                    className="w-full py-2.5 px-3 rounded-xl liquid-glass-button text-xs font-medium text-[var(--orion-text-primary)] text-center flex items-center justify-center gap-1.5 cursor-pointer"
+                  >
+                    <User className="w-3.5 h-3.5 text-[var(--orion-accent)] shrink-0" />
+                    <span>Personal Profile</span>
+                  </button>
 
                   <div className={`grid ${isAdmin ? 'grid-cols-2' : 'grid-cols-1'} gap-2`}>
                     {isAdmin && (

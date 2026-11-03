@@ -28,6 +28,7 @@ import { LessonReaderView } from './components/dashboard/LessonReaderView';
 import { LearningProgressView } from './components/dashboard/LearningProgressView';
 import { OsUserManualView } from './components/dashboard/OsUserManualView';
 import { DocumentationLibraryView } from './components/dashboard/DocumentationLibraryView';
+import { UserProfileView } from './components/dashboard/UserProfileView';
 
 const AppContent: React.FC = () => {
   const { activeConfig } = useSiteConfig();
@@ -203,6 +204,18 @@ const AppContent: React.FC = () => {
           breadcrumbs={[{ label: 'Learning Progress' }]}
         >
           <LearningProgressView onNavigate={navigate} />
+        </UserDashboardLayout>
+      );
+    }
+
+    if (currentPath === '/dashboard/profile' || currentPath.startsWith('/dashboard/profile')) {
+      return (
+        <UserDashboardLayout
+          currentPath={currentPath}
+          onNavigate={navigate}
+          breadcrumbs={[{ label: 'Personal Profile' }]}
+        >
+          <UserProfileView onNavigate={navigate} />
         </UserDashboardLayout>
       );
     }

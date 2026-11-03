@@ -10,6 +10,11 @@ import {
   sendPasswordResetEmail,
   sendEmailVerification,
   updateProfile,
+  updatePassword,
+  reauthenticateWithCredential,
+  EmailAuthProvider,
+  verifyBeforeUpdateEmail,
+  updateEmail,
   GoogleAuthProvider,
   signInWithPopup,
   setPersistence,
@@ -31,6 +36,7 @@ import {
   limit,
   serverTimestamp,
   deleteDoc,
+  runTransaction,
 } from 'firebase/firestore';
 
 export interface FirebaseClientConfig {
@@ -272,6 +278,11 @@ export {
   sendPasswordResetEmail,
   sendEmailVerification,
   updateProfile,
+  updatePassword,
+  reauthenticateWithCredential,
+  EmailAuthProvider,
+  verifyBeforeUpdateEmail,
+  updateEmail,
   onAuthStateChanged,
   GoogleAuthProvider,
   signInWithPopup,
@@ -289,6 +300,7 @@ export {
   limit,
   serverTimestamp,
   deleteDoc,
+  runTransaction,
   type User,
   type Firestore,
 };

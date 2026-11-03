@@ -14,11 +14,11 @@ import {
   getDoc,
   setDoc,
   serverTimestamp,
-} from './firebase';
+} from './firebase.ts';
 import {
   normalizeUsername,
   validateUsername,
-} from '../utils/auth-validation';
+} from '../utils/auth-validation.ts';
 
 export interface UsernameRecord {
   uid: string;

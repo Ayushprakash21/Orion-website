@@ -20,6 +20,7 @@ import {
   Sliders,
   Sparkles,
   Globe,
+  User,
 } from 'lucide-react';
 
 interface UserDashboardLayoutProps {
@@ -72,6 +73,12 @@ export const UserDashboardLayout: React.FC<UserDashboardLayoutProps> = ({
       path: '/dashboard/progress',
       icon: CheckCircle2,
       isActive: currentPath.startsWith('/dashboard/progress'),
+    },
+    {
+      label: 'Profile',
+      path: '/dashboard/profile',
+      icon: User,
+      isActive: currentPath.startsWith('/dashboard/profile'),
     },
   ];
 
@@ -172,6 +179,21 @@ export const UserDashboardLayout: React.FC<UserDashboardLayoutProps> = ({
                 <span>Admin</span>
               </button>
             )}
+
+            {/* Personal Profile Shortcut */}
+            <button
+              type="button"
+              onClick={() => onNavigate('/dashboard/profile')}
+              className={`hidden sm:inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl liquid-glass-button text-xs font-medium cursor-pointer transition-colors ${
+                currentPath.startsWith('/dashboard/profile')
+                  ? 'bg-sky-500/20 text-sky-500 dark:text-sky-400 border border-sky-500/30'
+                  : 'text-[var(--orion-text-primary)]'
+              }`}
+              title="My Personal Profile"
+            >
+              <User className="w-3.5 h-3.5 text-sky-400" />
+              <span className="max-w-[120px] truncate">{displayName}</span>
+            </button>
 
             {/* Launch OS Button */}
             <button

@@ -141,7 +141,10 @@ service cloud.firestore {
       allow update: if (
         isOwner(userId) &&
         request.resource.data.uid == resource.data.uid &&
-        request.resource.data.role == resource.data.role &&
+        (
+          (!('role' in resource.data) && (!('role' in request.resource.data) || request.resource.data.role == 'operator')) ||
+          (request.resource.data.role == resource.data.role)
+        ) &&
         !('isAdmin' in request.resource.data)
       ) || isAdmin();
 
@@ -164,9 +167,9 @@ service cloud.firestore {
         request.resource.data.normalizedUsername == normalizedUsername &&
         !exists(/databases/$(database)/documents/usernames/$(normalizedUsername));
 
-      // Usernames are immutable once registered; only verified admins can manage
+      // Usernames can be managed by admins or released by their authenticated owner
       allow update: if false;
-      allow delete: if isAdmin();
+      allow delete: if isAdmin() || (isAuthenticated() && resource.data.uid == request.auth.uid);
     }
 
     // ===============================================================
