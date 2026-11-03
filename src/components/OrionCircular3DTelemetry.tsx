@@ -451,38 +451,6 @@ export const OrionCircular3DTelemetry: React.FC = () => {
         </div>
 
         {/* =====================================================================
-            MINIMAL SCENARIO SWITCHER STRIP (WITHOUT PLAY/PAUSE CONTROLS)
-           ===================================================================== */}
-        <div className="flex items-center gap-1.5 sm:gap-2 p-1.5 rounded-2xl liquid-glass-clear mb-6 shadow-lg max-w-[calc(100vw-2rem)] overflow-x-auto scrollbar-none">
-          {SCENARIO_CARDS.map((card, idx) => {
-            const isActive = idx === activeIndex;
-            return (
-              <button
-                key={card.id}
-                type="button"
-                data-scenario-index={idx}
-                onClick={() => selectScenario(idx)}
-                className={`px-3 sm:px-3.5 py-1.5 rounded-xl text-xs font-mono font-semibold transition-all cursor-pointer flex items-center gap-2 shrink-0 ${
-                  isActive
-                    ? 'bg-white text-slate-900 shadow-md scale-[1.02] dark:bg-white dark:text-slate-900'
-                    : 'text-[var(--orion-text-secondary)] hover:text-[var(--orion-text-primary)] hover:bg-white/20 dark:hover:bg-white/10'
-                }`}
-              >
-                <span
-                  style={{
-                    backgroundColor: isActive ? card.accent : '#64748B',
-                  }}
-                  className="w-1.5 h-1.5 rounded-full shrink-0"
-                />
-                <span className="whitespace-nowrap">
-                  {card.code}: {card.title}
-                </span>
-              </button>
-            );
-          })}
-        </div>
-
-        {/* =====================================================================
             CIRCULAR 3D STAGE (Active card is GUARANTEED to be in the exact center)
            ===================================================================== */}
         <div
