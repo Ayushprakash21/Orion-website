@@ -144,15 +144,35 @@ export function SiteConfigProvider({ children }: { children: React.ReactNode }) 
     }
 
     const root = document.documentElement;
-    root.style.setProperty('--orion-canvas', activeConfig.branding.canvasColor);
-    root.style.setProperty('--orion-alt-bg', activeConfig.branding.altSectionColor);
-    root.style.setProperty('--orion-surface', activeConfig.branding.surfaceColor);
-    root.style.setProperty('--orion-text-primary', activeConfig.branding.primaryTextColor);
-    root.style.setProperty('--orion-text-secondary', activeConfig.branding.secondaryTextColor);
-    root.style.setProperty('--orion-border', activeConfig.branding.borderColor);
-    root.style.setProperty('--orion-deep-blue', activeConfig.branding.deepBlueAccent);
-    root.style.setProperty('--orion-steel-blue', activeConfig.branding.steelBlueAccent);
-    root.style.setProperty('--orion-dark-surface', activeConfig.branding.darkSurfaceColor);
+    const applyVariables = () => {
+      const isDark = root.classList.contains('dark') || root.getAttribute('data-theme') === 'dark';
+      if (!isDark) {
+        root.style.setProperty('--orion-canvas', activeConfig.branding.canvasColor);
+        root.style.setProperty('--orion-alt-bg', activeConfig.branding.altSectionColor);
+        root.style.setProperty('--orion-surface', activeConfig.branding.surfaceColor);
+        root.style.setProperty('--orion-text-primary', activeConfig.branding.primaryTextColor);
+        root.style.setProperty('--orion-text-secondary', activeConfig.branding.secondaryTextColor);
+        root.style.setProperty('--orion-border', activeConfig.branding.borderColor);
+        root.style.setProperty('--orion-deep-blue', activeConfig.branding.deepBlueAccent);
+        root.style.setProperty('--orion-steel-blue', activeConfig.branding.steelBlueAccent);
+        root.style.setProperty('--orion-dark-surface', activeConfig.branding.darkSurfaceColor);
+      } else {
+        root.style.removeProperty('--orion-canvas');
+        root.style.removeProperty('--orion-alt-bg');
+        root.style.removeProperty('--orion-surface');
+        root.style.removeProperty('--orion-text-primary');
+        root.style.removeProperty('--orion-text-secondary');
+        root.style.removeProperty('--orion-border');
+        root.style.removeProperty('--orion-deep-blue');
+        root.style.removeProperty('--orion-steel-blue');
+        root.style.removeProperty('--orion-dark-surface');
+      }
+    };
+
+    applyVariables();
+    const handleThemeChange = () => applyVariables();
+    window.addEventListener('orion-theme-changed', handleThemeChange);
+    return () => window.removeEventListener('orion-theme-changed', handleThemeChange);
   }, [activeConfig]);
 
   const refreshFromFirestore = useCallback(async () => {

@@ -149,7 +149,7 @@ export const AuthPageView: React.FC<AuthPageViewProps> = ({ mode, onNavigate }) 
               <button
                 type="button"
                 onClick={() => launchOrion()}
-                className="w-full h-11 rounded-xl bg-gradient-to-r from-[#D4AF37] to-[#F5D76E] hover:brightness-105 text-[#080808] text-xs font-bold transition-all flex items-center justify-center gap-2 cursor-pointer shadow-[0_4px_16px_rgba(212,175,55,0.25)]"
+                className="w-full h-11 rounded-xl bg-[var(--orion-text-primary)] text-[var(--orion-surface)] text-xs font-semibold hover:opacity-90 transition-all flex items-center justify-center gap-2 cursor-pointer shadow-md"
               >
                 <span className="hidden sm:inline">Launch Orion-9 OS</span>
               <span className="sm:hidden">Orion-9 OS</span>
@@ -158,7 +158,7 @@ export const AuthPageView: React.FC<AuthPageViewProps> = ({ mode, onNavigate }) 
               <button
                 type="button"
                 onClick={() => onNavigate('/dashboard')}
-                className="w-full h-11 rounded-xl bg-[#D4AF37]/15 text-[#F5D76E] hover:bg-[#D4AF37]/25 text-xs font-semibold transition-all flex items-center justify-center gap-2 cursor-pointer border border-[#38301D]"
+                className="w-full h-11 rounded-xl bg-sky-500/15 text-sky-400 hover:bg-sky-500/25 text-xs font-semibold transition-all flex items-center justify-center gap-2 cursor-pointer border border-sky-500/30"
               >
                 <span>Open User Dashboard</span>
                 <ArrowRight className="w-4 h-4" />

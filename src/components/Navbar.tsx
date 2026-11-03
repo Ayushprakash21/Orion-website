@@ -197,7 +197,7 @@ export const Navbar: React.FC<NavbarProps> = ({ onNavigate, onOpenDownload }) =>
               title={`Switch to ${theme === 'dark' ? 'light' : 'dark'} mode`}
             >
               {theme === 'dark' ? (
-                <Sun className="w-4 h-4 text-amber-400" />
+                <Sun className="w-4 h-4 text-[#F5D76E]" />
               ) : (
                 <Moon className="w-4 h-4 text-slate-700" />
               )}
@@ -393,7 +393,7 @@ export const Navbar: React.FC<NavbarProps> = ({ onNavigate, onOpenDownload }) =>
                 <button
                   type="button"
                   onClick={() => launchOrion(destinationUrl)}
-                  className="macos-btn-primary px-4 py-2 rounded-xl text-[#080808] text-xs font-semibold cursor-pointer whitespace-nowrap"
+                  className="macos-btn-primary px-4 py-2 rounded-xl text-white dark:text-[#080808] text-xs font-semibold cursor-pointer whitespace-nowrap"
                 >
                   Launch Orion-9 OS
                 </button>
@@ -412,7 +412,7 @@ export const Navbar: React.FC<NavbarProps> = ({ onNavigate, onOpenDownload }) =>
               {theme === 'dark' ? (
                 <Sun className="w-3.5 h-3.5 text-[#F5D76E]" />
               ) : (
-                <Moon className="w-3.5 h-3.5 text-[#A3A3A3]" />
+                <Moon className="w-3.5 h-3.5 text-slate-700" />
               )}
             </button>
 
@@ -420,7 +420,7 @@ export const Navbar: React.FC<NavbarProps> = ({ onNavigate, onOpenDownload }) =>
               <button
                 type="button"
                 onClick={() => launchOrion(destinationUrl)}
-                className="px-3 py-1.5 rounded-lg bg-[#D4AF37] text-[#080808] text-xs font-semibold whitespace-nowrap shadow-[0_2px_10px_rgba(212,175,55,0.3)]"
+                className="px-3 py-1.5 rounded-lg bg-[var(--orion-accent)] text-white dark:text-[#080808] text-xs font-semibold whitespace-nowrap shadow-xs dark:shadow-[0_2px_10px_rgba(212,175,55,0.3)]"
               >
                 Orion-9 OS
               </button>
@@ -476,9 +476,9 @@ export const Navbar: React.FC<NavbarProps> = ({ onNavigate, onOpenDownload }) =>
                     <button
                       type="button"
                       onClick={() => handleRoute('/dashboard')}
-                      className="py-2.5 px-3 rounded-xl bg-[#D4AF37]/15 text-[#F5D76E] font-semibold text-xs text-center border border-[#38301D] flex items-center justify-center gap-1.5"
+                      className="py-2.5 px-3 rounded-xl bg-sky-500/15 dark:bg-[#D4AF37]/15 text-sky-600 dark:text-[#F5D76E] border border-sky-500/30 dark:border-[#38301D] font-semibold text-xs text-center flex items-center justify-center gap-1.5"
                     >
-                      <LayoutDashboard className="w-3.5 h-3.5 text-[#D4AF37] shrink-0" />
+                      <LayoutDashboard className="w-3.5 h-3.5 text-sky-600 dark:text-[#D4AF37] shrink-0" />
                       <span>User Dashboard</span>
                     </button>
                     <button

@@ -15,15 +15,19 @@ const ThemeContext = createContext<ThemeContextValue | undefined>(undefined);
 
 export const ThemeProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [themePreference, setThemePreferenceState] = useState<ThemePreference>(() => {
-    if (typeof window === 'undefined') return 'dark';
+    if (typeof window === 'undefined') return 'light';
+    const urlTheme = new URLSearchParams(window.location.search).get('theme');
+    if (urlTheme === 'light' || urlTheme === 'dark') {
+      return urlTheme;
+    }
     const stored = localStorage.getItem(THEME_STORAGE_KEY) as ThemePreference | null;
     if (stored === 'light' || stored === 'dark' || stored === 'system') {
       return stored;
     }
-    return 'dark'; // Default to premium Black & Gold Dark Mode
+    return 'light'; // Default to pristine light glass mode with dark toggle
   });
 
-  const [resolvedTheme, setResolvedTheme] = useState<'light' | 'dark'>('dark');
+  const [resolvedTheme, setResolvedTheme] = useState<'light' | 'dark'>('light');
 
   // Evaluate resolved theme based on preference and media query
   useEffect(() => {
@@ -38,14 +42,30 @@ export const ThemeProvider: React.FC<{ children: React.ReactNode }> = ({ childre
 
       setResolvedTheme(active);
 
-      // Toggle dark class on root HTML and body element
+      // Toggle dark class and data-theme on root HTML and body element
       const root = document.documentElement;
       if (active === 'dark') {
         root.classList.add('dark');
         document.body.classList.add('dark');
+        root.setAttribute('data-theme', 'dark');
+        document.body.setAttribute('data-theme', 'dark');
+        root.style.removeProperty('--orion-canvas');
+        root.style.removeProperty('--orion-alt-bg');
+        root.style.removeProperty('--orion-surface');
+        root.style.removeProperty('--orion-text-primary');
+        root.style.removeProperty('--orion-text-secondary');
+        root.style.removeProperty('--orion-border');
+        root.style.removeProperty('--orion-deep-blue');
+        root.style.removeProperty('--orion-steel-blue');
+        root.style.removeProperty('--orion-dark-surface');
       } else {
         root.classList.remove('dark');
         document.body.classList.remove('dark');
+        root.setAttribute('data-theme', 'light');
+        document.body.setAttribute('data-theme', 'light');
+        if (typeof window !== 'undefined') {
+          window.dispatchEvent(new CustomEvent('orion-theme-changed', { detail: { theme: 'light' } }));
+        }
       }
     };
 

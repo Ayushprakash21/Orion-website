@@ -131,7 +131,7 @@ export function AdminLogin({ onNavigate }: AdminLoginProps) {
     <div className="min-h-screen bg-[var(--orion-canvas)] text-[var(--orion-text-primary)] flex flex-col justify-between p-4 sm:p-6 md:p-10 font-sans transition-colors duration-300 relative overflow-hidden">
       {/* Ambient background light spot */}
       <div
-        className="pointer-events-none absolute -top-40 left-1/2 -translate-x-1/2 w-[700px] h-[500px] bg-[#D4AF37]/10 blur-[130px] rounded-full"
+        className="pointer-events-none absolute -top-40 left-1/2 -translate-x-1/2 w-[700px] h-[500px] bg-sky-400/15 dark:bg-sky-500/10 blur-[130px] rounded-full"
         aria-hidden="true"
       />
 
@@ -365,16 +365,16 @@ export function AdminLogin({ onNavigate }: AdminLoginProps) {
               <button
                 type="submit"
                 disabled={loading}
-                className="w-full h-11 rounded-xl bg-gradient-to-r from-[#D4AF37] to-[#F5D76E] hover:brightness-105 text-[#080808] text-xs font-bold shadow-[0_4px_16px_rgba(212,175,55,0.25)] flex items-center justify-center gap-2 cursor-pointer transition-all disabled:opacity-50"
+                className="w-full h-11 rounded-xl bg-gradient-to-r from-[#0284C7] to-[#0369A1] hover:from-[#0369A1] hover:to-[#075985] text-white text-xs font-semibold shadow-lg shadow-sky-600/20 flex items-center justify-center gap-2 cursor-pointer transition-all disabled:opacity-50"
               >
                 {loading ? (
                   <>
-                    <RefreshCw className="w-4 h-4 animate-spin text-[#080808]" />
+                    <RefreshCw className="w-4 h-4 animate-spin text-sky-200" />
                     <span>Verifying Credentials...</span>
                   </>
                 ) : (
                   <>
-                    <KeyRound className="w-4 h-4 text-[#080808]" />
+                    <KeyRound className="w-4 h-4 text-sky-200" />
                     <span>Authenticate &amp; Enter Console</span>
                   </>
                 )}

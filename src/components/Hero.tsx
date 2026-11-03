@@ -1,4 +1,4 @@
-import React, { useEffect, useRef } from 'react';
+import React from 'react';
 import { useAuth } from '../context/AuthContext';
 import { useSiteConfig } from '../context/SiteConfigContext';
 import { HeroSculpturalNetwork } from './HeroSculpturalNetwork';
@@ -21,7 +21,7 @@ export const Hero: React.FC = () => {
     >
       {/* Delicate ambient background glow */}
       <div
-        className="absolute top-0 right-1/4 w-[640px] h-[640px] bg-gradient-to-b from-[#DCEAF2]/60 to-transparent rounded-full blur-3xl pointer-events-none"
+        className="absolute top-0 right-1/4 w-[640px] h-[640px] bg-gradient-to-b from-[#DCEAF2]/60 to-transparent dark:from-[#D4AF37]/10 dark:to-transparent rounded-full blur-3xl pointer-events-none"
         aria-hidden="true"
       />
 
@@ -30,9 +30,9 @@ export const Hero: React.FC = () => {
           {/* Editorial Column */}
           <div className="lg:col-span-6 space-y-7 animate-[fadeIn_0.6s_ease-out]">
             <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full liquid-glass-badge text-xs font-medium text-[var(--orion-text-primary)] shadow-xs">
-              <span className="w-1.5 h-1.5 rounded-full bg-[#294D6B]" />
-              <span className="font-semibold text-[#111827]">ORION-9</span>
-              <span className="text-[#D5E1E8]">/</span>
+              <span className="w-1.5 h-1.5 rounded-full bg-[#294D6B] dark:bg-[#D4AF37]" />
+              <span className="font-semibold text-[#111827] dark:text-[#F5F5F5]">ORION-9</span>
+              <span className="text-[#D5E1E8] dark:text-[#38301D]">/</span>
               <span>Autonomous Supply Chain OS</span>
             </div>
 
@@ -51,32 +51,32 @@ export const Hero: React.FC = () => {
               <button
                 type="button"
                 onClick={() => launchOrion(hp.secondaryCtaUrl || destinationUrl)}
-                className="group inline-flex items-center gap-2.5 px-7 py-3.5 rounded-full bg-gradient-to-r from-[#D4AF37] to-[#F5D76E] hover:brightness-105 text-[#080808] font-bold text-sm transition-all shadow-[0_4px_16px_rgba(212,175,55,0.25)] cursor-pointer"
+                className="group inline-flex items-center gap-2.5 px-7 py-3.5 rounded-full bg-[var(--orion-text-primary)] text-[var(--orion-surface)] dark:bg-gradient-to-r dark:from-[#D4AF37] dark:to-[#F5D76E] dark:hover:brightness-105 dark:text-[#080808] dark:shadow-[0_4px_16px_rgba(212,175,55,0.25)] font-medium dark:font-bold text-sm hover:bg-[var(--orion-accent)] hover:text-white transition-all shadow-lg cursor-pointer"
               >
                 <span>Launch Orion-9 OS</span>
-                <ArrowRight className="w-4 h-4 text-[#080808] transition-transform group-hover:translate-x-1" />
+                <ArrowRight className="w-4 h-4 text-[#A8C2D2] dark:text-[#080808] transition-transform group-hover:translate-x-1" />
               </button>
 
               <a
                 href="#problem"
-                className="inline-flex items-center gap-2 px-6 py-3.5 rounded-full liquid-glass-button text-[#F5F5F5] font-medium text-sm transition-all shadow-xs"
+                className="inline-flex items-center gap-2 px-6 py-3.5 rounded-full liquid-glass-button text-[var(--orion-text-primary)] font-medium text-sm transition-all shadow-xs"
               >
-                <Compass className="w-4 h-4 text-[#D4AF37]" />
+                <Compass className="w-4 h-4 text-[#294D6B] dark:text-[#D4AF37]" />
                 <span>Explore the Platform</span>
               </a>
             </div>
 
-            <div className="pt-4 border-t border-[var(--glass-border-subtle)] flex flex-wrap items-center gap-6 text-xs text-[#737373]">
+            <div className="pt-4 border-t border-[var(--glass-border-subtle)] flex flex-wrap items-center gap-6 text-xs text-[var(--orion-text-muted)]">
               <div className="flex items-center gap-2">
-                <ShieldCheck className="w-4 h-4 text-[#D4AF37]" />
+                <ShieldCheck className="w-4 h-4 text-[#294D6B] dark:text-[#D4AF37]" />
                 <span>Zero-Trust Security</span>
               </div>
               <div className="flex items-center gap-2">
-                <Database className="w-4 h-4 text-[#D4AF37]" />
+                <Database className="w-4 h-4 text-[#294D6B] dark:text-[#D4AF37]" />
                 <span>Canonical Graph Ontology</span>
               </div>
               <div className="flex items-center gap-2">
-                <CheckCircle2 className="w-4 h-4 text-[#D4AF37]" />
+                <CheckCircle2 className="w-4 h-4 text-[#294D6B] dark:text-[#D4AF37]" />
                 <span>Governed Decision Automation</span>
               </div>
             </div>

@@ -94,11 +94,11 @@ export const UserDashboardLayout: React.FC<UserDashboardLayoutProps> = ({
     <div className="min-h-screen bg-[var(--orion-canvas)] text-[var(--orion-text-primary)] flex flex-col font-sans transition-colors duration-300">
       {/* Background ambient refraction orbs */}
       <div
-        className="pointer-events-none fixed -top-40 -left-40 w-[500px] h-[500px] bg-[#D4AF37]/8 blur-[120px] rounded-full z-0"
+        className="pointer-events-none fixed -top-40 -left-40 w-[500px] h-[500px] bg-sky-500/10 dark:bg-sky-500/5 blur-[120px] rounded-full z-0"
         aria-hidden="true"
       />
       <div
-        className="pointer-events-none fixed -bottom-40 -right-40 w-[500px] h-[500px] bg-[#D4AF37]/5 blur-[120px] rounded-full z-0"
+        className="pointer-events-none fixed -bottom-40 -right-40 w-[500px] h-[500px] bg-blue-600/10 dark:bg-blue-600/5 blur-[120px] rounded-full z-0"
         aria-hidden="true"
       />
 
@@ -164,7 +164,7 @@ export const UserDashboardLayout: React.FC<UserDashboardLayoutProps> = ({
               {theme === 'dark' ? (
                 <Sun className="w-4 h-4 text-[#F5D76E]" />
               ) : (
-                <Moon className="w-4 h-4 text-[#A3A3A3]" />
+                <Moon className="w-4 h-4 text-slate-700" />
               )}
             </button>
 
@@ -175,7 +175,7 @@ export const UserDashboardLayout: React.FC<UserDashboardLayoutProps> = ({
                 className="hidden sm:inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl liquid-glass-button text-xs font-medium text-[var(--orion-text-primary)] cursor-pointer"
                 title="Open Admin Console"
               >
-                <Sliders className="w-3.5 h-3.5 text-[#D4AF37]" />
+                <Sliders className="w-3.5 h-3.5 text-sky-400" />
                 <span>Admin</span>
               </button>
             )}
@@ -186,12 +186,12 @@ export const UserDashboardLayout: React.FC<UserDashboardLayoutProps> = ({
               onClick={() => onNavigate('/dashboard/profile')}
               className={`hidden sm:inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl liquid-glass-button text-xs font-medium cursor-pointer transition-colors ${
                 currentPath.startsWith('/dashboard/profile')
-                  ? 'bg-[#D4AF37]/15 text-[#F5D76E] border border-[#38301D]'
+                  ? 'bg-sky-500/20 text-sky-500 dark:text-[#F5D76E] dark:bg-[#D4AF37]/15 dark:border-[#38301D] border border-sky-500/30'
                   : 'text-[var(--orion-text-primary)]'
               }`}
               title="My Personal Profile"
             >
-              <User className="w-3.5 h-3.5 text-[#D4AF37]" />
+              <User className="w-3.5 h-3.5 text-sky-400" />
               <span className="max-w-[120px] truncate">{displayName}</span>
             </button>
 
@@ -199,7 +199,7 @@ export const UserDashboardLayout: React.FC<UserDashboardLayoutProps> = ({
             <button
               type="button"
               onClick={() => launchOrion(destinationUrl)}
-              className="macos-btn-primary inline-flex items-center gap-1.5 px-4 py-2 rounded-xl text-[#080808] text-xs font-semibold cursor-pointer whitespace-nowrap"
+              className="macos-btn-primary inline-flex items-center gap-1.5 px-4 py-2 rounded-xl text-white dark:text-[#080808] text-xs font-semibold cursor-pointer whitespace-nowrap"
             >
               <Sparkles className="w-3.5 h-3.5" />
               <span className="hidden sm:inline">Launch Orion-9 OS</span>
@@ -254,11 +254,11 @@ export const UserDashboardLayout: React.FC<UserDashboardLayoutProps> = ({
                     onClick={() => handleTabClick(tab.path)}
                     className={`flex items-center gap-2.5 px-3 py-2 rounded-xl text-xs font-medium text-left transition-all cursor-pointer ${
                       tab.isActive
-                        ? 'bg-[#D4AF37]/15 text-[#F5D76E] border border-[#38301D] font-semibold'
-                        : 'text-[var(--orion-text-primary)] hover:bg-[#1B1B1B]'
+                        ? 'bg-sky-500 text-white font-semibold dark:bg-gradient-to-r dark:from-[#D4AF37] dark:to-[#F5D76E] dark:text-[#080808]'
+                        : 'text-[var(--orion-text-primary)] hover:bg-white/40 dark:hover:bg-white/5'
                     }`}
                   >
-                    <Icon className={`w-4 h-4 ${tab.isActive ? 'text-[#D4AF37]' : 'text-[#737373]'}`} />
+                    <Icon className="w-4 h-4" />
                     <span>{tab.label}</span>
                   </button>
                 );
@@ -283,7 +283,7 @@ export const UserDashboardLayout: React.FC<UserDashboardLayoutProps> = ({
                     setMobileNavOpen(false);
                     onNavigate('/admin');
                   }}
-                  className="w-full py-2 px-3 rounded-xl liquid-glass-button text-xs font-medium text-[#D4AF37] text-center cursor-pointer"
+                  className="w-full py-2 px-3 rounded-xl liquid-glass-button text-xs font-medium text-sky-400 text-center cursor-pointer"
                 >
                   Admin Console
                 </button>

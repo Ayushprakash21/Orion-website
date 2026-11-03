@@ -1,5 +1,5 @@
 <!doctype html>
-<html lang="en" class="dark bg-[#080808] text-[#F5F5F5]">
+<html lang="en" class="bg-[#EAF4F8] text-[#111827]">
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
@@ -11,12 +11,27 @@
     <meta property="og:url" content="https://orion-9-webos.ai.studio/" />
     <link rel="canonical" href="https://orion-9-webos.ai.studio/" />
     <meta name="twitter:card" content="summary_large_image" />
-    <meta name="theme-color" content="#080808" />
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link href="https://fonts.googleapis.com/css2?family=Lato:wght@400;700;900&family=Roboto+Mono:wght@400;500&family=Roboto:wght@400;500;700&display=swap" rel="stylesheet" />
+    <script>
+      (function() {
+        try {
+          var searchTheme = new URLSearchParams(window.location.search).get('theme');
+          var pref = searchTheme || localStorage.getItem('orion9_theme_preference');
+          var isDark = pref === 'dark' || (pref === 'system' && window.matchMedia('(prefers-color-scheme: dark)').matches);
+          if (isDark) {
+            document.documentElement.classList.add('dark');
+            document.documentElement.setAttribute('data-theme', 'dark');
+          } else {
+            document.documentElement.classList.remove('dark');
+            document.documentElement.setAttribute('data-theme', 'light');
+          }
+        } catch (e) {}
+      })();
+    </script>
   </head>
-  <body class="bg-[#080808] text-[#F5F5F5] antialiased selection:bg-[#D4AF37] selection:text-[#080808]">
+  <body class="bg-[#F2F9FD] text-[#070B19] antialiased selection:bg-[#070B19] selection:text-white dark:bg-[#080808] dark:text-[#F5F5F5] dark:selection:bg-[#D4AF37] dark:selection:text-[#080808]">
     <div id="root"></div>
     <script type="module" src="/src/main.tsx"></script>
   </body>

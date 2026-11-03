@@ -109,7 +109,7 @@ export const Footer: React.FC<FooterProps> = ({ onNavigate, onOpenDownload }) =>
               <button
                 type="button"
                 onClick={() => launchOrion(destinationUrl)}
-                className="inline-flex items-center gap-2 px-6 py-3 rounded-xl bg-gradient-to-r from-[#D4AF37] to-[#F5D76E] hover:brightness-105 text-[#080808] text-xs font-bold transition-all shadow-[0_4px_16px_rgba(212,175,55,0.25)] cursor-pointer"
+                className="inline-flex items-center gap-2 px-6 py-3 rounded-xl bg-gradient-to-r from-[#0284C7] to-[#0369A1] hover:from-[#0369A1] hover:to-[#075985] text-white dark:from-[#D4AF37] dark:to-[#F5D76E] dark:hover:brightness-105 dark:text-[#080808] dark:shadow-[0_4px_16px_rgba(212,175,55,0.25)] text-xs font-semibold dark:font-bold transition-all shadow-[0_4px_16px_rgba(2,132,199,0.35)] cursor-pointer"
               >
                 <span>Launch Orion-9 OS</span>
                 <ArrowRight className="w-4 h-4" />

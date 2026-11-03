@@ -88,10 +88,10 @@ export const OrionNovaDownloadButton: React.FC<OrionNovaDownloadButtonProps> = (
           }}
           className={`relative overflow-hidden flex items-center justify-center font-bold text-sm select-none cursor-pointer transition-colors shadow-xs ${
             !isAuthenticated
-              ? 'bg-gradient-to-r from-[#D4AF37] to-[#F5D76E] hover:brightness-105 text-[#080808] shadow-[0_4px_16px_rgba(212,175,55,0.25)]'
+              ? 'bg-[#0284C7] hover:bg-[#0369A1] text-white dark:bg-gradient-to-r dark:from-[#D4AF37] dark:to-[#F5D76E] dark:hover:brightness-105 dark:text-[#080808] dark:shadow-[0_4px_16px_rgba(212,175,55,0.25)]'
               : isComplete
               ? 'bg-[#059669] hover:bg-[#047857] text-white shadow-[0_0_20px_rgba(5,150,105,0.3)]'
-              : 'bg-gradient-to-r from-[#D4AF37] to-[#F5D76E] hover:brightness-105 text-[#080808] shadow-[0_4px_16px_rgba(212,175,55,0.25)]'
+              : 'bg-[#0284C7] hover:bg-[#0369A1] text-white dark:bg-gradient-to-r dark:from-[#D4AF37] dark:to-[#F5D76E] dark:hover:brightness-105 dark:text-[#080808] shadow-[0_4px_14px_rgba(2,132,199,0.35)] dark:shadow-[0_4px_16px_rgba(212,175,55,0.25)]'
           } ${disabled ? 'opacity-60 cursor-not-allowed' : ''}`}
         >
           {/* Subtle Glass Shimmer */}
@@ -109,14 +109,14 @@ export const OrionNovaDownloadButton: React.FC<OrionNovaDownloadButtonProps> = (
               >
                 {!isAuthenticated ? (
                   <>
-                    <Lock className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-white/90 shrink-0" />
+                    <Lock className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-white/90 dark:text-[#080808]/90 shrink-0" />
                     <span className="font-bold tracking-tight truncate text-xs sm:text-sm">
                       Authenticate to Download {filename}
                     </span>
                   </>
                 ) : (
                   <>
-                    <Download className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-white shrink-0" />
+                    <Download className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-white dark:text-[#080808] shrink-0" />
                     <span className="font-bold tracking-tight truncate text-xs sm:text-sm">
                       Download {filename} <span className="font-normal opacity-90 text-[11px] sm:text-xs ml-1">(v{version})</span>
                     </span>

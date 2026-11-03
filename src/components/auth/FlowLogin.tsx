@@ -216,14 +216,14 @@ export const FlowLogin: React.FC<FlowLoginProps> = ({
       onMouseEnter={() => trigger === 'hover' && !loading && setExpanded(true)}
       onMouseLeave={() => trigger === 'hover' && !loading && setExpanded(false)}
     >
-      {/* Subtle Gold Ambient Aura */}
+      {/* Subtle Ice-Blue Ambient Aura */}
       <motion.div
         animate={{
           opacity: expanded ? 0.9 : 0.65,
           scale: expanded ? 1.05 : 1,
         }}
         transition={{ duration: 0.8, ease }}
-        className="pointer-events-none absolute left-1/2 top-1/2 h-[420px] w-[420px] -translate-x-1/2 -translate-y-1/2 rounded-full bg-[#D4AF37]/15 blur-[120px]"
+        className="pointer-events-none absolute left-1/2 top-1/2 h-[420px] w-[420px] -translate-x-1/2 -translate-y-1/2 rounded-full bg-[#A8C2D2]/30 blur-[110px]"
       />
 
       <div className="relative flex w-full max-w-[430px] flex-col items-center">
@@ -237,12 +237,12 @@ export const FlowLogin: React.FC<FlowLoginProps> = ({
           className="absolute -top-[48px] z-30"
         >
           <div className="relative h-[46px] w-[46px]">
-            <div className="absolute inset-[2px] rounded-full bg-[radial-gradient(circle_at_30%_24%,#FFFFFF_0%,#F5D76E_22%,#D4AF37_56%,#9E7C25_82%,#141414_100%)] shadow-[0_10px_28px_rgba(212,175,55,0.35),0_0_35px_rgba(212,175,55,0.25)]" />
+            <div className="absolute inset-[2px] rounded-full bg-[radial-gradient(circle_at_30%_24%,#FFFFFF_0%,#D5E8F2_22%,#5682A3_56%,#294D6B_82%,#101820_100%)] shadow-[0_10px_28px_rgba(41,77,107,0.38),0_0_40px_rgba(168,194,210,0.35)]" />
             <div className="absolute left-[10px] top-[7px] h-[9px] w-[13px] rotate-[-20deg] rounded-full bg-white/85 blur-[1.5px]" />
             <motion.div
               animate={{ rotate: 360 }}
               transition={{ duration: 8, repeat: Infinity, ease: 'linear' }}
-              className="absolute -inset-[3px] rounded-full border border-[#38301D]"
+              className="absolute -inset-[3px] rounded-full border border-[#294D6B]/25"
             />
           </div>
         </motion.div>
@@ -254,7 +254,7 @@ export const FlowLogin: React.FC<FlowLoginProps> = ({
             borderRadius: expanded ? 28 : 22,
           }}
           transition={{ duration: 0.65, ease }}
-          className="relative w-full overflow-hidden rounded-3xl liquid-glass-elevated border border-[#38301D] bg-[#141414] text-[#F5F5F5] shadow-2xl"
+          className="relative w-full overflow-hidden rounded-3xl liquid-glass-elevated border border-[var(--glass-border)] text-[var(--orion-text-primary)] shadow-2xl"
         >
           {/* Top Atmospheric Highlight */}
           <motion.div
@@ -263,7 +263,7 @@ export const FlowLogin: React.FC<FlowLoginProps> = ({
               height: expanded ? 140 : 95,
             }}
             transition={{ duration: 0.7, ease }}
-            className="pointer-events-none absolute inset-x-0 top-0 bg-[radial-gradient(ellipse_at_center_top,rgba(212,175,55,0.2),transparent_70%)]"
+            className="pointer-events-none absolute inset-x-0 top-0 bg-[radial-gradient(ellipse_at_center_top,rgba(168,194,210,0.38),transparent_70%)]"
           />
 
           {/* Minimize button */}
@@ -271,7 +271,7 @@ export const FlowLogin: React.FC<FlowLoginProps> = ({
             <button
               type="button"
               onClick={toggle}
-              className="absolute right-4 top-4 z-20 flex h-7 w-7 items-center justify-center rounded-full border border-[#292929] bg-[#1B1B1B] text-[#A3A3A3] hover:text-[#F5F5F5] transition cursor-pointer"
+              className="absolute right-4 top-4 z-20 flex h-7 w-7 items-center justify-center rounded-full border border-[var(--glass-border)] liquid-glass-button text-[var(--orion-text-secondary)] hover:text-[var(--orion-text-primary)] transition cursor-pointer"
               title="Minimize card"
               aria-label="Minimize authentication card"
             >
@@ -286,14 +286,14 @@ export const FlowLogin: React.FC<FlowLoginProps> = ({
               transition={{ duration: 0.5, ease }}
               className="text-center"
             >
-              <div className="mx-auto mb-2 inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-[10px] font-mono font-semibold uppercase tracking-widest bg-[#D4AF37]/15 text-[#F5D76E] border border-[#38301D]">
-                <ShieldCheck size={12} className="text-[#D4AF37]" />
+              <div className="mx-auto mb-2 inline-flex items-center gap-1.5 rounded-full liquid-glass-badge px-3 py-1 text-[10px] font-mono font-semibold uppercase tracking-widest text-[var(--orion-accent)]">
+                <ShieldCheck size={12} />
                 <span>ORION-9 IDENTITY GATEWAY</span>
               </div>
-              <h2 className="text-[26px] font-bold tracking-[-0.03em] text-[#F5F5F5]">
+              <h2 className="text-[26px] font-bold tracking-[-0.03em] text-[var(--orion-text-primary)]">
                 {forgotMode ? 'Recover Account' : title}
               </h2>
-              <p className="mt-1 text-[13px] font-medium text-[#A3A3A3]">
+              <p className="mt-1 text-[13px] font-medium text-[var(--orion-text-secondary)]">
                 {forgotMode
                   ? 'Enter your username or email address to receive password reset instructions.'
                   : subtitle}
@@ -306,7 +306,7 @@ export const FlowLogin: React.FC<FlowLoginProps> = ({
                 <button
                   type="button"
                   onClick={handleCardClick}
-                  className="flex h-[42px] items-center gap-2 rounded-full bg-gradient-to-r from-[#D4AF37] to-[#F5D76E] hover:brightness-105 px-6 text-[13px] font-bold text-[#080808] shadow-[0_8px_24px_rgba(212,175,55,0.25)] transition cursor-pointer"
+                  className="flex h-[42px] items-center gap-2 rounded-full bg-[#101820] px-6 text-[13px] font-semibold text-white shadow-[0_8px_24px_rgba(16,24,32,0.18)] transition hover:bg-[#294D6B] cursor-pointer"
                 >
                   <span>{compactText}</span>
                   <ChevronDown size={14} strokeWidth={2.2} />
@@ -327,9 +327,9 @@ export const FlowLogin: React.FC<FlowLoginProps> = ({
                 {errorMessage && (
                   <div
                     role="alert"
-                    className="flex items-start gap-2.5 rounded-2xl border border-red-800/60 bg-red-950/40 p-3.5 text-[12px] font-medium text-red-300"
+                    className="flex items-start gap-2.5 rounded-2xl border border-red-200 bg-red-50/90 p-3.5 text-[12px] font-medium text-red-800"
                   >
-                    <AlertCircle size={15} className="mt-0.5 shrink-0 text-red-400" />
+                    <AlertCircle size={15} className="mt-0.5 shrink-0 text-red-600" />
                     <span className="leading-relaxed">{errorMessage}</span>
                   </div>
                 )}
@@ -337,9 +337,9 @@ export const FlowLogin: React.FC<FlowLoginProps> = ({
                 {successMessage && (
                   <div
                     role="status"
-                    className="flex items-start gap-2.5 rounded-2xl border border-emerald-800/60 bg-emerald-950/40 p-3.5 text-[12px] font-medium text-emerald-300"
+                    className="flex items-start gap-2.5 rounded-2xl border border-emerald-200 bg-emerald-50/90 p-3.5 text-[12px] font-medium text-emerald-900"
                   >
-                    <CheckCircle2 size={15} className="mt-0.5 shrink-0 text-emerald-400" />
+                    <CheckCircle2 size={15} className="mt-0.5 shrink-0 text-emerald-600" />
                     <span className="leading-relaxed">{successMessage}</span>
                   </div>
                 )}
@@ -349,7 +349,7 @@ export const FlowLogin: React.FC<FlowLoginProps> = ({
                   <div className="flex items-center justify-between mb-1.5">
                     <label
                       htmlFor="flow-login-identifier"
-                      className="block text-[11px] font-semibold uppercase tracking-wider text-[#A3A3A3]"
+                      className="block text-[11px] font-semibold uppercase tracking-wider text-[var(--orion-text-secondary)]"
                     >
                       Username or Work Email
                     </label>
@@ -358,7 +358,7 @@ export const FlowLogin: React.FC<FlowLoginProps> = ({
                       <button
                         type="button"
                         onClick={handleClearRemembered}
-                        className="inline-flex items-center gap-1 text-[11px] font-medium text-[#D4AF37] hover:underline transition-colors cursor-pointer"
+                        className="inline-flex items-center gap-1 text-[11px] font-medium text-[#294D6B] hover:text-[#111827] transition-colors cursor-pointer"
                         title="Forget this username on this device"
                       >
                         <X size={11} />
@@ -370,7 +370,7 @@ export const FlowLogin: React.FC<FlowLoginProps> = ({
                   <div className="relative">
                     <User
                       size={15}
-                      className="absolute left-3.5 top-1/2 -translate-y-1/2 text-[#737373]"
+                      className="absolute left-3.5 top-1/2 -translate-y-1/2 text-[#566575]"
                     />
                     <input
                       id="flow-login-identifier"
@@ -383,7 +383,7 @@ export const FlowLogin: React.FC<FlowLoginProps> = ({
                       spellCheck={false}
                       autoComplete="username"
                       disabled={loading}
-                      className="h-[46px] w-full rounded-[13px] bg-[#101010] border border-[#292929] pl-10 pr-3.5 text-[13px] font-medium text-[#F5F5F5] outline-none transition placeholder:text-[#737373] focus:border-[#D4AF37] focus:ring-1 focus:ring-[#D4AF37] disabled:opacity-60"
+                      className="h-[46px] w-full rounded-[13px] liquid-glass-input pl-10 pr-3.5 text-[13px] font-medium text-[var(--orion-text-primary)] outline-none transition placeholder:text-[var(--orion-text-muted)] focus:border-[var(--orion-accent)] disabled:opacity-60"
                     />
                   </div>
                 </motion.div>
@@ -398,7 +398,7 @@ export const FlowLogin: React.FC<FlowLoginProps> = ({
                   >
                     <label
                       htmlFor="flow-login-password"
-                      className="mb-1.5 block text-[11px] font-semibold uppercase tracking-wider text-[#A3A3A3]"
+                      className="mb-1.5 block text-[11px] font-semibold uppercase tracking-wider text-[var(--orion-text-secondary)]"
                     >
                       Password
                     </label>
@@ -406,7 +406,7 @@ export const FlowLogin: React.FC<FlowLoginProps> = ({
                     <div className="relative">
                       <Lock
                         size={15}
-                        className="absolute left-3.5 top-1/2 -translate-y-1/2 text-[#737373]"
+                        className="absolute left-3.5 top-1/2 -translate-y-1/2 text-[#566575]"
                       />
                       <input
                         id="flow-login-password"
@@ -416,14 +416,14 @@ export const FlowLogin: React.FC<FlowLoginProps> = ({
                         placeholder="Enter your password"
                         autoComplete="current-password"
                         disabled={loading}
-                        className="h-[46px] w-full rounded-[13px] bg-[#101010] border border-[#292929] pl-10 pr-10 text-[13px] font-medium text-[#F5F5F5] outline-none transition placeholder:text-[#737373] focus:border-[#D4AF37] focus:ring-1 focus:ring-[#D4AF37] disabled:opacity-60"
+                        className="h-[46px] w-full rounded-[13px] liquid-glass-input pl-10 pr-10 text-[13px] font-medium text-[var(--orion-text-primary)] outline-none transition placeholder:text-[var(--orion-text-muted)] focus:border-[var(--orion-accent)] disabled:opacity-60"
                       />
 
                       <button
                         type="button"
                         disabled={loading}
                         onClick={() => setPasswordVisible((value) => !value)}
-                        className="absolute right-3.5 top-1/2 -translate-y-1/2 text-[#737373] transition hover:text-[#F5F5F5] disabled:opacity-40 cursor-pointer"
+                        className="absolute right-3.5 top-1/2 -translate-y-1/2 text-[#566575] transition hover:text-[#111827] disabled:opacity-40 cursor-pointer"
                         aria-label={passwordVisible ? 'Hide password' : 'Show password'}
                       >
                         {passwordVisible ? <EyeOff size={15} /> : <Eye size={15} />}
@@ -446,13 +446,13 @@ export const FlowLogin: React.FC<FlowLoginProps> = ({
                         type="button"
                         disabled={loading}
                         onClick={() => setRemember((value) => !value)}
-                        className="flex items-center gap-2 text-[12px] font-medium text-[#A3A3A3] transition hover:text-[#F5F5F5] disabled:opacity-40 cursor-pointer"
+                        className="flex items-center gap-2 text-[12px] font-medium text-[#566575] transition hover:text-[#111827] disabled:opacity-40 cursor-pointer"
                       >
                         <span
                           className={`flex h-[16px] w-[16px] items-center justify-center rounded-[5px] border transition ${
                             remember
-                              ? 'border-[#D4AF37] bg-[#D4AF37] text-[#080808]'
-                              : 'border-[#292929] bg-[#101010]'
+                              ? 'border-[#294D6B] bg-[#294D6B] text-white'
+                              : 'border-[#D5E1E8] bg-[#F5F9FB]'
                           }`}
                         >
                           {remember && <Check size={10} strokeWidth={2.8} />}
@@ -472,7 +472,7 @@ export const FlowLogin: React.FC<FlowLoginProps> = ({
                           setSuccessMessage(null);
                           setForgotMode(true);
                         }}
-                        className="text-[12px] font-semibold text-[#D4AF37] transition hover:underline disabled:opacity-40 cursor-pointer"
+                        className="text-[12px] font-semibold text-[#294D6B] dark:text-[#D4AF37] transition hover:underline disabled:opacity-40 cursor-pointer"
                       >
                         Forgot password?
                       </button>
@@ -488,11 +488,11 @@ export const FlowLogin: React.FC<FlowLoginProps> = ({
                   transition={{ delay: 0.15 }}
                   type="submit"
                   disabled={loading}
-                  className="flex h-[46px] w-full items-center justify-center gap-2 rounded-full bg-gradient-to-r from-[#D4AF37] to-[#F5D76E] hover:brightness-105 text-[13px] font-bold text-[#080808] shadow-[0_10px_25px_rgba(212,175,55,0.25)] transition duration-200 disabled:cursor-wait disabled:opacity-70 cursor-pointer"
+                  className="flex h-[46px] w-full items-center justify-center gap-2 rounded-full bg-[#101820] text-[13px] font-semibold text-white shadow-[0_10px_25px_rgba(16,24,32,0.18)] dark:bg-gradient-to-r dark:from-[#D4AF37] dark:to-[#F5D76E] dark:hover:brightness-105 dark:text-[#080808] dark:shadow-[0_4px_16px_rgba(212,175,55,0.25)] transition duration-200 hover:bg-[#294D6B] disabled:cursor-wait disabled:opacity-70 cursor-pointer"
                 >
                   {loading ? (
                     <>
-                      <span className="h-4 w-4 animate-spin rounded-full border-2 border-black/30 border-t-black" />
+                      <span className="h-4 w-4 animate-spin rounded-full border-2 border-white/30 border-t-white" />
                       <span>{forgotMode ? 'Checking account...' : 'Signing in...'}</span>
                     </>
                   ) : forgotMode ? (
@@ -510,7 +510,7 @@ export const FlowLogin: React.FC<FlowLoginProps> = ({
                       setErrorMessage(null);
                       setSuccessMessage(null);
                     }}
-                    className="flex w-full items-center justify-center gap-1.5 pt-1 text-[12px] font-semibold text-[#A3A3A3] hover:text-[#F5F5F5] cursor-pointer"
+                    className="flex w-full items-center justify-center gap-1.5 pt-1 text-[12px] font-semibold text-[#566575] hover:text-[#111827] cursor-pointer"
                   >
                     <ArrowLeft size={13} />
                     <span>Back to Sign In</span>
@@ -521,18 +521,18 @@ export const FlowLogin: React.FC<FlowLoginProps> = ({
                 {!forgotMode && showSocial && (
                   <>
                     <div className="flex items-center gap-3 py-1">
-                      <span className="h-px flex-1 bg-[#292929]" />
-                      <span className="text-[11px] font-medium text-[#737373]">
+                      <span className="h-px flex-1 bg-[#D5E1E8] dark:bg-[#292929]" />
+                      <span className="text-[11px] font-medium text-[#566575]">
                         or continue with
                       </span>
-                      <span className="h-px flex-1 bg-[#292929]" />
+                      <span className="h-px flex-1 bg-[#D5E1E8]" />
                     </div>
 
                     <button
                       type="button"
                       disabled={loading}
                       onClick={handleGoogleClick}
-                      className="flex h-[42px] w-full items-center justify-center gap-2.5 rounded-full border border-[#292929] bg-[#141414] text-[12px] font-semibold text-[#F5F5F5] transition hover:border-[#38301D] hover:bg-[#1B1B1B] disabled:opacity-50 cursor-pointer"
+                      className="flex h-[42px] w-full items-center justify-center gap-2.5 rounded-full border border-[#D5E1E8] bg-[#F5F9FB] text-[12px] font-semibold text-[#111827] transition hover:border-[#294D6B]/40 hover:bg-white disabled:opacity-50 cursor-pointer"
                     >
                       <GoogleIcon size={15} />
                       <span>Continue with Google Workspace</span>
@@ -542,13 +542,13 @@ export const FlowLogin: React.FC<FlowLoginProps> = ({
 
                 {/* Footer Switch to Signup */}
                 {!forgotMode && (
-                  <p className="pt-2 text-center text-[12px] font-medium text-[#737373]">
+                  <p className="pt-2 text-center text-[12px] font-medium text-[#566575]">
                     New to Orion-9?{' '}
                     <button
                       type="button"
                       disabled={loading}
                       onClick={onNavigateSignup}
-                      className="font-semibold text-[#D4AF37] transition hover:underline disabled:opacity-40 cursor-pointer"
+                      className="font-semibold text-[#294D6B] transition hover:underline disabled:opacity-40 cursor-pointer"
                     >
                       Create Account
                     </button>
