@@ -5,6 +5,11 @@
  * Dedicated admin control for uploading, replacing, and managing the project creator's
  * photographic identity stored in secure asset storage.
  * Synchronizes with the public About Page (#created-by) while preserving creator attribution.
+ *
+ * CROP EDITOR INTEGRATION:
+ * When an administrator selects a file, the interactive FounderPhotoCropEditor is displayed
+ * before upload. Only the cropped Blob is uploaded to Cloudflare R2 — the original
+ * unedited file is never stored. Upload is deferred until the user clicks "Apply & Upload".
  */
 
 import React, { useState, useRef } from 'react';
@@ -13,7 +18,6 @@ import {
   RotateCcw,
   CheckCircle2,
   AlertCircle,
-  FileImage,
   Sun,
   Moon,
   Info,
@@ -21,18 +25,27 @@ import {
   UploadCloud,
   Check,
   User,
-  Quote,
   Shield,
-  ExternalLink,
   Trash2,
+  Crop,
 } from 'lucide-react';
-import { CreatorProfileConfig, LogoPlacementMetadata } from '../../types/cms';
+import { CreatorProfileConfig } from '../../types/cms';
 import {
   uploadCreatorProfileImage,
+  validateLogoFile,
+  MAX_LOGO_FILE_SIZE_BYTES,
 } from '../../services/brandingStorage';
 import { DEFAULT_CREATOR_PROFILE } from '../../data/defaultSiteConfig';
 import { useSiteConfig } from '../../context/SiteConfigContext';
 import { useAuth } from '../../context/AuthContext';
+import {
+  FounderPhotoCropEditor,
+  type CropEditorResult,
+} from './FounderPhotoCropEditor';
+
+// ---------------------------------------------------------------------------
+// Props
+// ---------------------------------------------------------------------------
 
 interface CreatorProfileSectionProps {
   creatorForm: CreatorProfileConfig;
@@ -42,6 +55,10 @@ interface CreatorProfileSectionProps {
   showBanner: (type: 'success' | 'error' | 'warning', message: string) => void;
 }
 
+// ---------------------------------------------------------------------------
+// Component
+// ---------------------------------------------------------------------------
+
 export const CreatorProfileSection: React.FC<CreatorProfileSectionProps> = ({
   creatorForm,
   setCreatorForm,
@@ -49,7 +66,13 @@ export const CreatorProfileSection: React.FC<CreatorProfileSectionProps> = ({
   isSaving,
   showBanner,
 }) => {
-  const [previewTone, setPreviewTone] = useState<'light' | 'dark' | 'canvas'>('light');
+  const [previewTone, setPreviewTone] = useState<'light' | 'dark'>('light');
+
+  // Crop editor state
+  const [pendingFile, setPendingFile] = useState<File | null>(null);
+  const [showCropEditor, setShowCropEditor] = useState(false);
+
+  // Upload state (used while the crop editor calls onApply)
   const [isUploading, setIsUploading] = useState<boolean>(false);
   const [uploadProgress, setUploadProgress] = useState<number>(0);
   const [uploadError, setUploadError] = useState<string | null>(null);
@@ -65,22 +88,46 @@ export const CreatorProfileSection: React.FC<CreatorProfileSectionProps> = ({
   const isPublishedLive = Boolean(isCustom && currentUrl === publishedUrl);
   const isDraftOnly = Boolean(isCustom && currentUrl !== publishedUrl);
 
+  // ── Step 1: File picker → validation → open crop editor ─────────────────
+
   const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
+    // Reset the input so the same file can be re-selected after cancel
+    if (fileInputRef.current) fileInputRef.current.value = '';
     if (!file) return;
 
     if (authLoading) {
-      showBanner('warning', 'Verifying administrator session, please wait a moment...');
+      showBanner('warning', 'Verifying administrator session, please wait a moment…');
       return;
     }
 
     if (!user && !isAdmin) {
-      const authErr = 'Authentication required: You must be signed in as an administrator to upload assets.';
-      setUploadError(authErr);
-      showBanner('error', authErr);
+      showBanner('error', 'Authentication required: You must be signed in as an administrator to upload assets.');
       return;
     }
 
+    // Validate format & size before opening the editor
+    const validation = await validateLogoFile(file);
+    if (!validation.valid) {
+      showBanner('error', validation.error || 'Invalid file.');
+      return;
+    }
+
+    // SVG files do not go through the crop editor (they are vector, not raster)
+    const isSvg = file.type === 'image/svg+xml' || file.name.toLowerCase().endsWith('.svg');
+    if (isSvg) {
+      await directUpload(file);
+      return;
+    }
+
+    setPendingFile(file);
+    setUploadError(null);
+    setShowCropEditor(true);
+  };
+
+  // ── Direct upload helper (used for SVG which skips cropping) ─────────────
+
+  const directUpload = async (file: File) => {
     setIsUploading(true);
     setUploadProgress(0);
     setUploadError(null);
@@ -88,11 +135,7 @@ export const CreatorProfileSection: React.FC<CreatorProfileSectionProps> = ({
     try {
       let token: string | undefined;
       if (user) {
-        try {
-          token = await user.getIdToken(true).catch(() => user.getIdToken(false));
-        } catch {
-          token = await user.getIdToken(false).catch(() => undefined);
-        }
+        token = await user.getIdToken(true).catch(() => user.getIdToken(false));
       }
 
       const metadata = await uploadCreatorProfileImage(
@@ -120,11 +163,76 @@ export const CreatorProfileSection: React.FC<CreatorProfileSectionProps> = ({
     } finally {
       setIsUploading(false);
       setUploadProgress(0);
-      if (fileInputRef.current) {
-        fileInputRef.current.value = '';
-      }
     }
   };
+
+  // ── Step 2: Crop editor confirmed → upload the cropped blob ──────────────
+
+  const handleCropApply = async (result: CropEditorResult) => {
+    if (!user && !isAdmin) {
+      showBanner('error', 'Authentication required.');
+      return;
+    }
+
+    setIsUploading(true);
+    setUploadProgress(0);
+    setUploadError(null);
+
+    try {
+      let token: string | undefined;
+      if (user) {
+        token = await user.getIdToken(true).catch(() => user.getIdToken(false));
+      }
+
+      // Convert the cropped Blob to a File so the existing upload pipeline can handle it
+      const croppedFile = new File([result.blob], result.filename, { type: result.mimeType });
+
+      // Sanity check — cropped output should always be under 5 MB
+      if (croppedFile.size > MAX_LOGO_FILE_SIZE_BYTES) {
+        throw new Error(`Cropped image (${(croppedFile.size / 1024 / 1024).toFixed(1)} MB) exceeds the 5 MB limit. Try reducing zoom or using a smaller source image.`);
+      }
+
+      const metadata = await uploadCreatorProfileImage(
+        croppedFile,
+        (pct) => setUploadProgress(pct),
+        token
+      );
+
+      setCreatorForm((prev) => ({
+        ...prev,
+        avatarUrl: metadata.url,
+        avatarMetadata: metadata,
+        updatedAt: new Date().toISOString(),
+        updatedBy: user?.email || user?.uid || 'admin',
+      }));
+
+      showBanner(
+        'success',
+        `Cropped photograph uploaded successfully (${metadata.fileType}, ${metadata.dimensions}). Remember to Save Draft or Publish Live.`
+      );
+
+      // Close the editor on success
+      setShowCropEditor(false);
+      setPendingFile(null);
+    } catch (err: unknown) {
+      const msg = (err as Error).message || 'Failed to upload cropped photograph.';
+      setUploadError(msg);
+      // Do NOT close the editor — let the user retry
+    } finally {
+      setIsUploading(false);
+      setUploadProgress(0);
+    }
+  };
+
+  // ── Crop editor cancelled ─────────────────────────────────────────────────
+
+  const handleCropCancel = () => {
+    setShowCropEditor(false);
+    setPendingFile(null);
+    setUploadError(null);
+  };
+
+  // ── Other controls ────────────────────────────────────────────────────────
 
   const handleRemovePhoto = () => {
     setCreatorForm((prev) => ({
@@ -148,11 +256,15 @@ export const CreatorProfileSection: React.FC<CreatorProfileSectionProps> = ({
     );
   };
 
+  // ── Render ────────────────────────────────────────────────────────────────
+
   return (
     <div className="space-y-6 max-w-4xl">
       {/* 1. Header Banner */}
-      <div className="liquid-glass-elevated rounded-3xl border border-[var(--glass-border)] shadow-xl p-6 md:p-8 space-y-4">
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-[var(--glass-border-subtle)] pb-5">
+      <div className="liquid-glass-elevated rounded-3xl border border-[var(--glass-border)] shadow-xl overflow-hidden">
+
+        {/* Header row */}
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 p-6 md:p-8 pb-5 border-b border-[var(--glass-border-subtle)]">
           <div>
             <div className="inline-flex items-center gap-2 text-xs font-mono font-bold uppercase tracking-wider text-[#0284C7] mb-1">
               <User className="w-4 h-4" />
@@ -186,190 +298,204 @@ export const CreatorProfileSection: React.FC<CreatorProfileSectionProps> = ({
           </div>
         </div>
 
-        {/* 2. Photo Upload & Preview Card */}
-        <div className="grid grid-cols-1 md:grid-cols-12 gap-6 items-start pt-2">
-          {/* Left Column: Visual Preview with tone switcher */}
-          <div className="md:col-span-5 flex flex-col items-center p-6 rounded-2xl border border-[var(--glass-border)] bg-[var(--orion-surface)]/60 space-y-4">
-            <div className="flex items-center justify-between w-full text-xs font-mono text-[var(--orion-text-muted)]">
-              <span className="font-semibold uppercase tracking-wider">Preview Surface</span>
-              <div className="flex items-center gap-1 bg-[var(--orion-alt-bg)] p-1 rounded-lg border border-[var(--glass-border-subtle)]">
-                <button
-                  type="button"
-                  onClick={() => setPreviewTone('light')}
-                  className={`p-1 rounded ${previewTone === 'light' ? 'bg-white dark:bg-slate-800 shadow-xs text-sky-600' : 'text-slate-400'}`}
-                  title="Light Surface"
-                >
-                  <Sun className="w-3.5 h-3.5" />
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setPreviewTone('dark')}
-                  className={`p-1 rounded ${previewTone === 'dark' ? 'bg-white dark:bg-slate-800 shadow-xs text-sky-600' : 'text-slate-400'}`}
-                  title="Dark Surface"
-                >
-                  <Moon className="w-3.5 h-3.5" />
-                </button>
-              </div>
-            </div>
+        {/* ── Crop Editor (shown instead of normal upload controls when active) ── */}
+        {showCropEditor && pendingFile ? (
+          <FounderPhotoCropEditor
+            sourceFile={pendingFile}
+            onApply={handleCropApply}
+            onCancel={handleCropCancel}
+            isUploading={isUploading}
+            uploadProgress={uploadProgress}
+            uploadError={uploadError}
+          />
+        ) : (
+          /* ── Normal photo upload & preview UI ──────────────────────────── */
+          <div className="p-6 md:p-8 pt-4">
+            {/* 2. Photo Upload & Preview Card */}
+            <div className="grid grid-cols-1 md:grid-cols-12 gap-6 items-start pt-2">
+              {/* Left Column: Visual Preview with tone switcher */}
+              <div className="md:col-span-5 flex flex-col items-center p-6 rounded-2xl border border-[var(--glass-border)] bg-[var(--orion-surface)]/60 space-y-4">
+                <div className="flex items-center justify-between w-full text-xs font-mono text-[var(--orion-text-muted)]">
+                  <span className="font-semibold uppercase tracking-wider">Preview Surface</span>
+                  <div className="flex items-center gap-1 bg-[var(--orion-alt-bg)] p-1 rounded-lg border border-[var(--glass-border-subtle)]">
+                    <button
+                      type="button"
+                      onClick={() => setPreviewTone('light')}
+                      className={`p-1 rounded ${previewTone === 'light' ? 'bg-white dark:bg-slate-800 shadow-xs text-sky-600' : 'text-slate-400'}`}
+                      title="Light Surface"
+                    >
+                      <Sun className="w-3.5 h-3.5" />
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setPreviewTone('dark')}
+                      className={`p-1 rounded ${previewTone === 'dark' ? 'bg-white dark:bg-slate-800 shadow-xs text-sky-600' : 'text-slate-400'}`}
+                      title="Dark Surface"
+                    >
+                      <Moon className="w-3.5 h-3.5" />
+                    </button>
+                  </div>
+                </div>
 
-            {/* Avatar Frame (Matches About Page creator card: responsive 112–180 px rounded-3xl) */}
-            <div
-              className={`w-36 h-36 rounded-3xl p-2 flex items-center justify-center transition-colors border shadow-sm ${
-                previewTone === 'light'
-                  ? 'bg-sky-50 border-sky-200'
-                  : 'bg-slate-900 border-slate-800'
-              }`}
-            >
-              {currentUrl ? (
-                <img
-                  src={currentUrl}
-                  alt={creatorForm.name}
-                  className="w-32 h-32 rounded-2xl object-cover object-top shadow-xl shadow-sky-600/20 border border-[var(--glass-border)]"
+                {/* Avatar Frame — matches About Page creator card: responsive 112–180 px rounded-3xl */}
+                <div
+                  className={`w-36 h-36 rounded-3xl p-2 flex items-center justify-center transition-colors border shadow-sm ${
+                    previewTone === 'light'
+                      ? 'bg-sky-50 border-sky-200'
+                      : 'bg-slate-900 border-slate-800'
+                  }`}
+                >
+                  {currentUrl ? (
+                    <img
+                      src={currentUrl}
+                      alt={creatorForm.name}
+                      className="w-32 h-32 rounded-2xl object-cover object-top shadow-xl shadow-sky-600/20 border border-[var(--glass-border)]"
+                    />
+                  ) : (
+                    <div className="w-32 h-32 rounded-2xl bg-gradient-to-br from-[#0284C7] to-[#070B19] text-white flex flex-col items-center justify-center font-bold shadow-xl shadow-sky-600/20">
+                      <span className="text-3xl font-mono">AP</span>
+                      <span className="text-[10px] font-mono tracking-wider opacity-75 mt-0.5">Orion-9</span>
+                    </div>
+                  )}
+                </div>
+
+                <div className="text-center">
+                  <p className="text-xs font-mono font-medium text-[var(--orion-text-primary)]">
+                    {currentUrl ? 'Custom Photograph Active' : 'Fallback "AP" Avatar Active'}
+                  </p>
+                  <p className="text-[11px] text-[var(--orion-text-muted)] mt-0.5">
+                    Displays at 180×180 px on desktop (responsive 112–180 px) on the public About page
+                  </p>
+                </div>
+              </div>
+
+              {/* Right Column: Actions & Photograph Upload Controls */}
+              <div className="md:col-span-7 space-y-4">
+                <div>
+                  <h3 className="text-sm font-semibold text-[var(--orion-text-primary)]">
+                    Photograph Controls
+                  </h3>
+                  <p className="text-xs text-[var(--orion-text-secondary)] mt-0.5">
+                    Upload your portrait in PNG, JPEG, WebP, or SVG format (max 5 MB).
+                    You'll be able to crop and position your face before uploading.
+                  </p>
+                </div>
+
+                {/* Hidden File Input */}
+                <input
+                  ref={fileInputRef}
+                  type="file"
+                  accept=".png,.jpg,.jpeg,.webp,.svg,image/png,image/jpeg,image/webp,image/svg+xml"
+                  onChange={handleFileChange}
+                  className="hidden"
+                  data-testid="creator-photo-file-input"
                 />
-              ) : (
-                <div className="w-32 h-32 rounded-2xl bg-gradient-to-br from-[#0284C7] to-[#070B19] text-white flex flex-col items-center justify-center font-bold shadow-xl shadow-sky-600/20">
-                  <span className="text-3xl font-mono">AP</span>
-                  <span className="text-[10px] font-mono tracking-wider opacity-75 mt-0.5">Orion-9</span>
-                </div>
-              )}
-            </div>
 
-            <div className="text-center">
-              <p className="text-xs font-mono font-medium text-[var(--orion-text-primary)]">
-                {currentUrl ? 'Custom Photograph Active' : 'Fallback "AP" Avatar Active'}
-              </p>
-              <p className="text-[11px] text-[var(--orion-text-muted)] mt-0.5">
-                Displays at 180×180 px on desktop (responsive 112–180 px) on the public About page
-              </p>
+                {/* Action Buttons */}
+                <div className="flex flex-wrap items-center gap-3">
+                  <button
+                    type="button"
+                    onClick={() => fileInputRef.current?.click()}
+                    disabled={isUploading || isSaving || authLoading}
+                    className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-[#0284C7] hover:bg-[#0369A1] text-white text-xs font-medium transition-colors shadow-xs cursor-pointer disabled:opacity-50"
+                    data-testid="creator-upload-button"
+                  >
+                    <Crop className="w-3.5 h-3.5" />
+                    <span>{currentUrl ? 'Replace Photograph' : 'Upload Photograph'}</span>
+                  </button>
+
+                  {currentUrl && (
+                    <button
+                      type="button"
+                      onClick={handleRemovePhoto}
+                      disabled={isUploading || isSaving}
+                      className="inline-flex items-center gap-2 px-3.5 py-2.5 rounded-xl border border-rose-300 dark:border-rose-800/40 text-rose-600 dark:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-950/20 text-xs font-medium transition-colors cursor-pointer disabled:opacity-50"
+                      data-testid="creator-remove-button"
+                    >
+                      <Trash2 className="w-3.5 h-3.5" />
+                      <span>Remove Photograph</span>
+                    </button>
+                  )}
+
+                  <button
+                    type="button"
+                    onClick={handleResetToDefaults}
+                    disabled={isUploading || isSaving}
+                    className="inline-flex items-center gap-1.5 px-3 py-2.5 rounded-xl border border-[var(--glass-border)] text-xs text-[var(--orion-text-secondary)] hover:bg-[var(--orion-alt-bg)] transition-colors cursor-pointer disabled:opacity-50"
+                    title="Restore default attribution"
+                  >
+                    <RotateCcw className="w-3.5 h-3.5" />
+                    <span>Reset Defaults</span>
+                  </button>
+                </div>
+
+                {/* Crop editor hint */}
+                <div className="flex items-start gap-2 p-3 rounded-xl bg-sky-50 dark:bg-sky-950/20 border border-sky-200 dark:border-sky-800/40 text-xs text-sky-800 dark:text-sky-300">
+                  <Crop className="w-3.5 h-3.5 shrink-0 mt-0.5" />
+                  <span>
+                    After selecting a photo, an interactive crop editor opens.
+                    Drag to position your face, adjust zoom, and click <strong>Apply &amp; Upload</strong> when ready.
+                  </span>
+                </div>
+
+                {/* Upload Error Banner (shown after a failed upload from inside the editor) */}
+                {uploadError && !showCropEditor && (
+                  <div className="p-3.5 rounded-xl bg-rose-50 dark:bg-rose-950/20 border border-rose-200 dark:border-rose-800/40 flex items-start gap-2 text-xs text-rose-700 dark:text-rose-300">
+                    <AlertCircle className="w-4 h-4 shrink-0 mt-0.5 text-rose-500" />
+                    <div className="space-y-0.5">
+                      <p className="font-semibold">Upload failed</p>
+                      <p>{uploadError}</p>
+                    </div>
+                  </div>
+                )}
+
+                {/* Metadata Card */}
+                {currentUrl && (
+                  <div className="p-3.5 rounded-xl bg-[var(--orion-alt-bg)] border border-[var(--glass-border-subtle)] text-xs font-mono space-y-1.5">
+                    <div className="flex items-center justify-between text-[var(--orion-text-muted)] text-[11px] pb-1 border-b border-[var(--glass-border-subtle)]">
+                      <span className="font-sans font-semibold uppercase tracking-wider text-[#0284C7]">
+                        Asset Metadata
+                      </span>
+                      <span className="text-emerald-600 font-medium flex items-center gap-1">
+                        <Check className="w-3 h-3" />
+                        Verified Asset
+                      </span>
+                    </div>
+                    {creatorForm.avatarMetadata?.originalFilename && (
+                      <div className="truncate text-[var(--orion-text-secondary)]">
+                        <span className="text-[var(--orion-text-muted)]">File:</span>{' '}
+                        {creatorForm.avatarMetadata.originalFilename}
+                      </div>
+                    )}
+                    {creatorForm.avatarMetadata?.dimensions && (
+                      <div className="text-[var(--orion-text-secondary)]">
+                        <span className="text-[var(--orion-text-muted)]">Dimensions:</span>{' '}
+                        {creatorForm.avatarMetadata.dimensions}
+                      </div>
+                    )}
+                    {creatorForm.avatarMetadata?.sizeBytes && (
+                      <div className="text-[var(--orion-text-secondary)]">
+                        <span className="text-[var(--orion-text-muted)]">Size:</span>{' '}
+                        {(creatorForm.avatarMetadata.sizeBytes / 1024).toFixed(1)} KB
+                      </div>
+                    )}
+                    <div className="truncate text-[var(--orion-text-muted)] text-[10px] pt-1">
+                      <span>URL:</span>{' '}
+                      <a
+                        href={currentUrl}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="text-[#0284C7] hover:underline"
+                      >
+                        {currentUrl}
+                      </a>
+                    </div>
+                  </div>
+                )}
+              </div>
             </div>
           </div>
-
-          {/* Right Column: Actions & Photograph Upload Controls */}
-          <div className="md:col-span-7 space-y-4">
-            <div>
-              <h3 className="text-sm font-semibold text-[var(--orion-text-primary)]">
-                Photograph Controls
-              </h3>
-              <p className="text-xs text-[var(--orion-text-secondary)] mt-0.5">
-                Upload your portrait in PNG, JPEG, WebP, or SVG format (max 5 MB).
-              </p>
-            </div>
-
-            {/* Hidden File Input */}
-            <input
-              ref={fileInputRef}
-              type="file"
-              accept=".png,.jpg,.jpeg,.webp,.svg,image/png,image/jpeg,image/webp,image/svg+xml"
-              onChange={handleFileChange}
-              className="hidden"
-              data-testid="creator-photo-file-input"
-            />
-
-            {/* Action Buttons */}
-            <div className="flex flex-wrap items-center gap-3">
-              <button
-                type="button"
-                onClick={() => fileInputRef.current?.click()}
-                disabled={isUploading || isSaving || authLoading}
-                className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-[#0284C7] hover:bg-[#0369A1] text-white text-xs font-medium transition-colors shadow-xs cursor-pointer disabled:opacity-50"
-                data-testid="creator-upload-button"
-              >
-                <Upload className="w-3.5 h-3.5" />
-                <span>{currentUrl ? 'Replace Photograph' : 'Upload Photograph'}</span>
-              </button>
-
-              {currentUrl && (
-                <button
-                  type="button"
-                  onClick={handleRemovePhoto}
-                  disabled={isUploading || isSaving}
-                  className="inline-flex items-center gap-2 px-3.5 py-2.5 rounded-xl border border-rose-300 dark:border-rose-800/40 text-rose-600 dark:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-950/20 text-xs font-medium transition-colors cursor-pointer disabled:opacity-50"
-                  data-testid="creator-remove-button"
-                >
-                  <Trash2 className="w-3.5 h-3.5" />
-                  <span>Remove Photograph</span>
-                </button>
-              )}
-
-              <button
-                type="button"
-                onClick={handleResetToDefaults}
-                disabled={isUploading || isSaving}
-                className="inline-flex items-center gap-1.5 px-3 py-2.5 rounded-xl border border-[var(--glass-border)] text-xs text-[var(--orion-text-secondary)] hover:bg-[var(--orion-alt-bg)] transition-colors cursor-pointer disabled:opacity-50"
-                title="Restore default attribution"
-              >
-                <RotateCcw className="w-3.5 h-3.5" />
-                <span>Reset Defaults</span>
-              </button>
-            </div>
-
-            {/* Upload Progress Indicator */}
-            {isUploading && (
-              <div className="p-3.5 rounded-xl bg-sky-50 dark:bg-sky-950/20 border border-sky-200 dark:border-sky-800/40 space-y-2">
-                <div className="flex items-center justify-between text-xs text-sky-800 dark:text-sky-300 font-medium">
-                  <span className="flex items-center gap-1.5">
-                    <UploadCloud className="w-4 h-4 animate-bounce" />
-                    Uploading photograph...
-                  </span>
-                  <span className="font-mono">{uploadProgress}%</span>
-                </div>
-                <div className="w-full h-1.5 rounded-full bg-sky-200 dark:bg-sky-900 overflow-hidden">
-                  <div
-                    className="h-full bg-[#0284C7] transition-all duration-150 rounded-full"
-                    style={{ width: `${uploadProgress}%` }}
-                  />
-                </div>
-              </div>
-            )}
-
-            {/* Upload Error Banner */}
-            {uploadError && (
-              <div className="p-3.5 rounded-xl bg-rose-50 dark:bg-rose-950/20 border border-rose-200 dark:border-rose-800/40 flex items-start gap-2 text-xs text-rose-700 dark:text-rose-300">
-                <AlertCircle className="w-4 h-4 shrink-0 mt-0.5 text-rose-500" />
-                <div className="space-y-0.5">
-                  <p className="font-semibold">Upload failed</p>
-                  <p>{uploadError}</p>
-                </div>
-              </div>
-            )}
-
-            {/* Metadata Card */}
-            {currentUrl && (
-              <div className="p-3.5 rounded-xl bg-[var(--orion-alt-bg)] border border-[var(--glass-border-subtle)] text-xs font-mono space-y-1.5">
-                <div className="flex items-center justify-between text-[var(--orion-text-muted)] text-[11px] pb-1 border-b border-[var(--glass-border-subtle)]">
-                  <span className="font-sans font-semibold uppercase tracking-wider text-[#0284C7]">
-                    Asset Metadata
-                  </span>
-                  <span className="text-emerald-600 font-medium flex items-center gap-1">
-                    <Check className="w-3 h-3" />
-                    Verified Asset
-                  </span>
-                </div>
-                {creatorForm.avatarMetadata?.originalFilename && (
-                  <div className="truncate text-[var(--orion-text-secondary)]">
-                    <span className="text-[var(--orion-text-muted)]">File:</span>{' '}
-                    {creatorForm.avatarMetadata.originalFilename}
-                  </div>
-                )}
-                {creatorForm.avatarMetadata?.dimensions && (
-                  <div className="text-[var(--orion-text-secondary)]">
-                    <span className="text-[var(--orion-text-muted)]">Dimensions:</span>{' '}
-                    {creatorForm.avatarMetadata.dimensions}
-                  </div>
-                )}
-                {creatorForm.avatarMetadata?.sizeBytes && (
-                  <div className="text-[var(--orion-text-secondary)]">
-                    <span className="text-[var(--orion-text-muted)]">Size:</span>{' '}
-                    {(creatorForm.avatarMetadata.sizeBytes / 1024).toFixed(1)} KB
-                  </div>
-                )}
-                <div className="truncate text-[var(--orion-text-muted)] text-[10px] pt-1">
-                  <span>URL:</span> <a href={currentUrl} target="_blank" rel="noopener noreferrer" className="text-[#0284C7] hover:underline">{currentUrl}</a>
-                </div>
-              </div>
-            )}
-          </div>
-        </div>
+        )}
       </div>
 
       {/* 3. Creator Profile Fields & Attribution */}
@@ -466,7 +592,7 @@ export const CreatorProfileSection: React.FC<CreatorProfileSectionProps> = ({
               data-testid="creator-save-draft-button"
             >
               <Save className="w-3.5 h-3.5" />
-              <span>{isSaving ? 'Saving...' : 'Save Draft'}</span>
+              <span>{isSaving ? 'Saving…' : 'Save Draft'}</span>
             </button>
 
             <button
@@ -477,7 +603,7 @@ export const CreatorProfileSection: React.FC<CreatorProfileSectionProps> = ({
               data-testid="creator-publish-button"
             >
               <UploadCloud className="w-3.5 h-3.5" />
-              <span>{isSaving ? 'Publishing...' : 'Publish Live'}</span>
+              <span>{isSaving ? 'Publishing…' : 'Publish Live'}</span>
             </button>
           </div>
         </div>
